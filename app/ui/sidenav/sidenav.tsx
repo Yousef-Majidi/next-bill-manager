@@ -2,8 +2,13 @@ import Link from "next/link";
 import { signOut } from "@/auth";
 import { PowerIcon } from "@heroicons/react/16/solid";
 import NavLinks from "./nav-links";
+import { auth } from "@/auth";
 
-export default function SideNav() {
+export default async function SideNav() {
+    const session = await auth();
+    const user = session?.user;
+    // console.log("session", session);
+
     return (
         <div className="flex h-full flex-col px-3 py-4 md:px-2">
             <Link
@@ -11,7 +16,7 @@ export default function SideNav() {
                 href={"/"}
             >
                 <div className="w-32 flex justify-center text-white md:w-40">
-                    Home Logo
+                    {user?.name}
                 </div>
             </Link>
             <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
