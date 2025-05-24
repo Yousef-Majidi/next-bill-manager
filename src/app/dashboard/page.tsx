@@ -1,6 +1,8 @@
+"use server";
+
 import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/server/auth/auth";
+import { authOptions } from "@/lib/server/auth";
 
 export default async function DashboardPage() {
 	const session = await getServerSession(authOptions);

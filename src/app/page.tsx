@@ -22,7 +22,7 @@ export default function LandingPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+		<div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
 			<div className="container mx-auto px-4 py-16">
 				<div className="mb-16 text-center">
 					<h1 className="mb-4 text-4xl font-bold text-gray-900">
