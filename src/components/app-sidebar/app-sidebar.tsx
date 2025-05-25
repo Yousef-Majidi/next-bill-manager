@@ -14,10 +14,14 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+	Badge,
+	Button,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -30,7 +34,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 	SidebarSeparator,
-} from "@/components/ui/sidebar";
+} from "@/components/ui";
 
 // Navigation data
 const navigationItems = [
@@ -77,6 +81,10 @@ const quickStats = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
+
+	const handleLogOut = () => {
+		signOut();
+	};
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -221,10 +229,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild>
-							<Link href="/">
+							<Button
+								variant="ghost"
+								className="flex items-center"
+								onClick={() => handleLogOut()}>
+								<span>Log Out</span>
 								<LogOut className="size-4" />
-								<span>Logout</span>
-							</Link>
+							</Button>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
