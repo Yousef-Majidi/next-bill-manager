@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useAtom } from "jotai";
 import {
 	CheckCircle,
 	Clock,
@@ -32,6 +33,7 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
+import { userAtom } from "@/states/store";
 import { User } from "@/types";
 
 // Mock data - Updated structure for consolidated bills
@@ -104,10 +106,11 @@ const tenants = [
 ];
 
 interface DashboardProps {
-	user: User;
+	loggedInUser: User;
 }
-export const Dashboard = ({ user }: DashboardProps) => {
-	console.log("User:", user);
+
+export const Dashboard = ({ loggedInUser }: DashboardProps) => {
+	const [user, setUser] = useAtom(userAtom);
 	const [selectedTenant, setSelectedTenant] = useState("");
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,6 +163,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
 		.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
 	const unpaidAmount = lastMonthTotal - paidAmount;
 
+	if (!user) setUser(loggedInUser);
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">

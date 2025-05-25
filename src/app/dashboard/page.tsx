@@ -2,8 +2,9 @@
 
 import { getServerSession } from "next-auth";
 
-import { Dashboard } from "@/components/dashboard/dashboard";
-import { authOptions } from "@/lib/server/auth";
+import { Dashboard } from "@/components/dashboard";
+import { getUtilityProviders } from "@/lib/data/actions";
+import { authOptions } from "@/lib/server";
 import { User } from "@/types/";
 
 export default async function DashboardPage() {
@@ -16,9 +17,12 @@ export default async function DashboardPage() {
 		accessTokenExp: session.accessTokenExpires,
 	} as User;
 
+	const providers = await getUtilityProviders();
+	console.log("Utility Providers:", providers);
+
 	return (
 		<main>
-			<Dashboard user={loggedInUser} />
+			<Dashboard loggedInUser={loggedInUser} />
 		</main>
 	);
 }

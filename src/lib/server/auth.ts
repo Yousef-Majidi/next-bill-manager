@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-import { authConfig } from "@/lib/server/auth";
+import { authConfig } from "@/lib/server";
 
 export const authOptions = {
 	...authConfig,
