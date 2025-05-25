@@ -1,7 +1,7 @@
 "use server";
 
 import client from "@/lib/server/mongodb";
-import { UtilityProvider, UtilityProviderCategory } from "@/types";
+import { ErrorType, UtilityProvider, UtilityProviderCategory } from "@/types";
 
 export const getUtilityProviders = async (userId: string) => {
 	try {
@@ -17,6 +17,43 @@ export const getUtilityProviders = async (userId: string) => {
 			category: provider.category as UtilityProviderCategory,
 		})) as UtilityProvider[];
 	} catch (error) {
-		throw new Error(`Failed to fetch utility providers: ${error}`);
+		throw {
+			code: ErrorType.DATABASE_ERROR,
+			message: "Failed to fetch utility providers.",
+			error: error,
+		};
+	}
+};
+
+export const addUtilityProvider = async (
+	userId: string,
+	provider: UtilityProvider,
+) => {
+	try {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		// check if provider already exists
+		const existingProvider = await db
+			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+			.findOne({ user_id: userId, name: provider.name });
+		if (existingProvider) {
+			throw {
+				code: ErrorType.RESOURCE_ALREADY_EXISTS,
+				message: "Provider already exists",
+			};
+		}
+
+		return await db
+			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+			.insertOne({
+				user_id: userId,
+				name: provider.name,
+				category: provider.category,
+			});
+	} catch (error) {
+		throw {
+			code: ErrorType.DATABASE_ERROR,
+			message: "Failed to add utility provider.",
+			error: error,
+		};
 	}
 };
