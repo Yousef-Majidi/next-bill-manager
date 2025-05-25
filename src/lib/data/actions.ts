@@ -1,4 +1,6 @@
-import { client } from "@/lib/server";
+"use server";
+
+import client from "@/lib/server/mongodb";
 
 export const getUtilityProviders = async () => {
 	try {

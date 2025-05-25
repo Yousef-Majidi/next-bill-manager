@@ -1,20 +1,16 @@
 "use server";
 
-import { getServerSession } from "next-auth";
-
 import { Dashboard } from "@/components/dashboard";
-import { getUtilityProviders } from "@/lib/data/actions";
-import { authOptions } from "@/lib/server";
+import { getUtilityProviders } from "@/lib/data";
 import { User } from "@/types/";
 
 export default async function DashboardPage() {
-	const session = await getServerSession(authOptions);
 	const loggedInUser = {
-		id: session.providerAccountId,
-		name: session.user.name,
-		email: session.user.email,
-		accessToken: session.accessToken,
-		accessTokenExp: session.accessTokenExpires,
+		id: "123",
+		name: "John Doe",
+		email: "test@test.com",
+		accessToken: "1234567890",
+		accessTokenExp: 1234567890,
 	} as User;
 
 	const providers = await getUtilityProviders();
