@@ -168,7 +168,9 @@ export const Dashboard = ({ loggedInUser }: DashboardProps) => {
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+					<h1 className="text-3xl font-bold tracking-tight">
+						Welcome {user?.name}
+					</h1>
 					<p className="text-muted-foreground">
 						Overview of your consolidated utility bills and tenant management
 					</p>
