@@ -115,6 +115,11 @@ export const Dashboard = ({ loggedInUser }: DashboardProps) => {
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [billToSend, setBillToSend] = useState<any>(null);
+	const currentDate = new Date().toLocaleString("default", {
+		day: "2-digit",
+		month: "long",
+		year: "numeric",
+	});
 
 	const handleSendBill = () => {
 		const tenant = tenants.find((t) => t.id === selectedTenant);
@@ -171,13 +176,10 @@ export const Dashboard = ({ loggedInUser }: DashboardProps) => {
 					<h1 className="text-3xl font-bold tracking-tight">
 						Welcome {user?.name}
 					</h1>
-					<p className="text-muted-foreground">
-						Overview of your consolidated utility bills and tenant management
-					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					<Badge variant="outline" className="hidden sm:flex">
-						December 2024
+						{currentDate}
 					</Badge>
 				</div>
 			</div>
