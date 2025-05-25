@@ -105,11 +105,11 @@ const tenants = [
 	},
 ];
 
-interface DashboardProps {
-	loggedInUser: User;
+interface DashboardPageProps {
+	readonly loggedInUser: User;
 }
 
-export const Dashboard = ({ loggedInUser }: DashboardProps) => {
+export const DashboardPage = ({ loggedInUser }: DashboardPageProps) => {
 	const [user, setUser] = useAtom(userAtom);
 	const [selectedTenant, setSelectedTenant] = useState("");
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);

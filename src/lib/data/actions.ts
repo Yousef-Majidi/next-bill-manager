@@ -1,5 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
+import { ObjectId } from "mongodb";
+
 import client from "@/lib/server/mongodb";
 import { ErrorType, UtilityProvider, UtilityProviderCategory } from "@/types";
 
@@ -42,17 +46,48 @@ export const addUtilityProvider = async (
 			};
 		}
 
-		return await db
+		const result = await db
 			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
 			.insertOne({
 				user_id: userId,
 				name: provider.name,
 				category: provider.category,
 			});
+		revalidatePath("/dashboard/providers");
+		return result;
 	} catch (error) {
 		throw {
 			code: ErrorType.DATABASE_ERROR,
 			message: "Failed to add utility provider.",
+			error: error,
+		};
+	}
+};
+
+export const deleteUtilityProvider = async (
+	userId: string,
+	providerId: string,
+) => {
+	try {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const result = await db
+			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+			.deleteOne({
+				_id: new ObjectId(providerId),
+				user_id: userId,
+			});
+		if (result.deletedCount === 0) {
+			throw {
+				code: ErrorType.RESOURCE_NOT_FOUND,
+				message: "Provider not found or does not belong to the user.",
+			};
+		}
+		revalidatePath("/dashboard/providers");
+		return result;
+	} catch (error) {
+		throw {
+			code: ErrorType.DATABASE_ERROR,
+			message: "Failed to delete utility provider.",
 			error: error,
 		};
 	}

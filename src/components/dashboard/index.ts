@@ -1,1 +1,1 @@
-export * from "@/components/dashboard/dashboard";
+export * from "@/components/dashboard/dashboard-page";

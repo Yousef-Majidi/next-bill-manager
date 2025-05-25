@@ -1,1 +1,1 @@
-export * from "@/components/providers";
+export * from "@/components/providers/providers-page";
