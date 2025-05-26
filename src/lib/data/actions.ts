@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
@@ -17,7 +16,6 @@ import {
 
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
-	// if (!session) redirect("/");
 	return {
 		id: session.providerAccountId,
 		name: session.user.name,
