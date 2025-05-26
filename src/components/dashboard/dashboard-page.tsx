@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAtom } from "jotai";
 import {
@@ -173,8 +173,19 @@ export const DashboardPage = ({
 		.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
 	const unpaidAmount = lastMonthTotal - paidAmount;
 
-	if (!user) setUser(loggedInUser);
-	if (!providersList.length) setProvidersList(utilityProviders);
+	// Initialize user and providers if not already set
+	useEffect(() => {
+		if (!user) setUser(loggedInUser);
+		if (!providersList.length) setProvidersList(utilityProviders);
+	}, [
+		user,
+		providersList,
+		loggedInUser,
+		utilityProviders,
+		setUser,
+		setProvidersList,
+	]);
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
