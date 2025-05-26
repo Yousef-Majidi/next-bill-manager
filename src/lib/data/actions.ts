@@ -17,7 +17,7 @@ import {
 
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
-	if (!session) redirect("/");
+	// if (!session) redirect("/");
 	return {
 		id: session.providerAccountId,
 		name: session.user.name,
