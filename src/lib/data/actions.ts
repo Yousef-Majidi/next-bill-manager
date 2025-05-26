@@ -1,11 +1,31 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { ObjectId } from "mongodb";
+import { getServerSession } from "next-auth";
 
+import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
-import { ErrorType, UtilityProvider, UtilityProviderCategory } from "@/types";
+import {
+	ErrorType,
+	User,
+	UtilityProvider,
+	UtilityProviderCategory,
+} from "@/types";
+
+export const getUser = async () => {
+	const session = await getServerSession(authOptions);
+	if (!session) redirect("/");
+	return {
+		id: session.providerAccountId,
+		name: session.user.name,
+		email: session.user.email,
+		accessToken: session.accessToken,
+		accessTokenExp: session.accessTokenExp,
+	} as User;
+};
 
 export const getUtilityProviders = async (userId: string) => {
 	try {
