@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
 import { useAtom } from "jotai";
 import { Droplets, Flame, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteDialog } from "@/components/common";
-import { AddDialog } from "@/components/providers";
+import { AddProviderDialog } from "@/components/providers";
 import {
 	Badge,
 	Button,
@@ -18,12 +16,8 @@ import {
 } from "@/components/ui";
 import { useDialogState } from "@/hooks";
 import { addUtilityProvider, deleteUtilityProvider } from "@/lib/data";
-import { userAtom } from "@/states";
-import {
-	UtilityProvider,
-	UtilityProviderCategory,
-	UtilityProviderFormData,
-} from "@/types";
+import { userAtom, utilityProvidersAtom } from "@/states";
+import { UtilityProviderCategory, UtilityProviderFormData } from "@/types";
 
 const categoryIcons = {
 	Electricity: Zap,
@@ -37,11 +31,7 @@ const categoryColors = {
 	Gas: "bg-orange-100 text-orange-800",
 };
 
-interface ProvidersPageProps {
-	readonly utilityProviders: UtilityProvider[];
-}
-
-export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
+export const ProvidersPage = () => {
 	const {
 		addDialogOpen,
 		deleteDialogOpen,
@@ -52,8 +42,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 	} = useDialogState();
 
 	const [loggedInUser] = useAtom(userAtom);
-	const [providers, setProviders] =
-		useState<UtilityProvider[]>(utilityProviders);
+	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
 
 	const handleAddProvider = async (data: UtilityProviderFormData) => {
 		if (!loggedInUser) return;
@@ -65,7 +54,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 			});
 			if (result.acknowledged) {
 				toast.success(`Provider "${result.insertedName}" added successfully`);
-				setProviders((prev) => [
+				setProvidersList((prev) => [
 					...prev,
 					{
 						id: result.insertedId,
@@ -97,7 +86,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 			toast.error((error as Error).message || "Failed to delete provider");
 		}
 		toggleDeleteDialog();
-		setProviders(providers.filter((p) => p.id !== providerId));
+		setProvidersList(providersList.filter((p) => p.id !== providerId));
 	};
 
 	return (
@@ -117,7 +106,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{providers.map((provider) => (
+				{providersList.map((provider) => (
 					<Card key={provider.id}>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<div className="flex items-center gap-2">
@@ -156,7 +145,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 				))}
 			</div>
 
-			<AddDialog
+			<AddProviderDialog
 				isOpen={addDialogOpen}
 				title="Add New Provider"
 				description="Add a new utility provider to your account."
@@ -175,7 +164,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 					}
 				}}
 			/>
-			{providers.length === 0 && (
+			{providersList.length === 0 && (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
 						<Zap className="text-muted-foreground mb-4 h-12 w-12" />

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { DashboardPage } from "@/components/dashboard";
+import { getUtilityProviders } from "@/lib/data";
 import { authOptions } from "@/lib/server/auth";
 import { User } from "@/types/";
 
@@ -19,9 +20,14 @@ export default async function Page() {
 		accessTokenExp: session.accessTokenExp,
 	} as User;
 
+	const availableProviders = await getUtilityProviders(loggedInUser.id);
+
 	return (
 		<main>
-			<DashboardPage loggedInUser={loggedInUser} />
+			<DashboardPage
+				loggedInUser={loggedInUser}
+				utilityProviders={availableProviders}
+			/>
 		</main>
 	);
 }

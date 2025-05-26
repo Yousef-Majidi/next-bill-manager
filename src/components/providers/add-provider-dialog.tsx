@@ -31,7 +31,7 @@ interface AddDialogProps {
 	readonly onSubmit: (data: UtilityProviderFormData) => void;
 }
 
-export const AddDialog: React.FC<AddDialogProps> = ({
+export const AddProviderDialog: React.FC<AddDialogProps> = ({
 	isOpen,
 	title,
 	description,

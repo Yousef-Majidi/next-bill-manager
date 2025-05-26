@@ -33,8 +33,8 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
-import { userAtom } from "@/states/store";
-import { User } from "@/types";
+import { userAtom, utilityProvidersAtom } from "@/states/store";
+import { User, UtilityProvider } from "@/types";
 
 // Mock data - Updated structure for consolidated bills
 const currentMonthBill = {
@@ -107,10 +107,15 @@ const tenants = [
 
 interface DashboardPageProps {
 	readonly loggedInUser: User;
+	readonly utilityProviders: UtilityProvider[];
 }
 
-export const DashboardPage = ({ loggedInUser }: DashboardPageProps) => {
+export const DashboardPage = ({
+	loggedInUser,
+	utilityProviders,
+}: DashboardPageProps) => {
 	const [user, setUser] = useAtom(userAtom);
+	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
 	const [selectedTenant, setSelectedTenant] = useState("");
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -169,6 +174,7 @@ export const DashboardPage = ({ loggedInUser }: DashboardPageProps) => {
 	const unpaidAmount = lastMonthTotal - paidAmount;
 
 	if (!user) setUser(loggedInUser);
+	if (!providersList.length) setProvidersList(utilityProviders);
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
