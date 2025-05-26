@@ -7,6 +7,7 @@ import { Droplets, Flame, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteDialog } from "@/components/common";
+import { AddDialog } from "@/components/providers";
 import {
 	Badge,
 	Button,
@@ -14,24 +15,14 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-	Input,
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 } from "@/components/ui";
-import { deleteUtilityProvider } from "@/lib/data";
+import { addUtilityProvider, deleteUtilityProvider } from "@/lib/data";
 import { userAtom } from "@/states";
-import { UtilityProvider } from "@/types";
+import {
+	UtilityProvider,
+	UtilityProviderCategory,
+	UtilityProviderFormData,
+} from "@/types";
 
 const categoryIcons = {
 	Electricity: Zap,
@@ -53,19 +44,40 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 	const [providers, setProviders] =
 		useState<UtilityProvider[]>(utilityProviders);
 
-	const [AddDialogOpen, setAddDialogOpen] = useState(false);
-	const [DeleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [newProvider, setNewProvider] = useState({ name: "", category: "" });
+	const [addDialogOpen, setAddDialogOpen] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [user] = useAtom(userAtom);
 
 	const [providerIdToDelete, setProviderIdToDelete] = useState<string | null>(
 		null,
 	);
 
-	const handleAddProvider = () => {
-		// 	setNewProvider({ name: "", category: "" });
-		// 	setDialogOpen(false);
-		// }
+	const handleAddProvider = async (data: UtilityProviderFormData) => {
+		if (!user) return;
+		try {
+			const result = await addUtilityProvider(user.id, {
+				userId: user.id,
+				name: data.name,
+				category: data.category as UtilityProviderCategory,
+			});
+			if (result.acknowledged) {
+				toast.success("Provider added successfully");
+				setProviders((prev) => [
+					...prev,
+					{
+						id: result.insertedId,
+						userId: user.id,
+						name: data.name,
+						category: data.category as UtilityProviderCategory,
+					},
+				]);
+				setAddDialogOpen(false);
+			}
+		} catch (error) {
+			console.error(error);
+			toast.error((error as Error).message || "Failed to add provider");
+			return;
+		}
 	};
 
 	const handleDeleteProvider = async (providerId: string) => {
@@ -93,119 +105,71 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 					</p>
 				</div>
 
-				{/* Delete Dialog */}
-				<DeleteDialog
-					isOpen={DeleteDialogOpen}
-					title="Delete Provider"
-					description="Are you sure you want to delete this provider? This action cannot be undone."
-					onClose={() => {
-						setProviderIdToDelete(null);
-						setDeleteDialogOpen(false);
-					}}
-					onConfirm={async () => {
-						if (providerIdToDelete) {
-							await handleDeleteProvider(providerIdToDelete);
-						}
-					}}
-				/>
-
-				<Dialog open={AddDialogOpen} onOpenChange={setAddDialogOpen}>
-					<DialogTrigger asChild>
-						<Button>
-							<Plus className="mr-2 h-4 w-4" />
-							Add Provider
-						</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Add New Provider</DialogTitle>
-							<DialogDescription>
-								Add a new utility provider to your account
-							</DialogDescription>
-						</DialogHeader>
-
-						<div className="space-y-4">
-							<div>
-								<Label htmlFor="name">Provider Name</Label>
-								<Input
-									id="name"
-									value={newProvider.name}
-									onChange={(e) =>
-										setNewProvider({ ...newProvider, name: e.target.value })
-									}
-									placeholder="e.g., City Electric Company"
-								/>
-							</div>
-
-							<div>
-								<Label htmlFor="category">Category</Label>
-								<Select
-									value={newProvider.category}
-									onValueChange={(value) =>
-										setNewProvider({ ...newProvider, category: value })
-									}>
-									<SelectTrigger>
-										<SelectValue placeholder="Select category" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="electricity">Electricity</SelectItem>
-										<SelectItem value="water">Water</SelectItem>
-										<SelectItem value="gas">Gas</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						</div>
-
-						<DialogFooter>
-							<Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-								Cancel
-							</Button>
-							<Button onClick={handleAddProvider}>Add Provider</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+				<Button onClick={() => setAddDialogOpen(true)}>
+					<Plus className="mr-2 h-4 w-4" />
+					Add Provider
+				</Button>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{providers.map((provider) => {
-					const Icon =
-						categoryIcons[
-							provider.category as string as keyof typeof categoryIcons
-						];
-					return (
-						<Card key={provider.id}>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<div className="flex items-center gap-2">
-									<Icon className="h-5 w-5" />
-									<CardTitle className="text-lg">{provider.name}</CardTitle>
-								</div>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										setProviderIdToDelete(provider.id);
-										setDeleteDialogOpen(true);
-									}}
-									className="text-destructive hover:text-destructive">
-									<Trash2 className="h-4 w-4" />
-								</Button>
-							</CardHeader>
-							<CardContent>
-								<Badge
-									className={
-										categoryColors[
-											provider.category as string as keyof typeof categoryColors
-										]
-									}>
-									{provider.category.charAt(0).toUpperCase() +
-										provider.category.slice(1)}
-								</Badge>
-							</CardContent>
-						</Card>
-					);
-				})}
+				{providers.map((provider) => (
+					<Card key={provider.id}>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<div className="flex items-center gap-2">
+								{(() => {
+									const Icon =
+										categoryIcons[
+											provider.category as keyof typeof categoryIcons
+										];
+									return Icon ? <Icon className="h-5 w-5" /> : null;
+								})()}
+								<CardTitle className="text-lg">{provider.name}</CardTitle>
+							</div>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setProviderIdToDelete(provider.id || null);
+									setDeleteDialogOpen(true);
+								}}
+								className="text-destructive hover:text-destructive">
+								<Trash2 className="h-4 w-4" />
+							</Button>
+						</CardHeader>
+						<CardContent>
+							<Badge
+								className={
+									categoryColors[
+										provider.category as keyof typeof categoryColors
+									]
+								}>
+								{provider.category.charAt(0).toUpperCase() +
+									provider.category.slice(1)}
+							</Badge>
+						</CardContent>
+					</Card>
+				))}
 			</div>
 
+			<AddDialog
+				isOpen={addDialogOpen}
+				title="Add New Provider"
+				description="Add a new utility provider to your account."
+				onClose={() => setAddDialogOpen(false)}
+				onSubmit={handleAddProvider}
+			/>
+
+			<DeleteDialog
+				isOpen={deleteDialogOpen}
+				title="Delete Provider"
+				description="Are you sure you want to delete this provider? This action cannot be undone."
+				onClose={() => setDeleteDialogOpen(false)}
+				onConfirm={async () => {
+					if (providerIdToDelete) {
+						await handleDeleteProvider(providerIdToDelete);
+					}
+				}}
+			/>
 			{providers.length === 0 && (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">

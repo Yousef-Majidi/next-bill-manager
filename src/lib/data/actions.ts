@@ -54,7 +54,10 @@ export const addUtilityProvider = async (
 				category: provider.category,
 			});
 		revalidatePath("/dashboard/providers");
-		return result;
+		return {
+			acknowledged: result.acknowledged,
+			insertedId: result.insertedId.toString(),
+		};
 	} catch (error) {
 		throw {
 			code: ErrorType.DATABASE_ERROR,

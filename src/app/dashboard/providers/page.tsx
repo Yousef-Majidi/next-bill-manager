@@ -9,8 +9,6 @@ import { getUtilityProviders } from "@/lib/data";
 import { authOptions } from "@/lib/server/auth";
 import { UtilityProvider } from "@/types";
 
-console.log("Providers Page: ", ProvidersPage);
-
 export default async function Page() {
 	const session = await getServerSession(authOptions);
 	if (!session) redirect("/");
