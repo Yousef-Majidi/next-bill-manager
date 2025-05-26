@@ -57,6 +57,7 @@ export const addUtilityProvider = async (
 		return {
 			acknowledged: result.acknowledged,
 			insertedId: result.insertedId.toString(),
+			insertedName: provider.name,
 		};
 	} catch (error) {
 		throw {
@@ -86,7 +87,10 @@ export const deleteUtilityProvider = async (
 			};
 		}
 		revalidatePath("/dashboard/providers");
-		return result;
+		return {
+			acknowledged: result.acknowledged,
+			deletedCount: result.deletedCount,
+		};
 	} catch (error) {
 		throw {
 			code: ErrorType.DATABASE_ERROR,

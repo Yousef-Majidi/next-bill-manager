@@ -64,7 +64,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 				category: data.category as UtilityProviderCategory,
 			});
 			if (result.acknowledged) {
-				toast.success("Provider added successfully");
+				toast.success(`Provider "${result.insertedName}" added successfully`);
 				setProviders((prev) => [
 					...prev,
 					{
@@ -87,8 +87,10 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 		if (!loggedInUser) return;
 		try {
 			const result = await deleteUtilityProvider(loggedInUser.id, providerId);
-			if (result) {
-				toast.success("Provider deleted successfully");
+			if (result.acknowledged) {
+				toast.success(
+					`${result.deletedCount} provider(s) deleted successfully`,
+				);
 			}
 		} catch (error) {
 			console.error(error);
