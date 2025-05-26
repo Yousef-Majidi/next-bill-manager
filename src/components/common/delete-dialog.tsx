@@ -36,7 +36,6 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
 					onSubmit={(e) => {
 						e.preventDefault();
 						onConfirm();
-						onClose();
 					}}>
 					<DialogFooter>
 						<Button type="submit" variant="destructive">

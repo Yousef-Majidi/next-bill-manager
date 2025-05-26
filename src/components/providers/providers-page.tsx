@@ -16,6 +16,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui";
+import { useDialogState } from "@/hooks";
 import { addUtilityProvider, deleteUtilityProvider } from "@/lib/data";
 import { userAtom } from "@/states";
 import {
@@ -41,22 +42,24 @@ interface ProvidersPageProps {
 }
 
 export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
+	const {
+		addDialogOpen,
+		deleteDialogOpen,
+		providerIdToDelete,
+		setProviderIdToDelete,
+		toggleAddDialog,
+		toggleDeleteDialog,
+	} = useDialogState();
+
+	const [loggedInUser] = useAtom(userAtom);
 	const [providers, setProviders] =
 		useState<UtilityProvider[]>(utilityProviders);
 
-	const [addDialogOpen, setAddDialogOpen] = useState(false);
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [user] = useAtom(userAtom);
-
-	const [providerIdToDelete, setProviderIdToDelete] = useState<string | null>(
-		null,
-	);
-
 	const handleAddProvider = async (data: UtilityProviderFormData) => {
-		if (!user) return;
+		if (!loggedInUser) return;
 		try {
-			const result = await addUtilityProvider(user.id, {
-				userId: user.id,
+			const result = await addUtilityProvider(loggedInUser.id, {
+				userId: loggedInUser.id,
 				name: data.name,
 				category: data.category as UtilityProviderCategory,
 			});
@@ -66,12 +69,12 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 					...prev,
 					{
 						id: result.insertedId,
-						userId: user.id,
+						userId: loggedInUser.id,
 						name: data.name,
 						category: data.category as UtilityProviderCategory,
 					},
 				]);
-				setAddDialogOpen(false);
+				toggleAddDialog();
 			}
 		} catch (error) {
 			console.error(error);
@@ -81,9 +84,9 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 	};
 
 	const handleDeleteProvider = async (providerId: string) => {
-		if (!user) return;
+		if (!loggedInUser) return;
 		try {
-			const result = await deleteUtilityProvider(user.id, providerId);
+			const result = await deleteUtilityProvider(loggedInUser.id, providerId);
 			if (result) {
 				toast.success("Provider deleted successfully");
 			}
@@ -91,7 +94,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 			console.error(error);
 			toast.error((error as Error).message || "Failed to delete provider");
 		}
-		setDeleteDialogOpen(false);
+		toggleDeleteDialog();
 		setProviders(providers.filter((p) => p.id !== providerId));
 	};
 
@@ -105,7 +108,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 					</p>
 				</div>
 
-				<Button onClick={() => setAddDialogOpen(true)}>
+				<Button onClick={toggleAddDialog}>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Provider
 				</Button>
@@ -130,7 +133,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 								size="sm"
 								onClick={() => {
 									setProviderIdToDelete(provider.id || null);
-									setDeleteDialogOpen(true);
+									toggleDeleteDialog();
 								}}
 								className="text-destructive hover:text-destructive">
 								<Trash2 className="h-4 w-4" />
@@ -155,7 +158,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 				isOpen={addDialogOpen}
 				title="Add New Provider"
 				description="Add a new utility provider to your account."
-				onClose={() => setAddDialogOpen(false)}
+				onClose={toggleAddDialog}
 				onSubmit={handleAddProvider}
 			/>
 
@@ -163,7 +166,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 				isOpen={deleteDialogOpen}
 				title="Delete Provider"
 				description="Are you sure you want to delete this provider? This action cannot be undone."
-				onClose={() => setDeleteDialogOpen(false)}
+				onClose={toggleDeleteDialog}
 				onConfirm={async () => {
 					if (providerIdToDelete) {
 						await handleDeleteProvider(providerIdToDelete);
@@ -179,7 +182,7 @@ export const ProvidersPage = ({ utilityProviders }: ProvidersPageProps) => {
 							Add your first utility provider to get started with bill
 							management
 						</p>
-						<Button onClick={() => setAddDialogOpen(true)}>
+						<Button onClick={toggleAddDialog}>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Provider
 						</Button>

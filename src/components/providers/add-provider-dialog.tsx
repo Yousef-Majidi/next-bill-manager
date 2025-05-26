@@ -46,8 +46,7 @@ export const AddDialog: React.FC<AddDialogProps> = ({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		onSubmit(formData);
-		setFormData({ name: "", category: "" }); // Reset form
-		onClose(); // Close the dialog
+		setFormData({ name: "", category: "" });
 	};
 
 	return (
