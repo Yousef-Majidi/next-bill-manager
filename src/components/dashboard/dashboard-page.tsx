@@ -6,7 +6,6 @@ import { useAtom } from "jotai";
 import {
 	CheckCircle,
 	Clock,
-	DollarSign,
 	Droplet,
 	FileText,
 	Flame,
@@ -14,7 +13,7 @@ import {
 	Zap,
 } from "lucide-react";
 
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardHeader, StatsSummary } from "@/components/dashboard";
 import {
 	Badge,
 	Button,
@@ -190,66 +189,9 @@ export const DashboardPage = ({
 	);
 
 	return (
-		<div className="space-y-6">
+		<div className="flex flex-col gap-6">
 			<DashboardHeader userName={user?.name || "User"} />
-
-			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Current Month Total
-						</CardTitle>
-						<DollarSign className="text-muted-foreground h-4 w-4" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">
-							${currentMonthTotal.toFixed(2)}
-						</div>
-						<p className="text-muted-foreground text-xs">
-							{new Date().toLocaleDateString("en-US", {
-								month: "long",
-								year: "numeric",
-							})}
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Last Month Billed
-						</CardTitle>
-						<DollarSign className="text-muted-foreground h-4 w-4" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">$0.00</div>
-						<p className="text-muted-foreground text-xs">November 2024</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Paid Amount</CardTitle>
-						<CheckCircle className="h-4 w-4 text-green-600" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold text-green-600">$0.00</div>
-						<p className="text-muted-foreground text-xs">Last month</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Outstanding</CardTitle>
-						<Clock className="h-4 w-4 text-orange-600" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold text-orange-600">$0.00</div>
-						<p className="text-muted-foreground text-xs">Unpaid bills</p>
-					</CardContent>
-				</Card>
-			</div>
+			<StatsSummary currentMonthTotal={currentMonthTotal} />
 
 			{/* Current Month Bill */}
 			<Card>
