@@ -7,11 +7,14 @@ import {
 	CheckCircle,
 	Clock,
 	DollarSign,
+	Droplet,
 	FileText,
+	Flame,
 	Mail,
 	Zap,
 } from "lucide-react";
 
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import {
 	Badge,
 	Button,
@@ -34,20 +37,12 @@ import {
 	Separator,
 } from "@/components/ui";
 import { userAtom, utilityProvidersAtom } from "@/states/store";
-import { User, UtilityProvider } from "@/types";
-
-// Mock data - Updated structure for consolidated bills
-const currentMonthBill = {
-	month: "December 2024",
-	categories: {
-		electricity: { amount: 150, provider: "City Electric" },
-		water: { amount: 80, provider: "Metro Water" },
-		gas: { amount: 120, provider: "Natural Gas Co" },
-	},
-	totalAmount: 350,
-	sent: false,
-	sentTo: null,
-};
+import {
+	UtilityProviderBill as Bill,
+	UtilityProviderCategory as BillCategory,
+	User,
+	UtilityProvider,
+} from "@/types";
 
 const lastMonthBills = [
 	{
@@ -108,11 +103,13 @@ const tenants = [
 interface DashboardPageProps {
 	readonly loggedInUser: User;
 	readonly utilityProviders: UtilityProvider[];
+	readonly currentMonthBills: Bill[];
 }
 
 export const DashboardPage = ({
 	loggedInUser,
 	utilityProviders,
+	currentMonthBills,
 }: DashboardPageProps) => {
 	const [user, setUser] = useAtom(userAtom);
 	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
@@ -120,41 +117,37 @@ export const DashboardPage = ({
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [billToSend, setBillToSend] = useState<any>(null);
-	const currentDate = new Date().toLocaleString("default", {
-		day: "2-digit",
-		month: "long",
-		year: "numeric",
-	});
+	const [currentMonthBill, setCurrentMonthBill] = useState<Bill[]>([]);
 
-	const handleSendBill = () => {
-		const tenant = tenants.find((t) => t.id === selectedTenant);
-		if (tenant) {
-			// Calculate tenant's share for each category
-			const tenantShares = {
-				electricity:
-					(currentMonthBill.categories.electricity.amount *
-						tenant.shares.electricity) /
-					100,
-				water:
-					(currentMonthBill.categories.water.amount * tenant.shares.water) /
-					100,
-				gas: (currentMonthBill.categories.gas.amount * tenant.shares.gas) / 100,
-			};
+	// const handleSendBill = () => {
+	// 	const tenant = tenants.find((t) => t.id === selectedTenant);
+	// 	if (tenant) {
+	// 		// Calculate tenant's share for each category
+	// 		const tenantShares = {
+	// 			electricity:
+	// 				(currentMonthBill.categories.electricity.amount *
+	// 					tenant.shares.electricity) /
+	// 				100,
+	// 			water:
+	// 				(currentMonthBill.categories.water.amount * tenant.shares.water) /
+	// 				100,
+	// 			gas: (currentMonthBill.categories.gas.amount * tenant.shares.gas) / 100,
+	// 		};
 
-			const tenantTotalShare = Object.values(tenantShares).reduce(
-				(sum, share) => sum + share,
-				0,
-			);
+	// 		const tenantTotalShare = Object.values(tenantShares).reduce(
+	// 			(sum, share) => sum + share,
+	// 			0,
+	// 		);
 
-			setBillToSend({
-				...currentMonthBill,
-				tenant,
-				tenantShares,
-				tenantTotalShare,
-			});
-			setEmailDialogOpen(true);
-		}
-	};
+	// 		setBillToSend({
+	// 			...currentMonthBill,
+	// 			tenant,
+	// 			tenantShares,
+	// 			tenantTotalShare,
+	// 		});
+	// 		setEmailDialogOpen(true);
+	// 	}
+	// };
 
 	const confirmSendEmail = () => {
 		console.log("Sending consolidated bill email to:", billToSend.tenant.email);
@@ -164,14 +157,14 @@ export const DashboardPage = ({
 		setSelectedTenant("");
 	};
 
-	const lastMonthTotal = lastMonthBills.reduce(
-		(sum, bill) => sum + bill.tenantTotalShare,
-		0,
-	);
-	const paidAmount = lastMonthBills
-		.filter((bill) => bill.paid)
-		.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
-	const unpaidAmount = lastMonthTotal - paidAmount;
+	// const lastMonthTotal = lastMonthBills.reduce(
+	// 	(sum, bill) => sum + bill.tenantTotalShare,
+	// 	0,
+	// );
+	// const paidAmount = lastMonthBills
+	// 	.filter((bill) => bill.paid)
+	// 	.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
+	// const unpaidAmount = lastMonthTotal - paidAmount;
 
 	// Initialize user and providers if not already set
 	useEffect(() => {
@@ -186,20 +179,19 @@ export const DashboardPage = ({
 		setProvidersList,
 	]);
 
+	// Fetch user bills when component mounts
+	useEffect(() => {
+		setCurrentMonthBill(currentMonthBills);
+	}, [currentMonthBills]);
+
+	const currentMonthTotal = currentMonthBill.reduce(
+		(sum, bill) => sum + bill.amount,
+		0,
+	);
+
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold tracking-tight">
-						Welcome {user?.name}
-					</h1>
-				</div>
-				<div className="flex items-center gap-2">
-					<Badge variant="outline" className="hidden sm:flex">
-						{currentDate}
-					</Badge>
-				</div>
-			</div>
+			<DashboardHeader userName={user?.name || "User"} />
 
 			{/* Stats Cards */}
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -212,9 +204,14 @@ export const DashboardPage = ({
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							${currentMonthBill.totalAmount}
+							${currentMonthTotal.toFixed(2)}
 						</div>
-						<p className="text-muted-foreground text-xs">December 2024</p>
+						<p className="text-muted-foreground text-xs">
+							{new Date().toLocaleDateString("en-US", {
+								month: "long",
+								year: "numeric",
+							})}
+						</p>
 					</CardContent>
 				</Card>
 
@@ -226,7 +223,7 @@ export const DashboardPage = ({
 						<DollarSign className="text-muted-foreground h-4 w-4" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">${lastMonthTotal}</div>
+						<div className="text-2xl font-bold">$0.00</div>
 						<p className="text-muted-foreground text-xs">November 2024</p>
 					</CardContent>
 				</Card>
@@ -237,9 +234,7 @@ export const DashboardPage = ({
 						<CheckCircle className="h-4 w-4 text-green-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold text-green-600">
-							${paidAmount}
-						</div>
+						<div className="text-2xl font-bold text-green-600">$0.00</div>
 						<p className="text-muted-foreground text-xs">Last month</p>
 					</CardContent>
 				</Card>
@@ -250,9 +245,7 @@ export const DashboardPage = ({
 						<Clock className="h-4 w-4 text-orange-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold text-orange-600">
-							${unpaidAmount}
-						</div>
+						<div className="text-2xl font-bold text-orange-600">$0.00</div>
 						<p className="text-muted-foreground text-xs">Unpaid bills</p>
 					</CardContent>
 				</Card>
@@ -263,51 +256,38 @@ export const DashboardPage = ({
 				<CardHeader>
 					<CardTitle>Current Month Bill</CardTitle>
 					<CardDescription>
-						December 2024 - Consolidated utility bill ready to send
+						Breakdown of utility bills for the current month
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-6">
 						{/* Bill Breakdown */}
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							<div className="rounded-lg border p-4">
-								<div className="mb-2 flex items-center justify-between">
-									<h4 className="font-medium">Electricity</h4>
-									<Zap className="h-4 w-4 text-yellow-600" />
+							{currentMonthBills.map((bill) => (
+								<div key={bill.id} className="rounded-lg border p-4">
+									<div className="mb-2 flex items-center justify-between">
+										<h4 className="font-medium">{bill.name}</h4>
+										{/* Icon based on category */}
+										{bill.category === BillCategory.Electricity && (
+											<Zap className="h-4 w-4 text-yellow-600" />
+										)}
+										{bill.category === BillCategory.Water && (
+											<Droplet className="h-4 w-4 text-blue-600" />
+										)}
+										{bill.category === "Gas" && (
+											<Flame className="h-4 w-4 text-red-600" />
+										)}
+									</div>
+									<p className="text-2xl font-bold">
+										${bill.amount.toFixed(2)}
+									</p>
+									<p className="text-muted-foreground text-xs">
+										{bill.sent
+											? `Sent to: ${bill.sentTo || "N/A"}`
+											: "Not Sent"}
+									</p>
 								</div>
-								<p className="text-2xl font-bold">
-									${currentMonthBill.categories.electricity.amount}
-								</p>
-								<p className="text-muted-foreground text-xs">
-									{currentMonthBill.categories.electricity.provider}
-								</p>
-							</div>
-
-							<div className="rounded-lg border p-4">
-								<div className="mb-2 flex items-center justify-between">
-									<h4 className="font-medium">Water</h4>
-									<div className="h-4 w-4 rounded-full bg-blue-600"></div>
-								</div>
-								<p className="text-2xl font-bold">
-									${currentMonthBill.categories.water.amount}
-								</p>
-								<p className="text-muted-foreground text-xs">
-									{currentMonthBill.categories.water.provider}
-								</p>
-							</div>
-
-							<div className="rounded-lg border p-4">
-								<div className="mb-2 flex items-center justify-between">
-									<h4 className="font-medium">Gas</h4>
-									<div className="h-4 w-4 rounded-full bg-orange-600"></div>
-								</div>
-								<p className="text-2xl font-bold">
-									${currentMonthBill.categories.gas.amount}
-								</p>
-								<p className="text-muted-foreground text-xs">
-									{currentMonthBill.categories.gas.provider}
-								</p>
-							</div>
+							))}
 						</div>
 
 						<Separator />
@@ -317,7 +297,10 @@ export const DashboardPage = ({
 							<div>
 								<h3 className="text-lg font-semibold">Total Bill Amount</h3>
 								<p className="text-primary text-3xl font-bold">
-									${currentMonthBill.totalAmount}
+									$
+									{currentMonthBills
+										.reduce((sum, bill) => sum + bill.amount, 0)
+										.toFixed(2)}
 								</p>
 							</div>
 
@@ -325,7 +308,7 @@ export const DashboardPage = ({
 								<Select
 									value={selectedTenant}
 									onValueChange={setSelectedTenant}>
-									<SelectTrigger className="w-[200px]">
+									<SelectTrigger className="w-48">
 										<SelectValue placeholder="Select tenant to bill" />
 									</SelectTrigger>
 									<SelectContent>
@@ -337,7 +320,9 @@ export const DashboardPage = ({
 									</SelectContent>
 								</Select>
 
-								<Button onClick={handleSendBill} disabled={!selectedTenant}>
+								<Button
+									onClick={() => console.log("send bills...")}
+									disabled={!selectedTenant}>
 									<Mail className="mr-2 h-4 w-4" />
 									Send Bill
 								</Button>
