@@ -70,6 +70,8 @@ export const ProvidersPage = () => {
 				toast.error(error.message);
 				return;
 			}
+			toast.error("An unexpected error occurred while adding provider.");
+			console.error(error);
 		}
 	};
 
@@ -81,13 +83,19 @@ export const ProvidersPage = () => {
 				toast.success(
 					`${result.deletedCount} provider(s) deleted successfully`,
 				);
+				toggleDeleteDialog();
+				setProvidersList(providersList.filter((p) => p.id !== providerId));
+				setItemIdToDelete(null);
+				return;
 			}
 		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+				return;
+			}
+			toast.error("An unexpected error occurred while deleting provider.");
 			console.error(error);
-			toast.error((error as Error).message || "Failed to delete provider");
 		}
-		toggleDeleteDialog();
-		setProvidersList(providersList.filter((p) => p.id !== providerId));
 	};
 
 	return (
