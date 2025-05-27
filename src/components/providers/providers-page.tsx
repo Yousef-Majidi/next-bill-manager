@@ -41,14 +41,14 @@ export const ProvidersPage = () => {
 		toggleDeleteDialog,
 	} = useDialogState();
 
-	const [loggedInUser] = useAtom(userAtom);
+	const [user] = useAtom(userAtom);
 	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
 
 	const handleAddProvider = async (data: UtilityProviderFormData) => {
-		if (!loggedInUser) return;
+		if (!user) return;
 		try {
-			const result = await addUtilityProvider(loggedInUser.id, {
-				userId: loggedInUser.id,
+			const result = await addUtilityProvider(user.id, {
+				userId: user.id,
 				name: data.name,
 				category: data.category as UtilityProviderCategory,
 			});
@@ -58,7 +58,7 @@ export const ProvidersPage = () => {
 					...prev,
 					{
 						id: result.insertedId,
-						userId: loggedInUser.id,
+						userId: user.id,
 						name: data.name,
 						category: data.category as UtilityProviderCategory,
 					},
@@ -76,9 +76,9 @@ export const ProvidersPage = () => {
 	};
 
 	const handleDeleteProvider = async (providerId: string) => {
-		if (!loggedInUser) return;
+		if (!user) return;
 		try {
-			const result = await deleteUtilityProvider(loggedInUser.id, providerId);
+			const result = await deleteUtilityProvider(user.id, providerId);
 			if (result.acknowledged) {
 				toast.success(
 					`${result.deletedCount} provider(s) deleted successfully`,
