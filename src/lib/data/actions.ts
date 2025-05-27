@@ -25,6 +25,11 @@ export const getUser = async () => {
 	} as User;
 };
 
+export const isTokenValid = async (tokenExp: number) => {
+	const currentTime = Math.floor(Date.now() / 1000); // Convert to seconds
+	return tokenExp > currentTime;
+};
+
 export const getUtilityProviders = async (userId: string) => {
 	try {
 		const db = client.db(process.env.MONGODB_DATABASE_NAME);

@@ -13,7 +13,6 @@ export default async function Page() {
 		currentDate.getMonth() + 1, // getMonth() is zero-based
 		currentDate.getFullYear(),
 	);
-
 	return (
 		<main>
 			<DashboardPage

@@ -3,17 +3,10 @@
 import { useEffect, useState } from "react";
 
 import { useAtom } from "jotai";
-import {
-	CheckCircle,
-	Clock,
-	Droplet,
-	FileText,
-	Flame,
-	Mail,
-	Zap,
-} from "lucide-react";
+import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
 
 import { DashboardHeader, StatsSummary } from "@/components/dashboard";
+import { BillBreakdown } from "@/components/dashboard/bill-breakdown";
 import {
 	Badge,
 	Button,
@@ -36,12 +29,7 @@ import {
 	Separator,
 } from "@/components/ui";
 import { userAtom, utilityProvidersAtom } from "@/states/store";
-import {
-	UtilityProviderBill as Bill,
-	UtilityProviderCategory as BillCategory,
-	User,
-	UtilityProvider,
-} from "@/types";
+import { UtilityBill as Bill, User, UtilityProvider } from "@/types";
 
 const lastMonthBills = [
 	{
@@ -204,33 +192,7 @@ export const DashboardPage = ({
 				<CardContent>
 					<div className="space-y-6">
 						{/* Bill Breakdown */}
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							{currentMonthBills.map((bill) => (
-								<div key={bill.id} className="rounded-lg border p-4">
-									<div className="mb-2 flex items-center justify-between">
-										<h4 className="font-medium">{bill.name}</h4>
-										{/* Icon based on category */}
-										{bill.category === BillCategory.Electricity && (
-											<Zap className="h-4 w-4 text-yellow-600" />
-										)}
-										{bill.category === BillCategory.Water && (
-											<Droplet className="h-4 w-4 text-blue-600" />
-										)}
-										{bill.category === "Gas" && (
-											<Flame className="h-4 w-4 text-red-600" />
-										)}
-									</div>
-									<p className="text-2xl font-bold">
-										${bill.amount.toFixed(2)}
-									</p>
-									<p className="text-muted-foreground text-xs">
-										{bill.sent
-											? `Sent to: ${bill.sentTo || "N/A"}`
-											: "Not Sent"}
-									</p>
-								</div>
-							))}
-						</div>
+						<BillBreakdown currentMonthBills={currentMonthBill} />
 
 						<Separator />
 

@@ -11,7 +11,9 @@ export interface UtilityProvider {
 	category: UtilityProviderCategory;
 }
 
-export interface UtilityProviderBill extends UtilityProvider {
+export interface UtilityBill {
+	id?: string;
+	utilityProvider: UtilityProvider;
 	amount: number;
 	month: number;
 	year: number;

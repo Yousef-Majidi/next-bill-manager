@@ -1,21 +1,29 @@
 "use server";
 
-import { getUser } from "@/lib/data";
+import { redirect } from "next/navigation";
+
+import { getUser, isTokenValid } from "@/lib/data";
 import { parseMessages } from "@/lib/gmail-utils";
 import { getGmailClient } from "@/lib/gmail-utils/client";
-import { UtilityProviderBill as Bill, UtilityProvider } from "@/types";
+import { UtilityBill as Bill, UtilityProvider } from "@/types";
 
 export const fetchUserBills = async (
 	providers: UtilityProvider[],
 	month: number,
 	year: number,
 ): Promise<Bill[]> => {
-	const loggedInUser = await getUser();
-	if (!loggedInUser) {
-		throw new Error("User not authenticated");
-	}
-
 	try {
+		const loggedInUser = await getUser();
+		if (
+			!loggedInUser ||
+			!isTokenValid(
+				loggedInUser.accessTokenExp ? loggedInUser.accessTokenExp : 0,
+			)
+		) {
+			console.warn("User is not logged in or token is invalid.");
+			redirect("/");
+		}
+
 		const gmailClient = getGmailClient(loggedInUser.accessToken || "");
 		const bills: Bill[] = [];
 
@@ -30,7 +38,7 @@ export const fetchUserBills = async (
 			const messages = response.data.messages || [];
 			if (messages.length === 0) {
 				bills.push({
-					...provider,
+					utilityProvider: provider,
 					amount: 0,
 					month,
 					year,
@@ -51,7 +59,7 @@ export const fetchUserBills = async (
 				.reduce((sum, value) => sum + value, 0);
 
 			bills.push({
-				...provider,
+				utilityProvider: provider,
 				amount: totalAmount,
 				month,
 				year,
