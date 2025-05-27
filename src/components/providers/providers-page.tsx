@@ -68,9 +68,7 @@ export const ProvidersPage = () => {
 		} catch (error) {
 			if (error instanceof Error) {
 				toast.error(error.message);
-			} else {
-				console.error(error);
-				toast.error("An unexpected error occurred while adding provider.");
+				return;
 			}
 		}
 	};
