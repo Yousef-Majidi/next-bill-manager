@@ -4,7 +4,7 @@ import { useAtom } from "jotai";
 import { Mail, Percent, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common";
+import { DeleteDialog, PageHeader } from "@/components/common";
 import { AddTenantDialog } from "@/components/tenants";
 import {
 	Badge,
@@ -26,7 +26,14 @@ export const TenantsPage = () => {
 	const [tenants, setTenants] = useAtom(tenantsAtom);
 	const [user] = useAtom(userAtom);
 
-	const { addDialogOpen, toggleAddDialog } = useDialogState();
+	const {
+		addDialogOpen,
+		deleteDialogOpen,
+		itemIdToDelete,
+		toggleAddDialog,
+		toggleDeleteDialog,
+		setItemIdToDelete,
+	} = useDialogState();
 
 	const handleAddTenant = async (newTenant: TenantFormData) => {
 		if (!user) return;
@@ -127,7 +134,8 @@ export const TenantsPage = () => {
 								variant="ghost"
 								size="sm"
 								onClick={() => {
-									handleDeleteTenant(tenant.id || "");
+									setItemIdToDelete(tenant.id || null);
+									toggleDeleteDialog();
 								}}
 								className="text-destructive hover:text-destructive">
 								<Trash2 className="h-4 w-4" />
@@ -182,6 +190,20 @@ export const TenantsPage = () => {
 				isOpen={addDialogOpen}
 				onClose={toggleAddDialog}
 				onSubmit={handleAddTenant}
+			/>
+
+			<DeleteDialog
+				isOpen={deleteDialogOpen}
+				title="Delete Tenant"
+				description="Are you sure you want to delete this tenant? This action cannot be undone."
+				onClose={toggleDeleteDialog}
+				onConfirm={() => {
+					if (itemIdToDelete) {
+						handleDeleteTenant(itemIdToDelete);
+						setItemIdToDelete(null);
+						toggleDeleteDialog();
+					}
+				}}
 			/>
 		</div>
 	);
