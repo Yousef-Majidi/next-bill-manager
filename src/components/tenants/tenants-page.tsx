@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useAtom } from "jotai";
 import { Mail, Percent, Plus, Trash2, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/common";
@@ -23,47 +24,25 @@ import {
 	Label,
 } from "@/components/ui";
 import { useDialogState } from "@/hooks";
+import { tenantsAtom } from "@/states";
+import { Tenant, UtilityProviderCategory as UtilityCategory } from "@/types";
 
 export const TenantsPage = () => {
-	const [tenants, setTenants] = useState([
-		{
-			id: "1",
-			name: "John Doe",
-			email: "john@example.com",
-			shares: { electricity: 50, water: 50, gas: 50 },
-		},
-		{
-			id: "2",
-			name: "Jane Smith",
-			email: "jane@example.com",
-			shares: { electricity: 50, water: 50, gas: 50 },
-		},
-	]);
+	const [tenants, setTenants] = useAtom(tenantsAtom);
 
 	const { addDialogOpen, toggleAddDialog } = useDialogState();
-	const [newTenant, setNewTenant] = useState({
+	const [newTenant, setNewTenant] = useState<Tenant>({
+		userId: "",
 		name: "",
 		email: "",
-		shares: { electricity: 50, water: 50, gas: 50 },
+		shares: {
+			Electricity: 0,
+			Water: 0,
+			Gas: 0,
+		},
 	});
 
-	const handleAddTenant = () => {
-		if (newTenant.name && newTenant.email) {
-			setTenants([
-				...tenants,
-				{
-					id: Date.now().toString(),
-					...newTenant,
-				},
-			]);
-			setNewTenant({
-				name: "",
-				email: "",
-				shares: { electricity: 50, water: 50, gas: 50 },
-			});
-			toggleAddDialog();
-		}
-	};
+	const handleAddTenant = () => {};
 
 	const handleDeleteTenant = (id: string) => {
 		setTenants(tenants.filter((t) => t.id !== id));
@@ -139,10 +118,10 @@ export const TenantsPage = () => {
 												type="number"
 												min="0"
 												max="100"
-												value={newTenant.shares.electricity}
+												value={newTenant.shares.Electricity}
 												onChange={(e) =>
 													updateShare(
-														"electricity",
+														UtilityCategory.Electricity,
 														Number.parseInt(e.target.value) || 0,
 													)
 												}
@@ -162,10 +141,10 @@ export const TenantsPage = () => {
 												type="number"
 												min="0"
 												max="100"
-												value={newTenant.shares.water}
+												value={newTenant.shares.Water}
 												onChange={(e) =>
 													updateShare(
-														"water",
+														UtilityCategory.Water,
 														Number.parseInt(e.target.value) || 0,
 													)
 												}
@@ -185,10 +164,10 @@ export const TenantsPage = () => {
 												type="number"
 												min="0"
 												max="100"
-												value={newTenant.shares.gas}
+												value={newTenant.shares.Gas}
 												onChange={(e) =>
 													updateShare(
-														"gas",
+														UtilityCategory.Gas,
 														Number.parseInt(e.target.value) || 0,
 													)
 												}
@@ -230,7 +209,7 @@ export const TenantsPage = () => {
 							<Button
 								variant="ghost"
 								size="sm"
-								onClick={() => handleDeleteTenant(tenant.id)}
+								onClick={() => handleDeleteTenant(tenant.id || "")}
 								className="text-destructive hover:text-destructive">
 								<Trash2 className="h-4 w-4" />
 							</Button>
@@ -241,21 +220,21 @@ export const TenantsPage = () => {
 									<span>Electricity</span>
 									<Badge variant="outline">
 										<Percent className="mr-1 h-3 w-3" />
-										{tenant.shares.electricity}%
+										{tenant.shares.Electricity}%
 									</Badge>
 								</div>
 								<div className="flex items-center justify-between text-sm">
 									<span>Water</span>
 									<Badge variant="outline">
 										<Percent className="mr-1 h-3 w-3" />
-										{tenant.shares.water}%
+										{tenant.shares.Water}%
 									</Badge>
 								</div>
 								<div className="flex items-center justify-between text-sm">
 									<span>Gas</span>
 									<Badge variant="outline">
 										<Percent className="mr-1 h-3 w-3" />
-										{tenant.shares.gas}%
+										{tenant.shares.Gas}%
 									</Badge>
 								</div>
 							</div>

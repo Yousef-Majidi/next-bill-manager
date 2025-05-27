@@ -7,7 +7,12 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
-import { User, UtilityProvider, UtilityProviderCategory } from "@/types";
+import {
+	Tenant,
+	User,
+	UtilityProvider,
+	UtilityProviderCategory,
+} from "@/types";
 
 export const isTokenExpired = async (tokenExp: number) => {
 	return tokenExp < Math.floor(Date.now() / 1000);
@@ -120,4 +125,23 @@ export const updateUtilityProvider = async (
 		acknowledged: result.acknowledged,
 		modifiedCount: result.modifiedCount,
 	};
+};
+
+export const getTenants = async (userId: string) => {
+	try {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const collection = await db
+			.collection(process.env.MONGODB_TENANTS!)
+			.find({ user_id: userId })
+			.toArray();
+		return collection.map((tenant) => ({
+			id: tenant._id.toString(),
+			userId: tenant.user_id,
+			name: tenant.name,
+			email: tenant.email,
+			shares: tenant.shares,
+		})) as Tenant[];
+	} catch {
+		throw new Error("Failed to fetch tenants.");
+	}
 };

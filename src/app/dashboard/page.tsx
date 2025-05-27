@@ -1,7 +1,7 @@
 "use server";
 
 import { DashboardPage } from "@/components/dashboard";
-import { getUser, getUtilityProviders } from "@/lib/data";
+import { getTenants, getUser, getUtilityProviders } from "@/lib/data";
 import { fetchUserBills } from "@/lib/gmail-utils";
 
 export default async function Page() {
@@ -13,12 +13,14 @@ export default async function Page() {
 		currentDate.getMonth() + 1, // getMonth() is zero-based
 		currentDate.getFullYear(),
 	);
+	const fetchedTenants = await getTenants(loggedInUser.id);
 	return (
 		<main>
 			<DashboardPage
 				loggedInUser={loggedInUser}
 				utilityProviders={availableProviders}
 				currentMonthBills={fetchedBills}
+				tenants={fetchedTenants}
 			/>
 		</main>
 	);
