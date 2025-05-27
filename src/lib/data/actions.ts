@@ -7,12 +7,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
-import {
-	ErrorType,
-	User,
-	UtilityProvider,
-	UtilityProviderCategory,
-} from "@/types";
+import { User, UtilityProvider, UtilityProviderCategory } from "@/types";
 
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
@@ -43,12 +38,8 @@ export const getUtilityProviders = async (userId: string) => {
 			name: provider.name,
 			category: provider.category as UtilityProviderCategory,
 		})) as UtilityProvider[];
-	} catch (error) {
-		throw {
-			code: ErrorType.DATABASE_ERROR,
-			message: "Failed to fetch utility providers.",
-			error: error,
-		};
+	} catch {
+		throw new Error("Failed to fetch utility providers.");
 	}
 };
 
@@ -56,39 +47,27 @@ export const addUtilityProvider = async (
 	userId: string,
 	provider: UtilityProvider,
 ) => {
-	try {
-		const db = client.db(process.env.MONGODB_DATABASE_NAME);
-		// check if provider already exists
-		const existingProvider = await db
-			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
-			.findOne({ user_id: userId, name: provider.name });
-		if (existingProvider) {
-			throw {
-				code: ErrorType.RESOURCE_ALREADY_EXISTS,
-				message: "Provider already exists",
-			};
-		}
-
-		const result = await db
-			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
-			.insertOne({
-				user_id: userId,
-				name: provider.name,
-				category: provider.category,
-			});
-		revalidatePath("/dashboard/providers");
-		return {
-			acknowledged: result.acknowledged,
-			insertedId: result.insertedId.toString(),
-			insertedName: provider.name,
-		};
-	} catch (error) {
-		throw {
-			code: ErrorType.DATABASE_ERROR,
-			message: "Failed to add utility provider.",
-			error: error,
-		};
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const existingProvider = await db
+		.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+		.findOne({ user_id: userId, name: provider.name });
+	if (existingProvider) {
+		throw new Error(`Utility provider "${provider.name}" already exists.`);
 	}
+
+	const result = await db
+		.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+		.insertOne({
+			user_id: userId,
+			name: provider.name,
+			category: provider.category,
+		});
+	revalidatePath("/dashboard/providers");
+	return {
+		acknowledged: result.acknowledged,
+		insertedId: result.insertedId.toString(),
+		insertedName: provider.name,
+	};
 };
 
 export const deleteUtilityProvider = async (
@@ -104,21 +83,14 @@ export const deleteUtilityProvider = async (
 				user_id: userId,
 			});
 		if (result.deletedCount === 0) {
-			throw {
-				code: ErrorType.RESOURCE_NOT_FOUND,
-				message: "Provider not found or does not belong to the user.",
-			};
+			throw new Error("Utility provider not found or does not belong to user.");
 		}
 		revalidatePath("/dashboard/providers");
 		return {
 			acknowledged: result.acknowledged,
 			deletedCount: result.deletedCount,
 		};
-	} catch (error) {
-		throw {
-			code: ErrorType.DATABASE_ERROR,
-			message: "Failed to delete utility provider.",
-			error: error,
-		};
+	} catch {
+		throw new Error("Failed to delete utility provider.");
 	}
 };

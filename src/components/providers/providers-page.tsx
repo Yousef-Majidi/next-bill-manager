@@ -66,9 +66,12 @@ export const ProvidersPage = () => {
 				toggleAddDialog();
 			}
 		} catch (error) {
-			console.error(error);
-			toast.error((error as Error).message || "Failed to add provider");
-			return;
+			if (error instanceof Error) {
+				toast.error(error.message);
+			} else {
+				console.error(error);
+				toast.error("An unexpected error occurred while adding provider.");
+			}
 		}
 	};
 
