@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
 import { useAtom } from "jotai";
 import { Mail, Percent, Plus, Trash2, Users } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common";
+import { AddTenantDialog } from "@/components/tenants";
 import {
 	Badge,
 	Button,
@@ -13,181 +13,82 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-	Input,
-	Label,
 } from "@/components/ui";
 import { useDialogState } from "@/hooks";
-import { tenantsAtom } from "@/states";
-import { Tenant, UtilityProviderCategory as UtilityCategory } from "@/types";
+import { addTenant } from "@/lib/data";
+import { tenantsAtom, userAtom } from "@/states";
+import {
+	TenantFormData,
+	UtilityProviderCategory as UtilityCategory,
+} from "@/types";
 
 export const TenantsPage = () => {
 	const [tenants, setTenants] = useAtom(tenantsAtom);
+	const [user] = useAtom(userAtom);
 
 	const { addDialogOpen, toggleAddDialog } = useDialogState();
-	const [newTenant, setNewTenant] = useState<Tenant>({
-		userId: "",
-		name: "",
-		email: "",
-		shares: {
-			Electricity: 0,
-			Water: 0,
-			Gas: 0,
-		},
-	});
 
-	const handleAddTenant = () => {};
+	const handleAddTenant = async (newTenant: TenantFormData) => {
+		if (!user) return;
+		try {
+			const result = await addTenant(user.id, {
+				userId: user.id,
+				name: newTenant.name,
+				email: newTenant.email,
+				shares: {
+					[UtilityCategory.Electricity]:
+						newTenant.shares[UtilityCategory.Electricity],
+					[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water],
+					[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas],
+				},
+			});
+			if (result.acknowledged) {
+				toast.success(`Tenant "${result.insertedName}" added successfully`);
+				setTenants((prev) => [
+					...prev,
+					{
+						id: result.insertedId,
+						userId: user.id,
+						name: newTenant.name,
+						email: newTenant.email,
+						shares: {
+							[UtilityCategory.Electricity]:
+								newTenant.shares[UtilityCategory.Electricity],
+							[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water],
+							[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas],
+						},
+					},
+				]);
+				toggleAddDialog();
+				return;
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+				return;
+			}
+
+			toast.error("An unexpected error occurred while adding the tenant");
+			console.error(error);
+		}
+	};
 
 	const handleDeleteTenant = (id: string) => {
 		setTenants(tenants.filter((t) => t.id !== id));
 	};
 
-	const updateShare = (category: string, value: number) => {
-		setNewTenant({
-			...newTenant,
-			shares: { ...newTenant.shares, [category]: value },
-		});
-	};
-
 	return (
-		<div className="space-y-6">
+		<div className="flex flex-col gap-6">
 			<div className="flex items-center justify-between">
 				<PageHeader
 					title="Tenants"
 					subtitle={<p>Manage your tenants and their utility shares</p>}
 				/>
 
-				<Dialog open={addDialogOpen} onOpenChange={toggleAddDialog}>
-					<DialogTrigger asChild>
-						<Button>
-							<Plus className="mr-2 h-4 w-4" />
-							Add Tenant
-						</Button>
-					</DialogTrigger>
-					<DialogContent className="max-w-md">
-						<DialogHeader>
-							<DialogTitle>Add New Tenant</DialogTitle>
-							<DialogDescription>
-								Add a new tenant and configure their utility share percentages
-							</DialogDescription>
-						</DialogHeader>
-
-						<div className="space-y-4">
-							<div>
-								<Label htmlFor="name">Full Name</Label>
-								<Input
-									id="name"
-									value={newTenant.name}
-									onChange={(e) =>
-										setNewTenant({ ...newTenant, name: e.target.value })
-									}
-									placeholder="e.g., John Doe"
-								/>
-							</div>
-
-							<div>
-								<Label htmlFor="email">Email Address</Label>
-								<Input
-									id="email"
-									type="email"
-									value={newTenant.email}
-									onChange={(e) =>
-										setNewTenant({ ...newTenant, email: e.target.value })
-									}
-									placeholder="e.g., john@example.com"
-								/>
-							</div>
-
-							<div className="space-y-3">
-								<Label>Utility Shares (%)</Label>
-
-								<div className="space-y-2">
-									<div className="flex items-center justify-between">
-										<Label htmlFor="electricity" className="text-sm">
-											Electricity
-										</Label>
-										<div className="flex items-center gap-2">
-											<Input
-												id="electricity"
-												type="number"
-												min="0"
-												max="100"
-												value={newTenant.shares.Electricity}
-												onChange={(e) =>
-													updateShare(
-														UtilityCategory.Electricity,
-														Number.parseInt(e.target.value) || 0,
-													)
-												}
-												className="w-20"
-											/>
-											<span className="text-muted-foreground text-sm">%</span>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
-										<Label htmlFor="water" className="text-sm">
-											Water
-										</Label>
-										<div className="flex items-center gap-2">
-											<Input
-												id="water"
-												type="number"
-												min="0"
-												max="100"
-												value={newTenant.shares.Water}
-												onChange={(e) =>
-													updateShare(
-														UtilityCategory.Water,
-														Number.parseInt(e.target.value) || 0,
-													)
-												}
-												className="w-20"
-											/>
-											<span className="text-muted-foreground text-sm">%</span>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
-										<Label htmlFor="gas" className="text-sm">
-											Gas
-										</Label>
-										<div className="flex items-center gap-2">
-											<Input
-												id="gas"
-												type="number"
-												min="0"
-												max="100"
-												value={newTenant.shares.Gas}
-												onChange={(e) =>
-													updateShare(
-														UtilityCategory.Gas,
-														Number.parseInt(e.target.value) || 0,
-													)
-												}
-												className="w-20"
-											/>
-											<span className="text-muted-foreground text-sm">%</span>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<DialogFooter>
-							<Button variant="outline" onClick={toggleAddDialog}>
-								Cancel
-							</Button>
-							<Button onClick={handleAddTenant}>Add Tenant</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+				<Button onClick={toggleAddDialog}>
+					<Plus className="mr-2 h-4 w-4" />
+					Add Tenant
+				</Button>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2">
@@ -217,24 +118,24 @@ export const TenantsPage = () => {
 						<CardContent>
 							<div className="space-y-2">
 								<div className="flex items-center justify-between text-sm">
-									<span>Electricity</span>
+									<span>{UtilityCategory.Electricity}</span>
 									<Badge variant="outline">
+										{tenant.shares[UtilityCategory.Electricity]}
 										<Percent className="mr-1 h-3 w-3" />
-										{tenant.shares.Electricity}%
 									</Badge>
 								</div>
 								<div className="flex items-center justify-between text-sm">
-									<span>Water</span>
+									<span>{UtilityCategory.Water}</span>
 									<Badge variant="outline">
+										{tenant.shares[UtilityCategory.Water]}
 										<Percent className="mr-1 h-3 w-3" />
-										{tenant.shares.Water}%
 									</Badge>
 								</div>
 								<div className="flex items-center justify-between text-sm">
-									<span>Gas</span>
+									<span>{UtilityCategory.Gas}</span>
 									<Badge variant="outline">
+										{tenant.shares[UtilityCategory.Gas]}
 										<Percent className="mr-1 h-3 w-3" />
-										{tenant.shares.Gas}%
 									</Badge>
 								</div>
 							</div>
@@ -258,6 +159,12 @@ export const TenantsPage = () => {
 					</CardContent>
 				</Card>
 			)}
+
+			<AddTenantDialog
+				isOpen={addDialogOpen}
+				onClose={toggleAddDialog}
+				onSubmit={handleAddTenant}
+			/>
 		</div>
 	);
 };

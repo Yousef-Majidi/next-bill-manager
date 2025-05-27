@@ -145,3 +145,26 @@ export const getTenants = async (userId: string) => {
 		throw new Error("Failed to fetch tenants.");
 	}
 };
+
+export const addTenant = async (userId: string, tenant: Tenant) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const existingTenant = await db
+		.collection(process.env.MONGODB_TENANTS!)
+		.findOne({ user_id: userId, email: tenant.email });
+	if (existingTenant) {
+		throw new Error(`Tenant with email "${tenant.email}" already exists.`);
+	}
+
+	const result = await db.collection(process.env.MONGODB_TENANTS!).insertOne({
+		user_id: userId,
+		name: tenant.name,
+		email: tenant.email,
+		shares: tenant.shares,
+	});
+	revalidatePath("/dashboard/tenants");
+	return {
+		acknowledged: result.acknowledged,
+		insertedId: result.insertedId.toString(),
+		insertedName: tenant.name,
+	};
+};
