@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
 
-import { DashboardHeader, StatsSummary } from "@/components/dashboard";
+import { PageHeader } from "@/components/common";
+import { StatsSummary } from "@/components/dashboard";
 import { BillBreakdown } from "@/components/dashboard/bill-breakdown";
 import {
 	Badge,
@@ -98,6 +99,7 @@ export const DashboardPage = ({
 	utilityProviders,
 	currentMonthBills,
 }: DashboardPageProps) => {
+	const currentDate = new Date();
 	const [user, setUser] = useAtom(userAtom);
 	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
 	const [selectedTenant, setSelectedTenant] = useState("");
@@ -178,9 +180,19 @@ export const DashboardPage = ({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<DashboardHeader userName={user?.name || "User"} />
+			<PageHeader
+				title={`Welcome ${user?.name || "User"}!`}
+				subtitle={
+					<Badge variant="outline" className="hidden sm:flex">
+						{currentDate.toLocaleDateString("en-US", {
+							month: "long",
+							day: "numeric",
+							year: "numeric",
+						})}
+					</Badge>
+				}
+			/>
 			<StatsSummary currentMonthTotal={currentMonthTotal} />
-
 			{/* Current Month Bill */}
 			<Card>
 				<CardHeader>
@@ -235,7 +247,6 @@ export const DashboardPage = ({
 					</div>
 				</CardContent>
 			</Card>
-
 			{/* Last Month Bills Summary */}
 			<Card>
 				<CardHeader>
@@ -280,7 +291,6 @@ export const DashboardPage = ({
 					</div>
 				</CardContent>
 			</Card>
-
 			{/* Email Confirmation Dialog */}
 			<Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
 				<DialogContent className="max-w-2xl">
