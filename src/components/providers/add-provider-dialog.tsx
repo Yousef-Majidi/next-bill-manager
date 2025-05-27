@@ -25,16 +25,12 @@ import {
 
 interface AddDialogProps {
 	readonly isOpen: boolean;
-	readonly title: string;
-	readonly description: string;
 	readonly onClose: () => void;
 	readonly onSubmit: (data: UtilityProviderFormData) => void;
 }
 
 export const AddProviderDialog: React.FC<AddDialogProps> = ({
 	isOpen,
-	title,
-	description,
 	onClose,
 	onSubmit,
 }) => {
@@ -53,8 +49,10 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>{description}</DialogDescription>
+					<DialogTitle>Add New Provider</DialogTitle>
+					<DialogDescription>
+						Add a new utility provider to your account
+					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit}>
 					<div className="space-y-4">

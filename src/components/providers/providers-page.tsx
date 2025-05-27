@@ -4,7 +4,7 @@ import { useAtom } from "jotai";
 import { Droplets, Flame, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
-import { DeleteDialog } from "@/components/common";
+import { DeleteDialog, PageHeader } from "@/components/common";
 import { AddProviderDialog } from "@/components/providers";
 import {
 	Badge,
@@ -35,20 +35,20 @@ export const ProvidersPage = () => {
 	const {
 		addDialogOpen,
 		deleteDialogOpen,
-		providerIdToDelete,
-		setProviderIdToDelete,
+		itemIdToDelete,
+		setItemIdToDelete,
 		toggleAddDialog,
 		toggleDeleteDialog,
 	} = useDialogState();
 
-	const [loggedInUser] = useAtom(userAtom);
+	const [user] = useAtom(userAtom);
 	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
 
 	const handleAddProvider = async (data: UtilityProviderFormData) => {
-		if (!loggedInUser) return;
+		if (!user) return;
 		try {
-			const result = await addUtilityProvider(loggedInUser.id, {
-				userId: loggedInUser.id,
+			const result = await addUtilityProvider(user.id, {
+				userId: user.id,
 				name: data.name,
 				category: data.category as UtilityProviderCategory,
 			});
@@ -58,7 +58,7 @@ export const ProvidersPage = () => {
 					...prev,
 					{
 						id: result.insertedId,
-						userId: loggedInUser.id,
+						userId: user.id,
 						name: data.name,
 						category: data.category as UtilityProviderCategory,
 					},
@@ -66,38 +66,45 @@ export const ProvidersPage = () => {
 				toggleAddDialog();
 			}
 		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+				return;
+			}
+			toast.error("An unexpected error occurred while adding provider.");
 			console.error(error);
-			toast.error((error as Error).message || "Failed to add provider");
-			return;
 		}
 	};
 
 	const handleDeleteProvider = async (providerId: string) => {
-		if (!loggedInUser) return;
+		if (!user) return;
 		try {
-			const result = await deleteUtilityProvider(loggedInUser.id, providerId);
+			const result = await deleteUtilityProvider(user.id, providerId);
 			if (result.acknowledged) {
 				toast.success(
 					`${result.deletedCount} provider(s) deleted successfully`,
 				);
+				toggleDeleteDialog();
+				setProvidersList(providersList.filter((p) => p.id !== providerId));
+				setItemIdToDelete(null);
+				return;
 			}
 		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+				return;
+			}
+			toast.error("An unexpected error occurred while deleting provider.");
 			console.error(error);
-			toast.error((error as Error).message || "Failed to delete provider");
 		}
-		toggleDeleteDialog();
-		setProvidersList(providersList.filter((p) => p.id !== providerId));
 	};
 
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold">Utility Providers</h1>
-					<p className="text-muted-foreground">
-						Manage your utility service providers
-					</p>
-				</div>
+				<PageHeader
+					title="Utility Providers"
+					subtitle={<p>Manage your utility service providers</p>}
+				/>
 
 				<Button onClick={toggleAddDialog}>
 					<Plus className="mr-2 h-4 w-4" />
@@ -123,7 +130,7 @@ export const ProvidersPage = () => {
 								variant="ghost"
 								size="sm"
 								onClick={() => {
-									setProviderIdToDelete(provider.id || null);
+									setItemIdToDelete(provider.id || null);
 									toggleDeleteDialog();
 								}}
 								className="text-destructive hover:text-destructive">
@@ -147,8 +154,6 @@ export const ProvidersPage = () => {
 
 			<AddProviderDialog
 				isOpen={addDialogOpen}
-				title="Add New Provider"
-				description="Add a new utility provider to your account."
 				onClose={toggleAddDialog}
 				onSubmit={handleAddProvider}
 			/>
@@ -159,8 +164,8 @@ export const ProvidersPage = () => {
 				description="Are you sure you want to delete this provider? This action cannot be undone."
 				onClose={toggleDeleteDialog}
 				onConfirm={async () => {
-					if (providerIdToDelete) {
-						await handleDeleteProvider(providerIdToDelete);
+					if (itemIdToDelete) {
+						await handleDeleteProvider(itemIdToDelete);
 					}
 				}}
 			/>

@@ -5,9 +5,7 @@ import { useState } from "react";
 export const useDialogState = () => {
 	const [addDialogOpen, setAddDialogOpen] = useState<boolean>(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
-	const [providerIdToDelete, setProviderIdToDelete] = useState<string | null>(
-		null,
-	);
+	const [itemIdToDelete, setItemIdToDelete] = useState<string | null>(null);
 
 	const toggleAddDialog = () => {
 		setAddDialogOpen((prev) => !prev);
@@ -20,8 +18,8 @@ export const useDialogState = () => {
 	return {
 		addDialogOpen,
 		deleteDialogOpen,
-		providerIdToDelete,
-		setProviderIdToDelete,
+		itemIdToDelete,
+		setItemIdToDelete,
 		toggleAddDialog,
 		toggleDeleteDialog,
 		setAddDialogOpen,

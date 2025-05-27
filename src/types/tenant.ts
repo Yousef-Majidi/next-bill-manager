@@ -1,11 +1,8 @@
 import { UtilityProviderCategory } from "@/types/utility-provider";
 
-export interface UtilityProviderFormData {
-	readonly name: string;
-	readonly category: string;
-}
-
-export interface TenantFormData {
+export interface Tenant {
+	readonly id?: string;
+	readonly userId: string;
 	readonly name: string;
 	readonly email: string;
 	readonly shares: {

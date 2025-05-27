@@ -11,7 +11,7 @@ export const BillBreakdown = ({ currentMonthBills }: BillBreakdownProps) => {
 		<div className="flex flex-wrap gap-4">
 			{currentMonthBills.map((bill) => (
 				<div
-					key={bill.id}
+					key={bill.id || bill.utilityProvider.id}
 					className="max-w-sm min-w-[220px] flex-1 rounded-lg border p-4"
 					style={{ flexBasis: "300px" }}>
 					<div className="mb-2 flex items-center justify-between">
@@ -23,7 +23,7 @@ export const BillBreakdown = ({ currentMonthBills }: BillBreakdownProps) => {
 						{bill.utilityProvider.category === BillCategory.Water && (
 							<Droplet className="h-4 w-4 text-blue-600" />
 						)}
-						{bill.utilityProvider.category === "Gas" && (
+						{bill.utilityProvider.category === BillCategory.Gas && (
 							<Flame className="h-4 w-4 text-red-600" />
 						)}
 					</div>

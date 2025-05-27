@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
 
-import { DashboardHeader, StatsSummary } from "@/components/dashboard";
+import { PageHeader } from "@/components/common";
+import { StatsSummary } from "@/components/dashboard";
 import { BillBreakdown } from "@/components/dashboard/bill-breakdown";
 import {
 	Badge,
@@ -28,8 +29,8 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
-import { userAtom, utilityProvidersAtom } from "@/states/store";
-import { UtilityBill as Bill, User, UtilityProvider } from "@/types";
+import { tenantsAtom, userAtom, utilityProvidersAtom } from "@/states/store";
+import { UtilityBill as Bill, Tenant, User, UtilityProvider } from "@/types";
 
 const lastMonthBills = [
 	{
@@ -72,34 +73,23 @@ const lastMonthBills = [
 	},
 ];
 
-const tenants = [
-	{
-		id: "1",
-		name: "John Doe",
-		email: "john@example.com",
-		shares: { electricity: 50, water: 50, gas: 50 },
-	},
-	{
-		id: "2",
-		name: "Jane Smith",
-		email: "jane@example.com",
-		shares: { electricity: 50, water: 50, gas: 50 },
-	},
-];
-
 interface DashboardPageProps {
 	readonly loggedInUser: User;
 	readonly utilityProviders: UtilityProvider[];
 	readonly currentMonthBills: Bill[];
+	readonly tenants: Tenant[];
 }
 
 export const DashboardPage = ({
 	loggedInUser,
 	utilityProviders,
 	currentMonthBills,
+	tenants,
 }: DashboardPageProps) => {
+	const currentDate = new Date();
 	const [user, setUser] = useAtom(userAtom);
 	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
+	const [tenantsList, setTenantsList] = useAtom(tenantsAtom);
 	const [selectedTenant, setSelectedTenant] = useState("");
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,13 +147,17 @@ export const DashboardPage = ({
 	useEffect(() => {
 		if (!user) setUser(loggedInUser);
 		if (!providersList.length) setProvidersList(utilityProviders);
+		if (!tenantsList.length) setTenantsList(tenants);
 	}, [
-		user,
-		providersList,
 		loggedInUser,
 		utilityProviders,
+		tenants,
+		user,
+		providersList,
+		tenantsList,
 		setUser,
 		setProvidersList,
+		setTenantsList,
 	]);
 
 	// Fetch user bills when component mounts
@@ -178,9 +172,19 @@ export const DashboardPage = ({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<DashboardHeader userName={user?.name || "User"} />
+			<PageHeader
+				title={`Welcome ${user?.name || "User"}!`}
+				subtitle={
+					<Badge variant="outline" className="hidden sm:flex">
+						{currentDate.toLocaleDateString("en-US", {
+							month: "long",
+							day: "numeric",
+							year: "numeric",
+						})}
+					</Badge>
+				}
+			/>
 			<StatsSummary currentMonthTotal={currentMonthTotal} />
-
 			{/* Current Month Bill */}
 			<Card>
 				<CardHeader>
@@ -217,7 +221,9 @@ export const DashboardPage = ({
 									</SelectTrigger>
 									<SelectContent>
 										{tenants.map((tenant) => (
-											<SelectItem key={tenant.id} value={tenant.id}>
+											<SelectItem
+												key={tenant.id}
+												value={tenant.id || tenant.name}>
 												{tenant.name}
 											</SelectItem>
 										))}
@@ -235,7 +241,6 @@ export const DashboardPage = ({
 					</div>
 				</CardContent>
 			</Card>
-
 			{/* Last Month Bills Summary */}
 			<Card>
 				<CardHeader>
@@ -280,7 +285,6 @@ export const DashboardPage = ({
 					</div>
 				</CardContent>
 			</Card>
-
 			{/* Email Confirmation Dialog */}
 			<Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
 				<DialogContent className="max-w-2xl">
