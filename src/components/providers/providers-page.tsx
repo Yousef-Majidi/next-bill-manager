@@ -4,7 +4,7 @@ import { useAtom } from "jotai";
 import { Droplets, Flame, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
-import { DeleteDialog } from "@/components/common";
+import { DeleteDialog, PageHeader } from "@/components/common";
 import { AddProviderDialog } from "@/components/providers";
 import {
 	Badge,
@@ -92,12 +92,10 @@ export const ProvidersPage = () => {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold">Utility Providers</h1>
-					<p className="text-muted-foreground">
-						Manage your utility service providers
-					</p>
-				</div>
+				<PageHeader
+					title="Utility Providers"
+					subtitle={<p>Manage your utility service providers</p>}
+				/>
 
 				<Button onClick={toggleAddDialog}>
 					<Plus className="mr-2 h-4 w-4" />
