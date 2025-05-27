@@ -45,23 +45,6 @@ export const authConfig = {
 
 			return session;
 		},
-		authorized({
-			auth,
-			request: { nextUrl },
-		}: {
-			auth: any;
-			request: { nextUrl: any };
-		}): boolean | Response {
-			const isLoggedIn = !!auth?.user;
-			const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
-			if (isOnDashboard) {
-				if (isLoggedIn) return true;
-				return false; // redirects to login
-			} else if (isLoggedIn) {
-				return Response.redirect(new URL("/dashboard", nextUrl));
-			}
-			return true;
-		},
 	},
 	providers: [],
 };

@@ -1,33 +1,25 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { DashboardPage } from "@/components/dashboard";
+import { getUser, getUtilityProviders } from "@/lib/data";
+import { fetchUserBills } from "@/lib/gmail-utils";
 
-import { getServerSession } from "next-auth";
-
-// import { getSession } from "next-auth/react";
-
-import { Dashboard } from "@/components/dashboard";
-import { getUtilityProviders } from "@/lib/data";
-import { authOptions } from "@/lib/server/auth";
-import { User } from "@/types/";
-
-export default async function DashboardPage() {
-	const providers = await getUtilityProviders();
-	console.log("Utility Providers:", providers);
-
-	const session = await getServerSession(authOptions);
-	if (!session) redirect("/");
-	const loggedInUser = {
-		id: session.providerAccountId,
-		name: session.user.name,
-		email: session.user.email,
-		accessToken: session.accessToken,
-		accessTokenExp: session.accessTokenExp,
-	} as User;
-
+export default async function Page() {
+	const loggedInUser = await getUser();
+	const availableProviders = await getUtilityProviders(loggedInUser.id);
+	const currentDate = new Date();
+	const fetchedBills = await fetchUserBills(
+		availableProviders,
+		currentDate.getMonth() + 1, // getMonth() is zero-based
+		currentDate.getFullYear(),
+	);
 	return (
 		<main>
-			<Dashboard loggedInUser={loggedInUser} />
+			<DashboardPage
+				loggedInUser={loggedInUser}
+				utilityProviders={availableProviders}
+				currentMonthBills={fetchedBills}
+			/>
 		</main>
 	);
 }
