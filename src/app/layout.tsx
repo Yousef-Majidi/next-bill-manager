@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster as Sonner } from "sonner";
 
 import "./globals.css";
@@ -31,6 +32,7 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 				{children}
 				<Sonner />
+				<Analytics mode="auto" />
 			</body>
 		</html>
 	);
