@@ -36,21 +36,17 @@ export const getUser = async () => {
 };
 
 export const getUtilityProviders = async (userId: string) => {
-	try {
-		const db = client.db(process.env.MONGODB_DATABASE_NAME);
-		const collection = await db
-			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
-			.find({ user_id: userId })
-			.toArray();
-		return collection.map((provider) => ({
-			id: provider._id.toString(),
-			userId: provider.user_id,
-			name: provider.name,
-			category: provider.category as UtilityProviderCategory,
-		})) as UtilityProvider[];
-	} catch {
-		throw new Error("Failed to fetch utility providers.");
-	}
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const collection = await db
+		.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+		.find({ user_id: userId })
+		.toArray();
+	return collection.map((provider) => ({
+		id: provider._id.toString(),
+		userId: provider.user_id,
+		name: provider.name,
+		category: provider.category as UtilityProviderCategory,
+	})) as UtilityProvider[];
 };
 
 export const addUtilityProvider = async (
@@ -84,25 +80,21 @@ export const deleteUtilityProvider = async (
 	userId: string,
 	providerId: string,
 ) => {
-	try {
-		const db = client.db(process.env.MONGODB_DATABASE_NAME);
-		const result = await db
-			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
-			.deleteOne({
-				_id: new ObjectId(providerId),
-				user_id: userId,
-			});
-		if (result.deletedCount === 0) {
-			throw new Error("Utility provider not found or does not belong to user.");
-		}
-		revalidatePath("/dashboard/providers");
-		return {
-			acknowledged: result.acknowledged,
-			deletedCount: result.deletedCount,
-		};
-	} catch {
-		throw new Error("Failed to delete utility provider.");
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db
+		.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+		.deleteOne({
+			_id: new ObjectId(providerId),
+			user_id: userId,
+		});
+	if (result.deletedCount === 0) {
+		throw new Error("Utility provider not found or does not belong to user.");
 	}
+	revalidatePath("/dashboard/providers");
+	return {
+		acknowledged: result.acknowledged,
+		deletedCount: result.deletedCount,
+	};
 };
 
 export const updateUtilityProvider = async (
@@ -128,22 +120,18 @@ export const updateUtilityProvider = async (
 };
 
 export const getTenants = async (userId: string) => {
-	try {
-		const db = client.db(process.env.MONGODB_DATABASE_NAME);
-		const collection = await db
-			.collection(process.env.MONGODB_TENANTS!)
-			.find({ user_id: userId })
-			.toArray();
-		return collection.map((tenant) => ({
-			id: tenant._id.toString(),
-			userId: tenant.user_id,
-			name: tenant.name,
-			email: tenant.email,
-			shares: tenant.shares,
-		})) as Tenant[];
-	} catch {
-		throw new Error("Failed to fetch tenants.");
-	}
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const collection = await db
+		.collection(process.env.MONGODB_TENANTS!)
+		.find({ user_id: userId })
+		.toArray();
+	return collection.map((tenant) => ({
+		id: tenant._id.toString(),
+		userId: tenant.user_id,
+		name: tenant.name,
+		email: tenant.email,
+		shares: tenant.shares,
+	})) as Tenant[];
 };
 
 export const addTenant = async (userId: string, tenant: Tenant) => {
@@ -166,5 +154,21 @@ export const addTenant = async (userId: string, tenant: Tenant) => {
 		acknowledged: result.acknowledged,
 		insertedId: result.insertedId.toString(),
 		insertedName: tenant.name,
+	};
+};
+
+export const deleteTenant = async (userId: string, tenantId: string) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db.collection(process.env.MONGODB_TENANTS!).deleteOne({
+		_id: new ObjectId(tenantId),
+		user_id: userId,
+	});
+	if (result.deletedCount === 0) {
+		throw new Error("Tenant not found or does not belong to user.");
+	}
+	revalidatePath("/dashboard/tenants");
+	return {
+		acknowledged: result.acknowledged,
+		deletedCount: result.deletedCount,
 	};
 };

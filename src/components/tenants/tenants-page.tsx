@@ -15,7 +15,7 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { useDialogState } from "@/hooks";
-import { addTenant } from "@/lib/data";
+import { addTenant, deleteTenant } from "@/lib/data";
 import { tenantsAtom, userAtom } from "@/states";
 import {
 	TenantFormData,
@@ -73,8 +73,24 @@ export const TenantsPage = () => {
 		}
 	};
 
-	const handleDeleteTenant = (id: string) => {
-		setTenants(tenants.filter((t) => t.id !== id));
+	const handleDeleteTenant = async (tenantId: string) => {
+		if (!user) return;
+		try {
+			const result = await deleteTenant(user.id, tenantId);
+			if (result.acknowledged) {
+				toast.success("Tenant deleted successfully");
+				setTenants((prev) => prev.filter((t) => t.id !== tenantId));
+				return;
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+				return;
+			}
+
+			toast.error("An unexpected error occurred while deleting the tenant");
+			console.error(error);
+		}
 	};
 
 	return (
@@ -110,7 +126,9 @@ export const TenantsPage = () => {
 							<Button
 								variant="ghost"
 								size="sm"
-								onClick={() => handleDeleteTenant(tenant.id || "")}
+								onClick={() => {
+									handleDeleteTenant(tenant.id || "");
+								}}
 								className="text-destructive hover:text-destructive">
 								<Trash2 className="h-4 w-4" />
 							</Button>
