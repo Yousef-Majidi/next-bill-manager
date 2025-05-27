@@ -148,8 +148,6 @@ export const ProvidersPage = () => {
 
 			<AddProviderDialog
 				isOpen={addDialogOpen}
-				title="Add New Provider"
-				description="Add a new utility provider to your account."
 				onClose={toggleAddDialog}
 				onSubmit={handleAddProvider}
 			/>
