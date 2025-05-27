@@ -99,3 +99,25 @@ export const deleteUtilityProvider = async (
 		throw new Error("Failed to delete utility provider.");
 	}
 };
+
+export const updateUtilityProvider = async (
+	userId: string,
+	providerId: string,
+	provider: UtilityProvider,
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db
+		.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+		.updateOne(
+			{ _id: new ObjectId(providerId), user_id: userId },
+			{ $set: { name: provider.name, category: provider.category } },
+		);
+	if (result.matchedCount === 0) {
+		throw new Error("Utility provider not found or does not belong to user.");
+	}
+	revalidatePath("/dashboard/providers");
+	return {
+		acknowledged: result.acknowledged,
+		modifiedCount: result.modifiedCount,
+	};
+};
