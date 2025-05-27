@@ -9,8 +9,18 @@ import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
 import { User, UtilityProvider, UtilityProviderCategory } from "@/types";
 
+export const isTokenExpired = async (tokenExp: number) => {
+	return tokenExp < Math.floor(Date.now() / 1000);
+};
+
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
+	if (!session || !session.user) {
+		throw new Error("User is not authenticated.");
+	}
+	if (await isTokenExpired(session.accessTokenExp)) {
+		throw new Error("Access token is expired.");
+	}
 	return {
 		id: session.providerAccountId,
 		name: session.user.name,
@@ -18,11 +28,6 @@ export const getUser = async () => {
 		accessToken: session.accessToken,
 		accessTokenExp: session.accessTokenExp,
 	} as User;
-};
-
-export const isTokenValid = async (tokenExp: number) => {
-	const currentTime = Math.floor(Date.now() / 1000); // Convert to seconds
-	return tokenExp > currentTime;
 };
 
 export const getUtilityProviders = async (userId: string) => {

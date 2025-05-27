@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { getUser, isTokenValid } from "@/lib/data";
+import { getUser, isTokenExpired } from "@/lib/data";
 import { parseMessages } from "@/lib/gmail-utils";
 import { getGmailClient } from "@/lib/gmail-utils/client";
 import { UtilityBill as Bill, UtilityProvider } from "@/types";
@@ -16,7 +16,7 @@ export const fetchUserBills = async (
 		const loggedInUser = await getUser();
 		if (
 			!loggedInUser ||
-			!isTokenValid(
+			!isTokenExpired(
 				loggedInUser.accessTokenExp ? loggedInUser.accessTokenExp : 0,
 			)
 		) {
