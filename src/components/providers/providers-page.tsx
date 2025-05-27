@@ -35,8 +35,8 @@ export const ProvidersPage = () => {
 	const {
 		addDialogOpen,
 		deleteDialogOpen,
-		providerIdToDelete,
-		setProviderIdToDelete,
+		itemIdToDelete,
+		setItemIdToDelete,
 		toggleAddDialog,
 		toggleDeleteDialog,
 	} = useDialogState();
@@ -123,7 +123,7 @@ export const ProvidersPage = () => {
 								variant="ghost"
 								size="sm"
 								onClick={() => {
-									setProviderIdToDelete(provider.id || null);
+									setItemIdToDelete(provider.id || null);
 									toggleDeleteDialog();
 								}}
 								className="text-destructive hover:text-destructive">
@@ -159,8 +159,8 @@ export const ProvidersPage = () => {
 				description="Are you sure you want to delete this provider? This action cannot be undone."
 				onClose={toggleDeleteDialog}
 				onConfirm={async () => {
-					if (providerIdToDelete) {
-						await handleDeleteProvider(providerIdToDelete);
+					if (itemIdToDelete) {
+						await handleDeleteProvider(itemIdToDelete);
 					}
 				}}
 			/>
