@@ -29,8 +29,8 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
-import { tenantsAtom, userAtom, utilityProvidersAtom } from "@/states/store";
-import { UtilityBill as Bill, Tenant, User, UtilityProvider } from "@/types";
+import { tenantsAtom, userAtom } from "@/states/store";
+import { UtilityBill as Bill } from "@/types";
 
 const lastMonthBills = [
 	{
@@ -74,22 +74,13 @@ const lastMonthBills = [
 ];
 
 interface DashboardPageProps {
-	readonly loggedInUser: User;
-	readonly utilityProviders: UtilityProvider[];
 	readonly currentMonthBills: Bill[];
-	readonly tenants: Tenant[];
 }
 
-export const DashboardPage = ({
-	loggedInUser,
-	utilityProviders,
-	currentMonthBills,
-	tenants,
-}: DashboardPageProps) => {
+export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	const currentDate = new Date();
-	const [user, setUser] = useAtom(userAtom);
-	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
-	const [tenantsList, setTenantsList] = useAtom(tenantsAtom);
+	const [user] = useAtom(userAtom);
+	const [tenantsList] = useAtom(tenantsAtom);
 	const [selectedTenant, setSelectedTenant] = useState("");
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,23 +133,6 @@ export const DashboardPage = ({
 	// 	.filter((bill) => bill.paid)
 	// 	.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
 	// const unpaidAmount = lastMonthTotal - paidAmount;
-
-	// Initialize user and providers if not already set
-	useEffect(() => {
-		if (!user) setUser(loggedInUser);
-		if (!providersList.length) setProvidersList(utilityProviders);
-		if (!tenantsList.length) setTenantsList(tenants);
-	}, [
-		loggedInUser,
-		utilityProviders,
-		tenants,
-		user,
-		providersList,
-		tenantsList,
-		setUser,
-		setProvidersList,
-		setTenantsList,
-	]);
 
 	// Fetch user bills when component mounts
 	useEffect(() => {
@@ -220,7 +194,7 @@ export const DashboardPage = ({
 										<SelectValue placeholder="Select tenant to bill" />
 									</SelectTrigger>
 									<SelectContent>
-										{tenants.map((tenant) => (
+										{tenantsList.map((tenant) => (
 											<SelectItem
 												key={tenant.id}
 												value={tenant.id || tenant.name}>
