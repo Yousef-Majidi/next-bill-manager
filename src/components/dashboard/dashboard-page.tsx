@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/common";
 import { StatsSummary } from "@/components/dashboard";
 import { BillBreakdown } from "@/components/dashboard/bill-breakdown";
+import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog";
 import {
 	Badge,
 	Button,
@@ -17,12 +18,6 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -30,11 +25,14 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
-import { constructTenantBillEmail, sendEmail } from "@/lib/gmail-utils";
+import { useDialogState } from "@/hooks";
+import { constructEmail, sendEmail } from "@/lib/gmail-utils";
 import { tenantsAtom, userAtom } from "@/states/store";
 import {
 	UtilityBill as Bill,
 	ConsolidatedBill,
+	EmailContent,
+	Tenant,
 	UtilityProviderCategory as UtilityCategory,
 	UtilityProvider,
 } from "@/types";
@@ -88,19 +86,18 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	const currentDate = new Date();
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
-	const [selectedTenant, setSelectedTenant] = useState(""); // TODO: Refactor to use tenant object instead of ID
-	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const [billToSend, setBillToSend] = useState<any>(null);
+	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null); // TODO: Refactor to use tenant object instead of ID
+	const { addDialogOpen, toggleAddDialog } = useDialogState();
+	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
 	const [currentMonthBill, setCurrentMonthBill] = useState<Bill[]>([]);
 
-	const handleSendBill = async () => {
+	const handleSendBill = () => {
 		if (!selectedTenant) {
 			toast.warning("Please select a tenant to send the bill.");
 			return;
 		}
 
-		const tenant = tenantsList.find((t) => t.id === selectedTenant);
+		const tenant = tenantsList.find((t) => t.id === selectedTenant.id);
 		if (!tenant) {
 			toast.error("Selected tenant not found.");
 			return;
@@ -151,16 +148,32 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			false,
 			currentDate.toISOString(),
 		);
-
-		const email = constructTenantBillEmail(tenant, consolidatedBill);
-		const result = await sendEmail(email, tenant);
-		console.log("Email sent result:", result);
+		setEmailContent(constructEmail(tenant, consolidatedBill));
+		toggleAddDialog();
 	};
 
-	const confirmSendEmail = () => {
-		setEmailDialogOpen(false);
-		setBillToSend(null);
-		setSelectedTenant("");
+	const confirmSendEmail = async () => {
+		if (!emailContent) {
+			toast.error("No email content to send.");
+			return;
+		}
+
+		const tenant = tenantsList.find((t) => t.id === selectedTenant?.id);
+		if (!tenant) {
+			toast.error("Selected tenant not found.");
+			return;
+		}
+
+		const result = await sendEmail(emailContent, tenant);
+		if (result.success) {
+			toast.success(`Email sent to ${tenant.name} successfully!`);
+		} else {
+			toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
+		}
+
+		toggleAddDialog();
+		setEmailContent(null);
+		setSelectedTenant(null);
 	};
 
 	// const lastMonthTotal = lastMonthBills.reduce(
@@ -175,7 +188,6 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	// Fetch user bills when component mounts
 	useEffect(() => {
 		setCurrentMonthBill(currentMonthBills);
-		console.log("Current Month Bills:", currentMonthBills);
 	}, [currentMonthBills]);
 
 	const currentMonthTotal = currentMonthBill.reduce(
@@ -227,8 +239,11 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 
 							<div className="flex items-center gap-4">
 								<Select
-									value={selectedTenant}
-									onValueChange={setSelectedTenant}>
+									value={selectedTenant?.id}
+									onValueChange={(tenantId) => {
+										const tenant = tenantsList.find((t) => t.id === tenantId);
+										setSelectedTenant(tenant ?? null);
+									}}>
 									<SelectTrigger className="w-48">
 										<SelectValue placeholder="Select tenant to bill" />
 									</SelectTrigger>
@@ -302,99 +317,15 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 				</CardContent>
 			</Card>
 			{/* Email Confirmation Dialog */}
-			<Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-				<DialogContent className="max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>
-							Send Consolidated Bill to {billToSend?.tenant?.name}
-						</DialogTitle>
-						<DialogDescription>
-							Review the bill details before sending to{" "}
-							{billToSend?.tenant?.email}
-						</DialogDescription>
-					</DialogHeader>
-
-					{billToSend && (
-						<div className="space-y-6">
-							<div className="bg-muted rounded-lg p-4">
-								<h4 className="mb-4 font-medium">
-									Bill Summary for {billToSend.month}
-								</h4>
-
-								<div className="space-y-3">
-									<div className="flex items-center justify-between">
-										<span className="font-medium">Electricity</span>
-										<div className="text-right">
-											<p className="font-medium">
-												${billToSend.tenantShares.electricity.toFixed(2)}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{billToSend.tenant.shares.electricity}% of $
-												{billToSend.categories.electricity.amount}
-											</p>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
-										<span className="font-medium">Water</span>
-										<div className="text-right">
-											<p className="font-medium">
-												${billToSend.tenantShares.water.toFixed(2)}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{billToSend.tenant.shares.water}% of $
-												{billToSend.categories.water.amount}
-											</p>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
-										<span className="font-medium">Gas</span>
-										<div className="text-right">
-											<p className="font-medium">
-												${billToSend.tenantShares.gas.toFixed(2)}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{billToSend.tenant.shares.gas}% of $
-												{billToSend.categories.gas.amount}
-											</p>
-										</div>
-									</div>
-
-									<Separator />
-
-									<div className="flex items-center justify-between">
-										<span className="text-lg font-semibold">
-											Total Amount Due
-										</span>
-										<span className="text-primary text-lg font-bold">
-											${billToSend.tenantTotalShare.toFixed(2)}
-										</span>
-									</div>
-								</div>
-							</div>
-
-							<div className="rounded-lg border bg-blue-50 p-4">
-								<h5 className="mb-2 font-medium">Email Preview</h5>
-								<p className="text-muted-foreground text-sm">
-									This bill breakdown will be sent to {billToSend.tenant.email}{" "}
-									with payment instructions and due date information.
-								</p>
-							</div>
-						</div>
-					)}
-
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
-							Cancel
-						</Button>
-						<Button onClick={confirmSendEmail}>
-							<Mail className="mr-1 h-4 w-4" />
-							Send Email
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			{emailContent && selectedTenant && (
+				<EmailPreviewDialog
+					isOpen={addDialogOpen}
+					tenant={selectedTenant}
+					emailContent={emailContent}
+					onClose={toggleAddDialog}
+					onConfirm={confirmSendEmail}
+				/>
+			)}
 		</div>
 	);
 };

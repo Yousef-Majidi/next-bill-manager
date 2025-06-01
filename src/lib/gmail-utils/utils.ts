@@ -52,13 +52,13 @@ export const parseMessages = async (
 	return billDetails;
 };
 
-export const constructTenantBillEmail = (
+export const constructEmail = (
 	tenant: Tenant,
 	bill: ConsolidatedBill,
 ): EmailContent => {
 	const date = new Date(bill.year, bill.month - 1);
 	const monthString = date.toLocaleString("en-US", { month: "long" });
-	const subject = `Utility Bill for ${tenant.name} - ${monthString} ${bill.year}`;
+	const subject = `Utility Bill for ${monthString} of ${bill.year}`;
 	const tenantShares = bill.tenantShares;
 
 	// Build category breakdown table rows
@@ -108,9 +108,9 @@ export const constructTenantBillEmail = (
         </head>
         <body>
             <p>Hello ${tenant.name},</p>
-            <p>Here is your utility bill for ${monthString} ${bill.year}.</p>
+            <p>Here is your utility bills for ${monthString} ${bill.year}.</p>
             <p><strong>Total Amount Due: $${tenantTotal}</strong> </p>
-            <p><strong>Category Breakdown:</strong></p>
+            <p><strong>Breakdown:</strong></p>
             <table>
                 <thead>
                     <tr>
