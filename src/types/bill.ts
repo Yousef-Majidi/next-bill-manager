@@ -6,6 +6,7 @@ import {
 
 export interface UtilityBill {
 	readonly id?: string;
+	readonly gmailMessageId: string;
 	readonly utilityProvider: UtilityProvider;
 	readonly amount: number;
 	readonly month: number;
@@ -23,6 +24,7 @@ export class ConsolidatedBill {
 
 	readonly categories: {
 		readonly [K in keyof typeof UtilityCategory]: {
+			readonly gmailMessageId: string;
 			readonly amount: number;
 			readonly provider: UtilityProvider;
 		};
@@ -35,6 +37,7 @@ export class ConsolidatedBill {
 		tenant: Tenant,
 		categories: {
 			readonly [K in keyof typeof UtilityCategory]: {
+				readonly gmailMessageId: string;
 				readonly amount: number;
 				readonly provider: UtilityProvider;
 			};

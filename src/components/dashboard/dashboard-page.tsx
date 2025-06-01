@@ -115,14 +115,20 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 					...acc,
 					[categoryKey]: acc[categoryKey]
 						? {
+								gmailMessageId: acc[categoryKey].gmailMessageId,
 								amount: acc[categoryKey].amount + bill.amount,
 								provider: bill.utilityProvider,
 							}
-						: { amount: bill.amount, provider: bill.utilityProvider },
+						: {
+								gmailMessageId: bill.gmailMessageId,
+								amount: bill.amount,
+								provider: bill.utilityProvider,
+							},
 				};
 			},
 			{} as {
 				[K in keyof typeof UtilityCategory]: {
+					gmailMessageId: string;
 					amount: number;
 					provider: UtilityProvider;
 				};
@@ -173,6 +179,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	// Fetch user bills when component mounts
 	useEffect(() => {
 		setCurrentMonthBill(currentMonthBills);
+		console.log("Current Month Bills:", currentMonthBills);
 	}, [currentMonthBills]);
 
 	const currentMonthTotal = currentMonthBill.reduce(

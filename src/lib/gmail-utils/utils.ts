@@ -13,11 +13,12 @@ export const parseMessages = async (
 	messages: gmail_v1.Schema$Message[],
 	providerName: string,
 ) => {
-	const dollarAmounts: string[] = [];
+	const billDetails: { messageId: string; dollarAmount: number }[] = [];
 	for (const message of messages) {
+		const messageId = message.id;
 		const messageDetails = await gmailClient.users.messages.get({
 			userId: "me",
-			id: message.id!,
+			id: messageId!,
 		});
 
 		const headers = messageDetails.data.payload?.headers || [];
@@ -34,15 +35,21 @@ export const parseMessages = async (
 			continue;
 		}
 
-		// Extract the snippet or body content
 		const body = messageDetails.data.snippet || "";
-		const extractedAmounts = extractDollarAmount(body);
 
-		// Collect all dollar amounts
-		dollarAmounts.push(...extractedAmounts);
+		const extractedAmounts = extractDollarAmount(body);
+		for (const amount of extractedAmounts) {
+			const numericAmount = parseFloat(amount.replace(/[$,]/g, ""));
+			if (!isNaN(numericAmount)) {
+				billDetails.push({
+					messageId: messageId!,
+					dollarAmount: numericAmount,
+				});
+			}
+		}
 	}
 
-	return dollarAmounts;
+	return billDetails;
 };
 
 export const constructTenantBillEmail = (

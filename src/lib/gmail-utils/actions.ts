@@ -38,6 +38,7 @@ export const fetchUserBills = async (
 			const messages = response.data.messages || [];
 			if (messages.length === 0) {
 				bills.push({
+					gmailMessageId: "",
 					utilityProvider: provider,
 					amount: 0,
 					month,
@@ -46,19 +47,19 @@ export const fetchUserBills = async (
 				continue;
 			}
 
-			const dollarAmounts = await parseMessages(
+			const billDetails = await parseMessages(
 				gmailClient,
 				messages,
 				provider.name,
 			);
 
-			const totalAmount = dollarAmounts
-				.map((amount) => parseFloat(amount.replace(/[$,]/g, ""))) // remove $ and commas
-				.reduce((sum, value) => sum + value, 0);
-
 			bills.push({
 				utilityProvider: provider,
-				amount: totalAmount,
+				gmailMessageId: billDetails.map((detail) => detail.messageId).join(","),
+				amount: billDetails.reduce(
+					(total, detail) => total + detail.dollarAmount,
+					0,
+				),
 				month,
 				year,
 			});
