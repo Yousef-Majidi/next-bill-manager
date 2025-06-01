@@ -30,7 +30,7 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
-import { constructTenantBillEmail } from "@/lib/gmail-utils";
+import { constructTenantBillEmail, sendEmail } from "@/lib/gmail-utils";
 import { tenantsAtom, userAtom } from "@/states/store";
 import {
 	UtilityBill as Bill,
@@ -94,7 +94,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	const [billToSend, setBillToSend] = useState<any>(null);
 	const [currentMonthBill, setCurrentMonthBill] = useState<Bill[]>([]);
 
-	const handleSendBill = () => {
+	const handleSendBill = async () => {
 		if (!selectedTenant) {
 			toast.warning("Please select a tenant to send the bill.");
 			return;
@@ -152,13 +152,9 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			currentDate.toISOString(),
 		);
 
-		// Log the consolidated bill
-		console.log("Consolidated Bill:", consolidatedBill);
-		console.log("tenant shares:", consolidatedBill.tenantShares);
-		console.log("tenant total:", consolidatedBill.tenantTotalShare);
-
 		const email = constructTenantBillEmail(tenant, consolidatedBill);
-		console.log("Email Content:", email);
+		const result = await sendEmail(email, tenant);
+		console.log("Email sent result:", result);
 	};
 
 	const confirmSendEmail = () => {

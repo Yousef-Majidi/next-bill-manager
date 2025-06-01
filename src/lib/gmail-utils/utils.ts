@@ -56,37 +56,93 @@ export const constructTenantBillEmail = (
 	tenant: Tenant,
 	bill: ConsolidatedBill,
 ): EmailContent => {
-	const subject = `Utility Bill for ${tenant.name} - ${bill.month}/${bill.year}`;
+	const date = new Date(bill.year, bill.month - 1);
+	const monthString = date.toLocaleString("en-US", { month: "long" });
+	const subject = `Utility Bill for ${tenant.name} - ${monthString} ${bill.year}`;
 	const tenantShares = bill.tenantShares;
-	const categoryDetails = Object.entries(bill.categories)
+
+	// Build category breakdown table rows
+	const categoryDetailsRows = Object.entries(bill.categories)
 		.map(
 			([category, details]) =>
-				`${category}: $${details.amount.toFixed(2)} (${details.provider.name})`,
+				`<tr>
+                    <td>${category}</td>
+                    <td>$${details.amount.toFixed(2)}</td>
+                    <td>${details.provider.name}</td>
+                </tr>`,
 		)
-		.join("\n");
+		.join("");
+
+	// Build tenant share table rows
+	const tenantSharesRows = Object.entries(tenantShares)
+		.map(
+			([category, share]) =>
+				`<tr>
+                    <td>${category}</td>
+                    <td>$${share ? share.toFixed(2) : "0.00"}</td>
+                </tr>`,
+		)
+		.join("");
+
 	const tenantTotal = bill.tenantTotalShare.toFixed(2);
+
+	// Construct the email body with HTML
 	const body = `
-		Hello ${tenant.name},
-
-		Here is your utility bill for the month of ${bill.month}/${bill.year}.
-
-		Total Amount Due: $${tenantTotal}
-		Category Breakdown:
-		${categoryDetails}
-		Your Share of the Bill:
-		${Object.entries(tenantShares)
-			.map(
-				([category, share]) =>
-					`${category}: $${share ? share.toFixed(2) : "0.00"}`,
-			)
-			.join("\n")}
-
-		Please ensure to make the payment by the due date.
-		If you have any questions or concerns, feel free to reach out.
-
-		Thank you,
-		Sent from Next Bill Manager
-	`;
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+            </style>
+        </head>
+        <body>
+            <p>Hello ${tenant.name},</p>
+            <p>Here is your utility bill for ${monthString} ${bill.year}.</p>
+            <p><strong>Total Amount Due: $${tenantTotal}</strong> </p>
+            <p><strong>Category Breakdown:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Provider</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${categoryDetailsRows}
+                </tbody>
+            </table>
+            <p><strong>Your Share of the Bill:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tenantSharesRows}
+                </tbody>
+            </table>
+            <p>Please ensure to make the payment by the due date.</p>
+            <p>If you have any questions or concerns, feel free to reach out.</p>
+			<p>If you need to view the original bill, please contact your landlord.</p>
+            <p>Thank you,</p>
+            <p>Sent from Next Bill Manager</p>
+        </body>
+        </html>
+    `;
 
 	return {
 		subject,

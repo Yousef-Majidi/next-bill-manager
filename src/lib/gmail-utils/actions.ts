@@ -1,11 +1,14 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
-import { getUser, isTokenExpired } from "@/lib/data";
+import { getUser } from "@/lib/data";
 import { parseMessages } from "@/lib/gmail-utils";
 import { getGmailClient } from "@/lib/gmail-utils/client";
-import { UtilityBill as Bill, UtilityProvider } from "@/types";
+import {
+	UtilityBill as Bill,
+	EmailContent,
+	Tenant,
+	UtilityProvider,
+} from "@/types";
 
 export const fetchUserBills = async (
 	providers: UtilityProvider[],
@@ -14,17 +17,10 @@ export const fetchUserBills = async (
 ): Promise<Bill[]> => {
 	try {
 		const loggedInUser = await getUser();
-		if (
-			!loggedInUser ||
-			!isTokenExpired(
-				loggedInUser.accessTokenExp ? loggedInUser.accessTokenExp : 0,
-			)
-		) {
-			console.warn("User is not logged in or token is invalid.");
-			redirect("/");
+		if (!loggedInUser.accessToken) {
+			throw new Error("User is not logged in");
 		}
-
-		const gmailClient = getGmailClient(loggedInUser.accessToken || "");
+		const gmailClient = getGmailClient(loggedInUser.accessToken);
 		const bills: Bill[] = [];
 
 		for (const provider of providers) {
@@ -69,5 +65,44 @@ export const fetchUserBills = async (
 	} catch (error) {
 		console.error("Error fetching bills:", error);
 		throw new Error("Failed to fetch bills");
+	}
+};
+
+export const sendEmail = async (emailContent: EmailContent, tenant: Tenant) => {
+	try {
+		const loggedInUser = await getUser();
+		if (!loggedInUser.accessToken) {
+			throw new Error("User is not logged in");
+		}
+		const gmailClient = getGmailClient(loggedInUser.accessToken);
+
+		const email = {
+			to: tenant.email,
+			subject: emailContent.subject,
+			body: emailContent.body,
+			attachments: emailContent.attachments || [],
+		};
+
+		const rawEmail = [
+			`To: ${email.to}`,
+			`Subject: ${email.subject}`,
+			`Content-Type: text/html; charset="UTF-8"`,
+			"",
+			email.body,
+		].join("\r\n");
+
+		const result = await gmailClient.users.messages.send({
+			userId: "me",
+			requestBody: {
+				raw: btoa(rawEmail), // Base64 encode the email content
+			},
+		});
+
+		return result.status === 200
+			? { success: true, messageId: result.data.id }
+			: { success: false, error: "Failed to send email" };
+	} catch (error) {
+		console.error("Error sending email:", error);
+		throw new Error("Failed to send email");
 	}
 };
