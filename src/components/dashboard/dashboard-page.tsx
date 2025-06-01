@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useAtom } from "jotai";
 import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common";
 import { StatsSummary } from "@/components/dashboard";
@@ -29,8 +30,14 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
+import { constructTenantBillEmail } from "@/lib/gmail-utils";
 import { tenantsAtom, userAtom } from "@/states/store";
-import { UtilityBill as Bill } from "@/types";
+import {
+	UtilityBill as Bill,
+	ConsolidatedBill,
+	UtilityProviderCategory as UtilityCategory,
+	UtilityProvider,
+} from "@/types";
 
 const lastMonthBills = [
 	{
@@ -81,45 +88,74 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	const currentDate = new Date();
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
-	const [selectedTenant, setSelectedTenant] = useState("");
+	const [selectedTenant, setSelectedTenant] = useState(""); // TODO: Refactor to use tenant object instead of ID
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [billToSend, setBillToSend] = useState<any>(null);
 	const [currentMonthBill, setCurrentMonthBill] = useState<Bill[]>([]);
 
-	// const handleSendBill = () => {
-	// 	const tenant = tenants.find((t) => t.id === selectedTenant);
-	// 	if (tenant) {
-	// 		// Calculate tenant's share for each category
-	// 		const tenantShares = {
-	// 			electricity:
-	// 				(currentMonthBill.categories.electricity.amount *
-	// 					tenant.shares.electricity) /
-	// 				100,
-	// 			water:
-	// 				(currentMonthBill.categories.water.amount * tenant.shares.water) /
-	// 				100,
-	// 			gas: (currentMonthBill.categories.gas.amount * tenant.shares.gas) / 100,
-	// 		};
+	const handleSendBill = () => {
+		if (!selectedTenant) {
+			toast.warning("Please select a tenant to send the bill.");
+			return;
+		}
 
-	// 		const tenantTotalShare = Object.values(tenantShares).reduce(
-	// 			(sum, share) => sum + share,
-	// 			0,
-	// 		);
+		const tenant = tenantsList.find((t) => t.id === selectedTenant);
+		if (!tenant) {
+			toast.error("Selected tenant not found.");
+			return;
+		}
 
-	// 		setBillToSend({
-	// 			...currentMonthBill,
-	// 			tenant,
-	// 			tenantShares,
-	// 			tenantTotalShare,
-	// 		});
-	// 		setEmailDialogOpen(true);
-	// 	}
-	// };
+		// Calculate categories and total amount for the consolidated bill
+		const categories = currentMonthBills.reduce(
+			(acc, bill) => {
+				const categoryKey = bill.utilityProvider
+					.category as keyof typeof UtilityCategory;
+				return {
+					...acc,
+					[categoryKey]: acc[categoryKey]
+						? {
+								amount: acc[categoryKey].amount + bill.amount,
+								provider: bill.utilityProvider,
+							}
+						: { amount: bill.amount, provider: bill.utilityProvider },
+				};
+			},
+			{} as {
+				[K in keyof typeof UtilityCategory]: {
+					amount: number;
+					provider: UtilityProvider;
+				};
+			},
+		);
+
+		const totalAmount = Object.values(categories).reduce(
+			(sum, category) => sum + category.amount,
+			0,
+		);
+
+		// Create a new ConsolidatedBill instance
+		const consolidatedBill = new ConsolidatedBill(
+			undefined,
+			currentDate.getMonth() + 1,
+			currentDate.getFullYear(),
+			tenant,
+			categories,
+			totalAmount,
+			false,
+			currentDate.toISOString(),
+		);
+
+		// Log the consolidated bill
+		console.log("Consolidated Bill:", consolidatedBill);
+		console.log("tenant shares:", consolidatedBill.tenantShares);
+		console.log("tenant total:", consolidatedBill.tenantTotalShare);
+
+		const email = constructTenantBillEmail(tenant, consolidatedBill);
+		console.log("Email Content:", email);
+	};
 
 	const confirmSendEmail = () => {
-		console.log("Sending consolidated bill email to:", billToSend.tenant.email);
-		console.log("Bill details:", billToSend);
 		setEmailDialogOpen(false);
 		setBillToSend(null);
 		setSelectedTenant("");
@@ -205,7 +241,10 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 								</Select>
 
 								<Button
-									onClick={() => console.log("send bills...")}
+									onClick={() => {
+										handleSendBill();
+										// setEmailDialogOpen(true);
+									}}
 									disabled={!selectedTenant}>
 									<Mail className="mr-2 h-4 w-4" />
 									Send Bill

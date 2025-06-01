@@ -42,8 +42,6 @@ export const fetchUserBills = async (
 					amount: 0,
 					month,
 					year,
-					sent: false,
-					sentTo: null,
 				});
 				continue;
 			}
@@ -63,8 +61,6 @@ export const fetchUserBills = async (
 				amount: totalAmount,
 				month,
 				year,
-				sent: false,
-				sentTo: null,
 			});
 		}
 
