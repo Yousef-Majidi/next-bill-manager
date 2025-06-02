@@ -14,7 +14,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui";
-import { useDialogState } from "@/hooks";
+import { DialogType, useDialogState } from "@/hooks";
 import { addTenant, deleteTenant } from "@/lib/data";
 import { tenantsAtom, userAtom } from "@/states";
 import {
@@ -27,12 +27,11 @@ export const TenantsPage = () => {
 	const [user] = useAtom(userAtom);
 
 	const {
-		addDialogOpen,
+		mainDialogOpen,
 		deleteDialogOpen,
 		itemIdToDelete,
-		toggleAddDialog,
-		toggleDeleteDialog,
 		setItemIdToDelete,
+		toggleDialog,
 	} = useDialogState();
 
 	const handleAddTenant = async (newTenant: TenantFormData) => {
@@ -66,7 +65,7 @@ export const TenantsPage = () => {
 						},
 					},
 				]);
-				toggleAddDialog();
+				toggleDialog(DialogType.MAIN);
 				return;
 			}
 		} catch (error) {
@@ -108,7 +107,7 @@ export const TenantsPage = () => {
 					subtitle={<p>Manage your tenants and their utility shares</p>}
 				/>
 
-				<Button onClick={toggleAddDialog}>
+				<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Tenant
 				</Button>
@@ -135,7 +134,7 @@ export const TenantsPage = () => {
 								size="sm"
 								onClick={() => {
 									setItemIdToDelete(tenant.id || null);
-									toggleDeleteDialog();
+									toggleDialog(DialogType.DELETE);
 								}}
 								className="text-destructive hover:text-destructive">
 								<Trash2 className="h-4 w-4" />
@@ -178,7 +177,7 @@ export const TenantsPage = () => {
 						<p className="text-muted-foreground mb-4 text-center">
 							Add your first tenant to start managing utility bill sharing
 						</p>
-						<Button onClick={toggleAddDialog}>
+						<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Tenant
 						</Button>
@@ -187,8 +186,8 @@ export const TenantsPage = () => {
 			)}
 
 			<AddTenantDialog
-				isOpen={addDialogOpen}
-				onClose={toggleAddDialog}
+				isOpen={mainDialogOpen}
+				onClose={() => toggleDialog(DialogType.MAIN)}
 				onSubmit={handleAddTenant}
 			/>
 
@@ -196,12 +195,12 @@ export const TenantsPage = () => {
 				isOpen={deleteDialogOpen}
 				title="Delete Tenant"
 				description="Are you sure you want to delete this tenant? This action cannot be undone."
-				onClose={toggleDeleteDialog}
+				onClose={() => toggleDialog(DialogType.DELETE)}
 				onConfirm={() => {
 					if (itemIdToDelete) {
 						handleDeleteTenant(itemIdToDelete);
 						setItemIdToDelete(null);
-						toggleDeleteDialog();
+						toggleDialog(DialogType.DELETE);
 					}
 				}}
 			/>

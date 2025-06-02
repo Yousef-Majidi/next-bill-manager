@@ -17,7 +17,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui";
-import { useDialogState } from "@/hooks";
+import { DialogType, useDialogState } from "@/hooks";
 import { constructEmail, sendEmail } from "@/lib/gmail-utils";
 import { tenantsAtom, userAtom } from "@/states/store";
 import {
@@ -78,7 +78,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	const currentDate = useMemo(() => new Date(), []);
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
-	const { addDialogOpen, toggleAddDialog } = useDialogState();
+	const { mainDialogOpen, toggleDialog } = useDialogState();
 	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
 	const [consolidatedBill, setConsolidatedBill] =
@@ -101,7 +101,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			return;
 		}
 		setEmailContent(constructEmail(tenant, consolidatedBill));
-		toggleAddDialog();
+		toggleDialog(DialogType.MAIN);
 	};
 
 	const confirmSendEmail = async () => {
@@ -123,7 +123,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
 		}
 
-		toggleAddDialog();
+		toggleDialog(DialogType.MAIN);
 		setEmailContent(null);
 		setSelectedTenant(null);
 	};
@@ -256,10 +256,10 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			{/* Email Confirmation Dialog */}
 			{emailContent && selectedTenant && (
 				<EmailPreviewDialog
-					isOpen={addDialogOpen}
+					isOpen={mainDialogOpen}
 					tenant={selectedTenant}
 					emailContent={emailContent}
-					onClose={toggleAddDialog}
+					onClose={() => toggleDialog(DialogType.MAIN)}
 					onConfirm={confirmSendEmail}
 				/>
 			)}
