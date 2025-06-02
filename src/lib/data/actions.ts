@@ -172,3 +172,27 @@ export const deleteTenant = async (userId: string, tenantId: string) => {
 		deletedCount: result.deletedCount,
 	};
 };
+
+export const updateTenant = async (
+	userId: string,
+	tenantId: string,
+	tenant: Tenant,
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db
+		.collection(process.env.MONGODB_TENANTS!)
+		.updateOne(
+			{ _id: new ObjectId(tenantId), user_id: userId },
+			{
+				$set: { name: tenant.name, email: tenant.email, shares: tenant.shares },
+			},
+		);
+	if (result.matchedCount === 0) {
+		throw new Error("Tenant not found or does not belong to user.");
+	}
+	revalidatePath("/dashboard/tenants");
+	return {
+		acknowledged: result.acknowledged,
+		modifiedCount: result.modifiedCount,
+	};
+};
