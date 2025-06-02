@@ -21,7 +21,7 @@ const breadcrumbMap: Record<string, string> = {
 
 export function DynamicBreadcrumb() {
 	const pathname = usePathname();
-	const segments = pathname.split("/").filter(Boolean);
+	const segments = (pathname ?? "").split("/").filter(Boolean);
 
 	if (segments.length === 1) {
 		return (

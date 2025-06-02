@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAtom } from "jotai";
 import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
@@ -83,13 +83,14 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
-	const currentDate = new Date();
+	const currentDate = useMemo(() => new Date(), []);
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
-	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null); // TODO: Refactor to use tenant object instead of ID
 	const { addDialogOpen, toggleAddDialog } = useDialogState();
+	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
-	const [currentMonthBill, setCurrentMonthBill] = useState<Bill[]>([]);
+	const [consolidatedBill, setConsolidatedBill] =
+		useState<ConsolidatedBill | null>(null);
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {
@@ -187,13 +188,49 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 
 	// Fetch user bills when component mounts
 	useEffect(() => {
-		setCurrentMonthBill(currentMonthBills);
-	}, [currentMonthBills]);
-
-	const currentMonthTotal = currentMonthBill.reduce(
-		(sum, bill) => sum + bill.amount,
-		0,
-	);
+		if (!tenantsList || tenantsList.length === 0) {
+			return;
+		}
+		setSelectedTenant(tenantsList[0] || null);
+		const tenant = tenantsList[0];
+		const consolidatedBill: ConsolidatedBill = new ConsolidatedBill(
+			undefined,
+			currentDate.getMonth() + 1,
+			currentDate.getFullYear(),
+			tenant,
+			currentMonthBills.reduce(
+				(acc, bill) => {
+					const categoryKey = bill.utilityProvider
+						.category as keyof typeof UtilityCategory;
+					return {
+						...acc,
+						[categoryKey]: acc[categoryKey]
+							? {
+									gmailMessageId: acc[categoryKey].gmailMessageId,
+									amount: acc[categoryKey].amount + bill.amount,
+									provider: bill.utilityProvider,
+								}
+							: {
+									gmailMessageId: bill.gmailMessageId,
+									amount: bill.amount,
+									provider: bill.utilityProvider,
+								},
+					};
+				},
+				{} as {
+					[K in keyof typeof UtilityCategory]: {
+						gmailMessageId: string;
+						amount: number;
+						provider: UtilityProvider;
+					};
+				},
+			),
+			currentMonthBills.reduce((sum, bill) => sum + bill.amount, 0),
+			false,
+			currentDate.toISOString(),
+		);
+		setConsolidatedBill(consolidatedBill);
+	}, [currentDate, currentMonthBills, tenantsList]);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -209,7 +246,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 					</Badge>
 				}
 			/>
-			<StatsSummary currentMonthTotal={currentMonthTotal} />
+			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
 			{/* Current Month Bill */}
 			<Card>
 				<CardHeader>
@@ -221,7 +258,14 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 				<CardContent>
 					<div className="space-y-6">
 						{/* Bill Breakdown */}
-						<BillBreakdown currentMonthBills={currentMonthBill} />
+						{!consolidatedBill && (
+							<p className="text-muted-foreground">
+								No bills available for the current month.
+							</p>
+						)}
+						{consolidatedBill && (
+							<BillBreakdown consolidatedBill={consolidatedBill} />
+						)}
 
 						<Separator />
 
