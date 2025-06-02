@@ -6,16 +6,10 @@ import {
 } from "@/types";
 
 interface BillBreakdownProps {
-	// readonly currentMonthBills: UtilityBill[];
-	// readonly selectedTenant?: Tenant | null;
 	readonly consolidatedBill: ConsolidatedBill;
 }
 
-export const BillBreakdown = ({
-	// currentMonthBills,
-	// selectedTenant,
-	consolidatedBill,
-}: BillBreakdownProps) => {
+export const BillBreakdown = ({ consolidatedBill }: BillBreakdownProps) => {
 	const { categories, tenant } = consolidatedBill;
 	return (
 		<div className="flex flex-wrap gap-4">

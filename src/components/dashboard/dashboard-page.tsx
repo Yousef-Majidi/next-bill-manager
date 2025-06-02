@@ -3,27 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAtom } from "jotai";
-import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
+import { CheckCircle, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common";
-import { StatsSummary } from "@/components/dashboard";
-import { BillBreakdown } from "@/components/dashboard/bill-breakdown";
+import { ConsolidatedBillSection, StatsSummary } from "@/components/dashboard";
 import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog";
 import {
 	Badge,
-	Button,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Separator,
 } from "@/components/ui";
 import { useDialogState } from "@/hooks";
 import { constructEmail, sendEmail } from "@/lib/gmail-utils";
@@ -104,51 +96,10 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			return;
 		}
 
-		// Calculate categories and total amount for the consolidated bill
-		const categories = currentMonthBills.reduce(
-			(acc, bill) => {
-				const categoryKey = bill.utilityProvider
-					.category as keyof typeof UtilityCategory;
-				return {
-					...acc,
-					[categoryKey]: acc[categoryKey]
-						? {
-								gmailMessageId: acc[categoryKey].gmailMessageId,
-								amount: acc[categoryKey].amount + bill.amount,
-								provider: bill.utilityProvider,
-							}
-						: {
-								gmailMessageId: bill.gmailMessageId,
-								amount: bill.amount,
-								provider: bill.utilityProvider,
-							},
-				};
-			},
-			{} as {
-				[K in keyof typeof UtilityCategory]: {
-					gmailMessageId: string;
-					amount: number;
-					provider: UtilityProvider;
-				};
-			},
-		);
-
-		const totalAmount = Object.values(categories).reduce(
-			(sum, category) => sum + category.amount,
-			0,
-		);
-
-		// Create a new ConsolidatedBill instance
-		const consolidatedBill = new ConsolidatedBill(
-			undefined,
-			currentDate.getMonth() + 1,
-			currentDate.getFullYear(),
-			tenant,
-			categories,
-			totalAmount,
-			false,
-			currentDate.toISOString(),
-		);
+		if (!consolidatedBill) {
+			toast.error("No bills available for the current month.");
+			return;
+		}
 		setEmailContent(constructEmail(tenant, consolidatedBill));
 		toggleAddDialog();
 	};
@@ -248,74 +199,16 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			/>
 			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
 			{/* Current Month Bill */}
-			<Card>
-				<CardHeader>
-					<CardTitle>Current Month Bill</CardTitle>
-					<CardDescription>
-						Breakdown of utility bills for the current month
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-6">
-						{/* Bill Breakdown */}
-						{!consolidatedBill && (
-							<p className="text-muted-foreground">
-								No bills available for the current month.
-							</p>
-						)}
-						{consolidatedBill && (
-							<BillBreakdown consolidatedBill={consolidatedBill} />
-						)}
+			{consolidatedBill && (
+				<ConsolidatedBillSection
+					consolidatedBill={consolidatedBill}
+					tenantsList={tenantsList}
+					selectedTenant={selectedTenant}
+					setSelectedTenant={setSelectedTenant}
+					handleSendBill={handleSendBill}
+				/>
+			)}
 
-						<Separator />
-
-						{/* Total and Send Section */}
-						<div className="flex items-center justify-between">
-							<div>
-								<h3 className="text-lg font-semibold">Total Bill Amount</h3>
-								<p className="text-primary text-3xl font-bold">
-									$
-									{currentMonthBills
-										.reduce((sum, bill) => sum + bill.amount, 0)
-										.toFixed(2)}
-								</p>
-							</div>
-
-							<div className="flex items-center gap-4">
-								<Select
-									value={selectedTenant?.id}
-									onValueChange={(tenantId) => {
-										const tenant = tenantsList.find((t) => t.id === tenantId);
-										setSelectedTenant(tenant ?? null);
-									}}>
-									<SelectTrigger className="w-48">
-										<SelectValue placeholder="Select tenant to bill" />
-									</SelectTrigger>
-									<SelectContent>
-										{tenantsList.map((tenant) => (
-											<SelectItem
-												key={tenant.id}
-												value={tenant.id || tenant.name}>
-												{tenant.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-
-								<Button
-									onClick={() => {
-										handleSendBill();
-										// setEmailDialogOpen(true);
-									}}
-									disabled={!selectedTenant}>
-									<Mail className="mr-2 h-4 w-4" />
-									Send Bill
-								</Button>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
 			{/* Last Month Bills Summary */}
 			<Card>
 				<CardHeader>
