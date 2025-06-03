@@ -18,7 +18,9 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
-import { constructEmail, sendEmail } from "@/lib/gmail-utils";
+import { addConsolidatedBill } from "@/lib/data";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { constructEmail, sendEmail } from "@/lib/gmail";
 import { tenantsAtom, userAtom } from "@/states/store";
 import {
 	UtilityBill as Bill,
@@ -100,6 +102,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			toast.error("No bills available for the current month.");
 			return;
 		}
+		console.log("Consolidated Bill:", consolidatedBill);
 		setEmailContent(constructEmail(tenant, consolidatedBill));
 		toggleDialog(DialogType.MAIN);
 	};
@@ -115,27 +118,38 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			toast.error("Selected tenant not found.");
 			return;
 		}
+		if (!consolidatedBill) {
+			toast.error("No consolidated bill available to add.");
+			return;
+		}
+		if (!user?.id) {
+			toast.error("User ID is missing. Please log in again.");
+			return;
+		}
 
-		const result = await sendEmail(emailContent, tenant);
-		if (result.success) {
-			toast.success(`Email sent to ${tenant.name} successfully!`);
-		} else {
-			toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
+		try {
+			// const result = await sendEmail(emailContent, tenant);
+			// if (result.success) {
+			// 	toast.success(`Email sent to ${tenant.name} successfully!`);
+			// } else {
+			// 	toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
+			// }
+
+			const newBill = await addConsolidatedBill(user.id, consolidatedBill);
+			if (newBill.acknowledged) {
+				toast.success("Consolidated bill added successfully!");
+			} else {
+				toast.error("Failed to add consolidated bill. Please try again.");
+			}
+		} catch (error) {
+			console.error("Error sending email:", error);
+			toast.error("Failed to send email. Please try again.");
 		}
 
 		toggleDialog(DialogType.MAIN);
 		setEmailContent(null);
 		setSelectedTenant(null);
 	};
-
-	// const lastMonthTotal = lastMonthBills.reduce(
-	// 	(sum, bill) => sum + bill.tenantTotalShare,
-	// 	0,
-	// );
-	// const paidAmount = lastMonthBills
-	// 	.filter((bill) => bill.paid)
-	// 	.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
-	// const unpaidAmount = lastMonthTotal - paidAmount;
 
 	// Fetch user bills when component mounts
 	useEffect(() => {
@@ -144,12 +158,17 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 		}
 		setSelectedTenant(tenantsList[0] || null);
 		const tenant = tenantsList[0];
-		const consolidatedBill: ConsolidatedBill = new ConsolidatedBill(
-			undefined,
-			currentDate.getMonth() + 1,
-			currentDate.getFullYear(),
-			tenant,
-			currentMonthBills.reduce(
+		if (!user?.id) {
+			toast.error("User not found. Please log in.");
+			return;
+		}
+		const consolidatedBill: ConsolidatedBill = {
+			id: undefined,
+			userId: user.id,
+			month: currentDate.getMonth() + 1,
+			year: currentDate.getFullYear(),
+			tenant: tenant,
+			categories: currentMonthBills.reduce(
 				(acc, bill) => {
 					const categoryKey = bill.utilityProvider
 						.category as keyof typeof UtilityCategory;
@@ -176,12 +195,15 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 					};
 				},
 			),
-			currentMonthBills.reduce((sum, bill) => sum + bill.amount, 0),
-			false,
-			currentDate.toISOString(),
-		);
+			totalAmount: currentMonthBills.reduce(
+				(sum, bill) => sum + bill.amount,
+				0,
+			),
+			paid: false,
+			dateSent: currentDate.toISOString(),
+		};
 		setConsolidatedBill(consolidatedBill);
-	}, [currentDate, currentMonthBills, tenantsList]);
+	}, [currentDate, currentMonthBills, tenantsList, user?.id]);
 
 	return (
 		<div className="flex flex-col gap-6">

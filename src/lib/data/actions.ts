@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
 import {
+	ConsolidatedBill,
 	Tenant,
 	User,
 	UtilityProvider,
@@ -179,14 +180,12 @@ export const updateTenant = async (
 	tenant: Tenant,
 ) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
-	const result = await db
-		.collection(process.env.MONGODB_TENANTS!)
-		.updateOne(
-			{ _id: new ObjectId(tenantId), user_id: userId },
-			{
-				$set: { name: tenant.name, email: tenant.email, shares: tenant.shares },
-			},
-		);
+	const result = await db.collection(process.env.MONGODB_TENANTS!).updateOne(
+		{ _id: new ObjectId(tenantId), user_id: userId },
+		{
+			$set: { name: tenant.name, email: tenant.email, shares: tenant.shares },
+		},
+	);
 	if (result.matchedCount === 0) {
 		throw new Error("Tenant not found or does not belong to user.");
 	}
@@ -194,5 +193,51 @@ export const updateTenant = async (
 	return {
 		acknowledged: result.acknowledged,
 		modifiedCount: result.modifiedCount,
+	};
+};
+
+export const getConsolidatedBills = async (userId: string) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const collection = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.find({ user_id: userId })
+		.toArray();
+	return collection.map(() => ({})) as ConsolidatedBill[];
+};
+
+export const addConsolidatedBill = async (
+	userId: string,
+	bill: ConsolidatedBill,
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const existingBill = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.findOne({
+			user_id: userId,
+			year: bill.year,
+			month: bill.month,
+		});
+	if (existingBill) {
+		throw new Error(
+			`Consolidated bill for ${bill.month}/${bill.year} already exists.`,
+		);
+	}
+
+	const result = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.insertOne({
+			user_id: userId,
+			year: bill.year,
+			month: bill.month,
+			categories: bill.categories,
+			total_amount: bill.totalAmount,
+			tenant: bill.tenant,
+			paid: bill.paid,
+			date_sent: bill.dateSent,
+		});
+	revalidatePath("/dashboard/bills");
+	return {
+		acknowledged: result.acknowledged,
+		insertedId: result.insertedId.toString(),
 	};
 };
