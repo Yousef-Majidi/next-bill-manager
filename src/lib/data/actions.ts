@@ -202,7 +202,37 @@ export const getConsolidatedBills = async (userId: string) => {
 		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
 		.find({ user_id: userId })
 		.toArray();
-	return collection.map(() => ({})) as ConsolidatedBill[];
+	return collection.map((bill) => ({
+		id: bill._id.toString(),
+		userId: bill.user_id,
+		month: bill.month,
+		year: bill.year,
+		tenantId: bill.tenant_id,
+		categories: Object.fromEntries(
+			Object.entries(bill.categories).map(([key, value]) => {
+				const v = value as {
+					gmail_message_id: string;
+					provider_id: string;
+					provider_name: string;
+					amount: number;
+				};
+				return [
+					key,
+					{
+						gmailMessageId: v.gmail_message_id,
+						providerId: v.provider_id,
+						providerName: v.provider_name,
+						amount: v.amount,
+					},
+				];
+			}),
+		),
+		totalAmount: bill.total_amount,
+		paid: bill.paid,
+		dateSent: bill.date_sent
+			? new Date(bill.date_sent).toISOString()
+			: undefined,
+	})) as ConsolidatedBill[];
 };
 
 export const addConsolidatedBill = async (

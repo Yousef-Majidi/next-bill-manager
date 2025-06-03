@@ -10,7 +10,12 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui";
-import { getTenants, getUser, getUtilityProviders } from "@/lib/data";
+import {
+	getConsolidatedBills,
+	getTenants,
+	getUser,
+	getUtilityProviders,
+} from "@/lib/data";
 
 export default async function DashboardLayout({
 	children,
@@ -20,11 +25,13 @@ export default async function DashboardLayout({
 	const loggedInUser = await getUser();
 	const fetchedProviders = await getUtilityProviders(loggedInUser.id);
 	const fetchedTenants = await getTenants(loggedInUser.id);
+	const fetchedBills = await getConsolidatedBills(loggedInUser.id);
 	return (
 		<DashboardWrapper
 			loggedInUser={loggedInUser}
 			utilityProviders={fetchedProviders}
-			tenants={fetchedTenants}>
+			tenants={fetchedTenants}
+			billsHistory={fetchedBills}>
 			<SidebarProvider>
 				<AppSidebar />
 				<SidebarInset>
