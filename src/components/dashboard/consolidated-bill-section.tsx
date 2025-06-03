@@ -97,12 +97,7 @@ export const ConsolidatedBillSection = ({
 								</SelectContent>
 							</Select>
 
-							<Button
-								onClick={() => {
-									handleSendBill();
-									// setEmailDialogOpen(true);
-								}}
-								disabled={!selectedTenant}>
+							<Button onClick={handleSendBill} disabled={!selectedTenant}>
 								<Mail className="mr-2 h-4 w-4" />
 								Send Bill
 							</Button>
