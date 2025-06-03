@@ -135,7 +135,7 @@ export const getTenants = async (userId: string) => {
 	})) as Tenant[];
 };
 
-export const addTenant = async (userId: string, tenant: Tenant) => {
+export const addTenant = async (userId: string, tenant: Omit<Tenant, "id">) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
 	const existingTenant = await db
 		.collection(process.env.MONGODB_TENANTS!)
@@ -229,9 +229,9 @@ export const addConsolidatedBill = async (
 			user_id: userId,
 			year: bill.year,
 			month: bill.month,
+			tenant_id: bill.tenantId,
 			categories: bill.categories,
 			total_amount: bill.totalAmount,
-			tenant: bill.tenant,
 			paid: bill.paid,
 			date_sent: bill.dateSent,
 		});

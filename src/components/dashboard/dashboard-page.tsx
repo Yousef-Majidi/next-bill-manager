@@ -150,57 +150,51 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 
 	// Fetch user bills when component mounts
 	useEffect(() => {
-		if (!tenantsList || tenantsList.length === 0) {
+		if (!tenantsList?.length || !user?.id) {
+			toast.error(
+				!user?.id ? "User not found. Please log in." : "No tenants available.",
+			);
 			return;
 		}
-		setSelectedTenant(tenantsList[0] || null);
+
 		const tenant = tenantsList[0];
-		if (!user?.id) {
-			toast.error("User not found. Please log in.");
-			return;
-		}
+		setSelectedTenant(tenant);
+
+		const categories = currentMonthBills.reduce(
+			(acc, bill) => {
+				const categoryKey = bill.utilityProvider
+					.category as keyof typeof UtilityCategory;
+				return {
+					...acc,
+					[categoryKey]: acc[categoryKey]
+						? {
+								...acc[categoryKey],
+								amount: acc[categoryKey].amount + bill.amount,
+							}
+						: {
+								gmailMessageId: bill.gmailMessageId,
+								amount: bill.amount,
+								providerId: bill.utilityProvider.id,
+								providerName: bill.utilityProvider.name,
+							},
+				};
+			},
+			{} as ConsolidatedBill["categories"],
+		);
+		const totalAmount = currentMonthBills.reduce(
+			(sum, bill) => sum + bill.amount,
+			0,
+		);
 		const consolidatedBill: ConsolidatedBill = {
 			id: undefined,
 			userId: user.id,
 			month: currentDate.getMonth() + 1,
 			year: currentDate.getFullYear(),
 			tenantId: tenant.id,
-			categories: currentMonthBills.reduce(
-				(acc, bill) => {
-					const categoryKey = bill.utilityProvider
-						.category as keyof typeof UtilityCategory;
-					return {
-						...acc,
-						[categoryKey]: acc[categoryKey]
-							? {
-									gmailMessageId: acc[categoryKey].gmailMessageId,
-									amount: acc[categoryKey].amount + bill.amount,
-									providerId: bill.utilityProvider.id,
-									providerName: bill.utilityProvider.name,
-								}
-							: {
-									gmailMessageId: bill.gmailMessageId,
-									amount: bill.amount,
-									providerId: bill.utilityProvider.id,
-									providerName: bill.utilityProvider.name,
-								},
-					};
-				},
-				{} as {
-					[K in keyof typeof UtilityCategory]: {
-						gmailMessageId: string;
-						amount: number;
-						providerId: string;
-						providerName: string;
-					};
-				},
-			),
-			totalAmount: currentMonthBills.reduce(
-				(sum, bill) => sum + bill.amount,
-				0,
-			),
+			categories: categories,
+			totalAmount: totalAmount,
 			paid: false,
-			dateSent: currentDate.toISOString(),
+			dateSent: currentDate.toDateString(),
 		};
 		setConsolidatedBill(consolidatedBill);
 	}, [currentDate, currentMonthBills, tenantsList, user?.id]);

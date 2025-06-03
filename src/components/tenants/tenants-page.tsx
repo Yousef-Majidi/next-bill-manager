@@ -43,9 +43,9 @@ export const TenantsPage = () => {
 				email: newTenant.email,
 				shares: {
 					[UtilityCategory.Electricity]:
-						newTenant.shares[UtilityCategory.Electricity],
-					[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water],
-					[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas],
+						newTenant.shares[UtilityCategory.Electricity] ?? 0,
+					[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water] ?? 0,
+					[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas] ?? 0,
 				},
 			});
 			if (result.acknowledged) {
@@ -59,9 +59,10 @@ export const TenantsPage = () => {
 						email: newTenant.email,
 						shares: {
 							[UtilityCategory.Electricity]:
-								newTenant.shares[UtilityCategory.Electricity],
-							[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water],
-							[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas],
+								newTenant.shares[UtilityCategory.Electricity] ?? 0,
+							[UtilityCategory.Water]:
+								newTenant.shares[UtilityCategory.Water] ?? 0,
+							[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas] ?? 0,
 						},
 					},
 				]);
