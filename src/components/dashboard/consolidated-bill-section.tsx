@@ -19,6 +19,7 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
+import { getTenantShares } from "@/lib/common/utils";
 import { ConsolidatedBill, Tenant } from "@/types";
 
 interface ConsolidatedBillSectionProps {
@@ -36,6 +37,10 @@ export const ConsolidatedBillSection = ({
 	setSelectedTenant,
 	handleSendBill,
 }: ConsolidatedBillSectionProps) => {
+	const tenantShares = selectedTenant
+		? getTenantShares(consolidatedBill, selectedTenant)
+		: null;
+
 	return (
 		<Card>
 			<CardHeader>
@@ -64,6 +69,10 @@ export const ConsolidatedBillSection = ({
 							<h3 className="text-lg font-semibold">Total Bill Amount</h3>
 							<p className="text-primary text-3xl font-bold">
 								${consolidatedBill.totalAmount.toFixed(2)}
+							</p>
+
+							<p className="text-muted-foreground text-sm">
+								Tenant&apos;s share: ${tenantShares?.tenantTotal.toFixed(2)}
 							</p>
 						</div>
 
