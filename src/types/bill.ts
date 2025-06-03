@@ -1,5 +1,4 @@
 import {
-	Tenant,
 	UtilityProviderCategory as UtilityCategory,
 	UtilityProvider,
 } from "@/types";
@@ -18,15 +17,16 @@ export interface ConsolidatedBill {
 	readonly userId: string;
 	readonly month: number;
 	readonly year: number;
+	readonly tenantId: string;
 	readonly categories: {
 		readonly [K in keyof typeof UtilityCategory]: {
 			readonly gmailMessageId: string;
+			readonly providerId: string;
+			readonly providerName: string;
 			readonly amount: number;
-			readonly provider: UtilityProvider;
 		};
 	};
 	readonly totalAmount: number;
-	readonly tenant: Tenant;
 	readonly paid: boolean;
-	readonly dateSent?: string; // ISO date string
+	readonly dateSent?: string;
 }

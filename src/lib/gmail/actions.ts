@@ -1,8 +1,8 @@
 "use server";
 
 import { getUser } from "@/lib/data";
-import { parseMessages } from "@/lib/gmail-utils";
-import { getGmailClient } from "@/lib/gmail-utils/client";
+import { parseMessages } from "@/lib/gmail";
+import { getGmailClient } from "@/lib/gmail/client";
 import {
 	UtilityBill as Bill,
 	EmailContent,

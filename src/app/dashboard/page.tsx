@@ -2,7 +2,7 @@
 
 import { DashboardPage } from "@/components/dashboard";
 import { getUser, getUtilityProviders } from "@/lib/data";
-import { fetchUserBills } from "@/lib/gmail-utils";
+import { fetchUserBills } from "@/lib/gmail";
 
 export default async function Page() {
 	const loggedInUser = await getUser();

@@ -28,7 +28,6 @@ import {
 	EmailContent,
 	Tenant,
 	UtilityProviderCategory as UtilityCategory,
-	UtilityProvider,
 } from "@/types";
 
 const lastMonthBills = [
@@ -102,7 +101,6 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			toast.error("No bills available for the current month.");
 			return;
 		}
-		console.log("Consolidated Bill:", consolidatedBill);
 		setEmailContent(constructEmail(tenant, consolidatedBill));
 		toggleDialog(DialogType.MAIN);
 	};
@@ -134,7 +132,6 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			// } else {
 			// 	toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
 			// }
-
 			const newBill = await addConsolidatedBill(user.id, consolidatedBill);
 			if (newBill.acknowledged) {
 				toast.success("Consolidated bill added successfully!");
@@ -167,7 +164,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			userId: user.id,
 			month: currentDate.getMonth() + 1,
 			year: currentDate.getFullYear(),
-			tenant: tenant,
+			tenantId: tenant.id,
 			categories: currentMonthBills.reduce(
 				(acc, bill) => {
 					const categoryKey = bill.utilityProvider
@@ -178,12 +175,14 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 							? {
 									gmailMessageId: acc[categoryKey].gmailMessageId,
 									amount: acc[categoryKey].amount + bill.amount,
-									provider: bill.utilityProvider,
+									providerId: bill.utilityProvider.id,
+									providerName: bill.utilityProvider.name,
 								}
 							: {
 									gmailMessageId: bill.gmailMessageId,
 									amount: bill.amount,
-									provider: bill.utilityProvider,
+									providerId: bill.utilityProvider.id,
+									providerName: bill.utilityProvider.name,
 								},
 					};
 				},
@@ -191,7 +190,8 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 					[K in keyof typeof UtilityCategory]: {
 						gmailMessageId: string;
 						amount: number;
-						provider: UtilityProvider;
+						providerId: string;
+						providerName: string;
 					};
 				},
 			),

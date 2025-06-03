@@ -36,7 +36,6 @@ export const ConsolidatedBillSection = ({
 	setSelectedTenant,
 	handleSendBill,
 }: ConsolidatedBillSectionProps) => {
-	console.log("Tenants List:", tenantsList);
 	return (
 		<Card>
 			<CardHeader>

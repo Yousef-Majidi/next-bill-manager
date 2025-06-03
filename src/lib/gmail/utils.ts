@@ -1,5 +1,6 @@
 import { gmail_v1 } from "googleapis";
 
+import { getTenantShares } from "@/lib/common/utils";
 import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
 export const extractDollarAmount = (text: string): string[] => {
@@ -59,7 +60,7 @@ export const constructEmail = (
 	const date = new Date(bill.year, bill.month - 1);
 	const monthString = date.toLocaleString("en-US", { month: "long" });
 	const subject = `Utility Bill for ${monthString} of ${bill.year}`;
-	const tenantShares = bill.tenantShares;
+	const { shares, tenantTotal } = getTenantShares(bill, tenant);
 
 	// Build category breakdown table rows
 	const categoryDetailsRows = Object.entries(bill.categories)
@@ -68,13 +69,13 @@ export const constructEmail = (
 				`<tr>
                     <td>${category}</td>
                     <td>$${details.amount.toFixed(2)}</td>
-                    <td>${details.provider.name}</td>
+                    <td>${details.providerName}</td>
                 </tr>`,
 		)
 		.join("");
 
 	// Build tenant share table rows
-	const tenantSharesRows = Object.entries(tenantShares)
+	const tenantSharesRows = Object.entries(shares)
 		.map(
 			([category, share]) =>
 				`<tr>
@@ -83,8 +84,6 @@ export const constructEmail = (
                 </tr>`,
 		)
 		.join("");
-
-	const tenantTotal = bill.tenantTotalShare.toFixed(2);
 
 	// Construct the email body with HTML
 	const body = `

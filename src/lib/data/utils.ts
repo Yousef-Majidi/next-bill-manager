@@ -1,10 +1,3 @@
-import { useAtom } from "jotai";
-import { Atom } from "jotai";
-
-export function useQueryById<T extends { id: string }>(
-	atom: Atom<T[]>,
-	id: string,
-): T | undefined {
-	const [list] = useAtom<T[]>(atom);
+export const findById = <T extends { id: string }>(list: T[], id: string) => {
 	return list.find((item) => item.id === id);
-}
+};

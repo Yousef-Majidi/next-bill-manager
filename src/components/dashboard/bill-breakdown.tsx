@@ -1,5 +1,8 @@
+import { useAtom } from "jotai";
 import { Droplet, Flame, Zap } from "lucide-react";
 
+import { findById } from "@/lib/data";
+import { tenantsAtom } from "@/states";
 import {
 	UtilityProviderCategory as BillCategory,
 	ConsolidatedBill,
@@ -10,21 +13,24 @@ interface BillBreakdownProps {
 }
 
 export const BillBreakdown = ({ consolidatedBill }: BillBreakdownProps) => {
-	const { categories, tenant } = consolidatedBill;
+	const { categories, tenantId } = consolidatedBill;
+	const [tenantsList] = useAtom(tenantsAtom);
+	const tenant = findById(tenantsList, tenantId);
+
 	return (
 		<div className="flex flex-wrap gap-4">
 			{Object.entries(categories).map(([categoryKey, bill]) => {
 				const sharePercent =
-					tenant.shares?.[categoryKey as keyof typeof BillCategory] ?? 0;
+					tenant?.shares?.[categoryKey as keyof typeof BillCategory] ?? 0;
 				const tenantShare = bill.amount * (sharePercent / 100);
 
 				return (
 					<div
-						key={bill.provider.id}
+						key={bill.providerId}
 						className="max-w-sm min-w-[220px] flex-1 rounded-lg border p-4"
 						style={{ flexBasis: "300px" }}>
 						<div className="mb-2 flex items-center justify-between">
-							<h4 className="font-medium">{bill.provider.name}</h4>
+							<h4 className="font-medium">{bill.providerName}</h4>
 							{categoryKey === BillCategory.Electricity && (
 								<Zap className="h-4 w-4 text-yellow-600" />
 							)}
