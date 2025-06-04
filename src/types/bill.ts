@@ -29,4 +29,5 @@ export interface ConsolidatedBill {
 	readonly totalAmount: number;
 	readonly paid: boolean;
 	readonly dateSent?: string;
+	readonly datePaid?: string;
 }

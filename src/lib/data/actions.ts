@@ -229,9 +229,8 @@ export const getConsolidatedBills = async (userId: string) => {
 		),
 		totalAmount: bill.total_amount,
 		paid: bill.paid,
-		dateSent: bill.date_sent
-			? new Date(bill.date_sent).toISOString()
-			: undefined,
+		dateSent: bill.date_sent ? new Date(bill.date_sent).toDateString() : null,
+		datePaid: bill.date_paid ? new Date(bill.date_paid).toDateString() : null,
 	})) as ConsolidatedBill[];
 };
 
@@ -264,6 +263,7 @@ export const addConsolidatedBill = async (
 			total_amount: bill.totalAmount,
 			paid: bill.paid,
 			date_sent: bill.dateSent,
+			date_paid: bill.datePaid,
 		});
 	revalidatePath("/dashboard/bills");
 	return {
