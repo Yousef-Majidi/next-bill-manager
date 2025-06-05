@@ -24,7 +24,9 @@ export const fetchUserBills = async (
 		const bills: Bill[] = [];
 
 		for (const provider of providers) {
-			const query = `${provider.name} after:${year}-${month}-01 before:${year}-${month + 1}-01`;
+			// Calculate the first day of the next month
+			const nextMonthDate = new Date(year, month, 1);
+			const query = `${provider.name} after:${year}-${month}-01 before:${nextMonthDate.getFullYear()}-${nextMonthDate.getMonth() + 1}-01`;
 
 			const response = await gmailClient.users.messages.list({
 				userId: "me",
@@ -60,7 +62,6 @@ export const fetchUserBills = async (
 				year,
 			});
 		}
-
 		return bills;
 	} catch (error) {
 		console.error("Error fetching bills:", error);

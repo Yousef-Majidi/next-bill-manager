@@ -4,7 +4,8 @@ import { getTenantShares } from "@/lib/common/utils";
 import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
 export const extractDollarAmount = (text: string): string[] => {
-	const dollarAmountRegex = /\$[0-9,]+(?:\.[0-9]{2})?/g; // Matches dollar amounts like $123.45 or $1,234.56
+	// const dollarAmountRegex = /\$[0-9,]+(?:\.[0-9]{2})?/g; // Matches dollar amounts like $123.45 or $1,234.56
+	const dollarAmountRegex = /\d+\.\d{2}/g; // Matches dollar amounts like 123.45 or 1,234.56 without the dollar sign
 	const matches = text.match(dollarAmountRegex);
 	return matches ? matches : [];
 };

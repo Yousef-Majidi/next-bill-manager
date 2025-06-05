@@ -168,7 +168,13 @@ export const BillsHistoryPage = () => {
 										<div className="space-y-1">
 											<div className="flex items-center gap-2">
 												<h3 className="font-semibold">
-													Consolidated Bill - {bill.month}
+													{new Date(bill.year, bill.month, 0).toLocaleString(
+														"default",
+														{
+															month: "long",
+															year: "numeric",
+														},
+													)}
 												</h3>
 												<Badge variant="outline">{tenant.name}</Badge>
 											</div>
