@@ -23,7 +23,7 @@ import { getTenantShares } from "@/lib/common/utils";
 import { ConsolidatedBill, Tenant } from "@/types";
 
 interface ConsolidatedBillSectionProps {
-	readonly consolidatedBill: ConsolidatedBill;
+	readonly consolidatedBill: ConsolidatedBill | null;
 	readonly tenantsList: Tenant[];
 	readonly selectedTenant: Tenant | null;
 	readonly setSelectedTenant: Dispatch<SetStateAction<Tenant | null>>;
@@ -37,6 +37,19 @@ export const ConsolidatedBillSection = ({
 	setSelectedTenant,
 	handleSendBill,
 }: ConsolidatedBillSectionProps) => {
+	if (!consolidatedBill) {
+		return (
+			<Card className="h-full items-center">
+				<CardHeader className="w-full text-center">
+					<CardTitle>Current Month Bill</CardTitle>
+					<CardDescription>
+						No bills available for the current month.
+					</CardDescription>
+				</CardHeader>
+			</Card>
+		);
+	}
+
 	const tenantShares = selectedTenant
 		? getTenantShares(consolidatedBill, selectedTenant)
 		: null;

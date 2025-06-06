@@ -40,6 +40,45 @@ export const DashboardPage = ({
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
 
+	useEffect(() => {
+		if (tenantsList?.length > 0) {
+			setSelectedTenant(tenantsList[0]);
+		} else if (tenantsList) {
+			toast.warning("No tenants available for this user.");
+			setSelectedTenant(null);
+		}
+	}, [tenantsList, setSelectedTenant, selectedTenant]);
+
+	// Fetch user bills when component mounts
+	useEffect(() => {
+		if (!user?.id || !selectedTenant) {
+			setConsolidatedBill(null);
+			return;
+		}
+
+		const categories = getBillCategory(currentMonthBills);
+		const totalAmount = calculateTotalBillAmount(currentMonthBills);
+
+		if (totalAmount <= 0) {
+			toast.warning("No bills available for the current month yet.");
+			setConsolidatedBill(null);
+			return;
+		}
+
+		const consolidatedBill: ConsolidatedBill = {
+			id: undefined, // Assigned on insertion
+			userId: user.id,
+			month: currentDate.getMonth() + 1,
+			year: currentDate.getFullYear(),
+			tenantId: selectedTenant.id,
+			categories: categories,
+			totalAmount: totalAmount,
+			paid: false,
+			dateSent: currentDate.toDateString(),
+		};
+		setConsolidatedBill(consolidatedBill);
+	}, [currentMonthBills, selectedTenant, user?.id, currentDate]);
+
 	const handleSendBill = () => {
 		if (!selectedTenant) {
 			toast.warning("Please select a tenant to send the bill.");
@@ -98,32 +137,6 @@ export const DashboardPage = ({
 		toggleDialog(DialogType.MAIN);
 		setEmailContent(null);
 	};
-	// Fetch user bills when component mounts
-	useEffect(() => {
-		if (!tenantsList?.length || !user?.id) {
-			toast.error(
-				!user?.id ? "User not found. Please log in." : "No tenants available.",
-			);
-			return;
-		}
-
-		const tenant = tenantsList[0];
-		setSelectedTenant(tenant);
-		const categories = getBillCategory(currentMonthBills);
-		const totalAmount = calculateTotalBillAmount(currentMonthBills);
-		const consolidatedBill: ConsolidatedBill = {
-			id: undefined,
-			userId: user.id,
-			month: currentDate.getMonth() + 1,
-			year: currentDate.getFullYear(),
-			tenantId: tenant.id,
-			categories: categories,
-			totalAmount: totalAmount,
-			paid: false,
-			dateSent: currentDate.toDateString(),
-		};
-		setConsolidatedBill(consolidatedBill);
-	}, [currentDate, currentMonthBills, tenantsList, user?.id]);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -137,15 +150,14 @@ export const DashboardPage = ({
 			/>
 			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
 			{/* Current Month Bill */}
-			{consolidatedBill && (
-				<ConsolidatedBillSection
-					consolidatedBill={consolidatedBill}
-					tenantsList={tenantsList}
-					selectedTenant={selectedTenant}
-					setSelectedTenant={setSelectedTenant}
-					handleSendBill={handleSendBill}
-				/>
-			)}
+
+			<ConsolidatedBillSection
+				consolidatedBill={consolidatedBill}
+				tenantsList={tenantsList}
+				selectedTenant={selectedTenant}
+				setSelectedTenant={setSelectedTenant}
+				handleSendBill={handleSendBill}
+			/>
 
 			{/* Last Month Bills Summary */}
 			<LastMonthSummary
