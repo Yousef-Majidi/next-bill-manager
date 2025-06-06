@@ -2,8 +2,6 @@
 
 import { BillsHistoryPage } from "@/components/bills-history/bills-history-page";
 
-export const BillsPage = () => {
+export default function BillsPage() {
 	return <BillsHistoryPage />;
-};
-
-export default BillsPage;
+}
