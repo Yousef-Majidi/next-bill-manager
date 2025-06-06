@@ -18,16 +18,15 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
+import { calculateTotalBillAmount, getBillCategory } from "@/lib/common/utils";
 import { addConsolidatedBill } from "@/lib/data";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { constructEmail, fetchUserBills, sendEmail } from "@/lib/gmail";
-import { tenantsAtom, userAtom, utilityProvidersAtom } from "@/states/store";
+import { constructEmail, sendEmail } from "@/lib/gmail";
+import { tenantsAtom, userAtom } from "@/states/store";
 import {
 	UtilityBill as Bill,
 	ConsolidatedBill,
 	EmailContent,
 	Tenant,
-	UtilityProviderCategory as UtilityCategory,
 } from "@/types";
 
 const lastMonthBills = [
@@ -79,16 +78,11 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 	const currentDate = useMemo(() => new Date(), []);
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
-	const [providersList] = useAtom(utilityProvidersAtom);
 	const { mainDialogOpen, toggleDialog } = useDialogState();
 	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
-	const [selectedMonth, setSelectedMonth] = useState(
-		currentDate.getMonth() + 1,
-	); // 1-based month
-	const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {
@@ -121,7 +115,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			toast.error("Selected tenant not found.");
 			return;
 		}
-		if (!consolidatedBill) {
+		if (!consolidatedBill || consolidatedBill.totalAmount <= 0) {
 			toast.error("No consolidated bill available to add.");
 			return;
 		}
@@ -131,17 +125,14 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 		}
 
 		try {
-			// const result = await sendEmail(emailContent, tenant);
-			// if (result.success) {
-			// 	toast.success(`Email sent to ${tenant.name} successfully!`);
-			// } else {
-			// 	toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
-			// }
-			const newBill = await addConsolidatedBill(user.id, consolidatedBill);
-			if (newBill.acknowledged) {
-				toast.success("Consolidated bill added successfully!");
+			const result = await sendEmail(emailContent, tenant);
+			if (result.success) {
+				const newBill = await addConsolidatedBill(user.id, consolidatedBill);
+				if (newBill.acknowledged) {
+					toast.success(`Email sent and bill added for ${tenant.name}!`);
+				}
 			} else {
-				toast.error("Failed to add consolidated bill. Please try again.");
+				toast.error(`Failed to send email to ${tenant.name}.`);
 			}
 		} catch (error) {
 			console.error("Error sending email:", error);
@@ -150,88 +141,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 
 		toggleDialog(DialogType.MAIN);
 		setEmailContent(null);
-		// setSelectedTenant(null);
 	};
-
-	const handleMonthChange = async (
-		event: React.ChangeEvent<HTMLSelectElement>,
-	) => {
-		const newMonth = parseInt(event.target.value, 10);
-		setSelectedMonth(newMonth);
-
-		await fetchAndSetBill(newMonth, selectedYear);
-	};
-
-	const handleYearChange = async (
-		event: React.ChangeEvent<HTMLSelectElement>,
-	) => {
-		const newYear = parseInt(event.target.value, 10);
-		setSelectedYear(newYear);
-
-		await fetchAndSetBill(selectedMonth, newYear);
-	};
-
-	const fetchAndSetBill = async (month: number, year: number) => {
-		try {
-			if (!user?.id || !tenantsList?.length) {
-				toast.error(
-					!user?.id
-						? "User not found. Please log in."
-						: "No tenants available.",
-				);
-				return;
-			}
-
-			const bills = await fetchUserBills(providersList, month, year);
-
-			const categories = bills.reduce(
-				(acc, bill) => {
-					const categoryKey = bill.utilityProvider
-						.category as keyof typeof UtilityCategory;
-					return {
-						...acc,
-						[categoryKey]: acc[categoryKey]
-							? {
-									...acc[categoryKey],
-									amount: acc[categoryKey].amount + bill.amount,
-								}
-							: {
-									gmailMessageId: bill.gmailMessageId,
-									amount: bill.amount,
-									providerId: bill.utilityProvider.id,
-									providerName: bill.utilityProvider.name,
-								},
-					};
-				},
-				{} as ConsolidatedBill["categories"],
-			);
-
-			const totalAmount = bills.reduce((sum, bill) => sum + bill.amount, 0);
-
-			// Construct a date for the last day of the given month/year
-			const lastDayOfMonth = new Date(year, month, 0);
-
-			const consolidatedBill: ConsolidatedBill = {
-				id: undefined,
-				userId: user.id,
-				month,
-				year,
-				tenantId: selectedTenant?.id || "",
-				categories,
-				totalAmount: Number(totalAmount.toFixed(2)),
-				paid: true,
-				dateSent: lastDayOfMonth.toDateString(),
-			};
-
-			setConsolidatedBill(consolidatedBill);
-		} catch (error) {
-			console.error("Error fetching bills for the selected date:", error);
-			toast.error(
-				"Failed to fetch bills for the selected date. Please try again.",
-			);
-		}
-	};
-
 	// Fetch user bills when component mounts
 	useEffect(() => {
 		if (!tenantsList?.length || !user?.id) {
@@ -241,45 +151,22 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			return;
 		}
 
-		// const tenant = tenantsList[0];
-		// setSelectedTenant(tenant);
-		// const categories = currentMonthBills.reduce(
-		// 	(acc, bill) => {
-		// 		const categoryKey = bill.utilityProvider
-		// 			.category as keyof typeof UtilityCategory;
-		// 		return {
-		// 			...acc,
-		// 			[categoryKey]: acc[categoryKey]
-		// 				? {
-		// 						...acc[categoryKey],
-		// 						amount: acc[categoryKey].amount + bill.amount,
-		// 					}
-		// 				: {
-		// 						gmailMessageId: bill.gmailMessageId,
-		// 						amount: bill.amount,
-		// 						providerId: bill.utilityProvider.id,
-		// 						providerName: bill.utilityProvider.name,
-		// 					},
-		// 		};
-		// 	},
-		// 	{} as ConsolidatedBill["categories"],
-		// );
-		// const totalAmount = currentMonthBills.reduce(
-		// 	(sum, bill) => sum + bill.amount,
-		// 	0,
-		// );
-		// const consolidatedBill: ConsolidatedBill = {
-		// 	id: undefined,
-		// 	userId: user.id,
-		// 	month: currentDate.getMonth() + 1,
-		// 	year: currentDate.getFullYear(),
-		// 	tenantId: tenant.id,
-		// 	categories: categories,
-		// 	totalAmount: totalAmount,
-		// 	paid: false,
-		// 	dateSent: currentDate.toDateString(),
-		// };
-		// setConsolidatedBill(consolidatedBill);
+		const tenant = tenantsList[0];
+		setSelectedTenant(tenant);
+		const categories = getBillCategory(currentMonthBills);
+		const totalAmount = calculateTotalBillAmount(currentMonthBills);
+		const consolidatedBill: ConsolidatedBill = {
+			id: undefined,
+			userId: user.id,
+			month: currentDate.getMonth() + 1,
+			year: currentDate.getFullYear(),
+			tenantId: tenant.id,
+			categories: categories,
+			totalAmount: totalAmount,
+			paid: false,
+			dateSent: currentDate.toDateString(),
+		};
+		setConsolidatedBill(consolidatedBill);
 	}, [currentDate, currentMonthBills, tenantsList, user?.id]);
 
 	return (
@@ -297,40 +184,6 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 				}
 			/>
 			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
-			{/* A dropdown to let user select a different date */}
-			<div className="flex items-center gap-4">
-				<label htmlFor="month-select" className="font-medium">
-					Select Month:
-				</label>
-				<select
-					id="month-select"
-					className="rounded border px-2 py-1"
-					value={selectedMonth}
-					onChange={handleMonthChange}>
-					{Array.from({ length: 12 }).map((_, idx) => (
-						<option key={idx + 1} value={idx + 1}>
-							{new Date(0, idx).toLocaleDateString("en-US", { month: "long" })}
-						</option>
-					))}
-				</select>
-				<label htmlFor="year-select" className="font-medium">
-					Select Year:
-				</label>
-				<select
-					id="year-select"
-					className="rounded border px-2 py-1"
-					value={selectedYear}
-					onChange={handleYearChange}>
-					{Array.from({ length: 10 }).map((_, idx) => {
-						const year = currentDate.getFullYear() - idx;
-						return (
-							<option key={year} value={year}>
-								{year}
-							</option>
-						);
-					})}
-				</select>
-			</div>
 			{/* Current Month Bill */}
 			{consolidatedBill && (
 				<ConsolidatedBillSection

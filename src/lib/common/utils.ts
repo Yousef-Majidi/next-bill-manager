@@ -1,4 +1,4 @@
-import { ConsolidatedBill, Tenant } from "@/types";
+import { ConsolidatedBill, Tenant, UtilityBill } from "@/types";
 import { UtilityProviderCategory as UtilityCategory } from "@/types";
 
 export const getTenantShares = (
@@ -20,4 +20,34 @@ export const getTenantShares = (
 		0,
 	);
 	return { shares, tenantTotal };
+};
+
+export const getBillCategory = (
+	bills: UtilityBill[],
+): ConsolidatedBill["categories"] => {
+	return bills.reduce(
+		(acc, bill) => {
+			const categoryKey = bill.utilityProvider
+				.category as keyof typeof UtilityCategory;
+			return {
+				...acc,
+				[categoryKey]: acc[categoryKey]
+					? {
+							...acc[categoryKey],
+							amount: acc[categoryKey].amount + bill.amount,
+						}
+					: {
+							gmailMessageId: bill.gmailMessageId,
+							amount: bill.amount,
+							providerId: bill.utilityProvider.id,
+							providerName: bill.utilityProvider.name,
+						},
+			};
+		},
+		{} as ConsolidatedBill["categories"],
+	);
+};
+
+export const calculateTotalBillAmount = (bills: UtilityBill[]): number => {
+	return bills.reduce((sum, bill) => sum + bill.amount, 0);
 };
