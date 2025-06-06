@@ -2,6 +2,9 @@
 	"name": "next-bill-manager",
 	"version": "0.1.0",
 	"private": true,
+	"packages:": [
+		"."
+	],
 	"scripts": {
 		"dev": "next dev --turbopack",
 		"build": "next build",
