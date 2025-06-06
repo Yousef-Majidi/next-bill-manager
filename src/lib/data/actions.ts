@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
 import {
+	ConsolidatedBill,
 	Tenant,
 	User,
 	UtilityProvider,
@@ -134,7 +135,7 @@ export const getTenants = async (userId: string) => {
 	})) as Tenant[];
 };
 
-export const addTenant = async (userId: string, tenant: Tenant) => {
+export const addTenant = async (userId: string, tenant: Omit<Tenant, "id">) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
 	const existingTenant = await db
 		.collection(process.env.MONGODB_TENANTS!)
@@ -170,5 +171,103 @@ export const deleteTenant = async (userId: string, tenantId: string) => {
 	return {
 		acknowledged: result.acknowledged,
 		deletedCount: result.deletedCount,
+	};
+};
+
+export const updateTenant = async (
+	userId: string,
+	tenantId: string,
+	tenant: Tenant,
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db.collection(process.env.MONGODB_TENANTS!).updateOne(
+		{ _id: new ObjectId(tenantId), user_id: userId },
+		{
+			$set: { name: tenant.name, email: tenant.email, shares: tenant.shares },
+		},
+	);
+	if (result.matchedCount === 0) {
+		throw new Error("Tenant not found or does not belong to user.");
+	}
+	revalidatePath("/dashboard/tenants");
+	return {
+		acknowledged: result.acknowledged,
+		modifiedCount: result.modifiedCount,
+	};
+};
+
+export const getConsolidatedBills = async (userId: string) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const collection = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.find({ user_id: userId })
+		.toArray();
+	return collection.map((bill) => ({
+		id: bill._id.toString(),
+		userId: bill.user_id,
+		month: bill.month,
+		year: bill.year,
+		tenantId: bill.tenant_id,
+		categories: Object.fromEntries(
+			Object.entries(bill.categories).map(([key, value]) => {
+				const v = value as {
+					gmail_message_id: string;
+					provider_id: string;
+					provider_name: string;
+					amount: number;
+				};
+				return [
+					key,
+					{
+						gmailMessageId: v.gmail_message_id,
+						providerId: v.provider_id,
+						providerName: v.provider_name,
+						amount: v.amount,
+					},
+				];
+			}),
+		),
+		totalAmount: bill.total_amount,
+		paid: bill.paid,
+		dateSent: bill.date_sent ? new Date(bill.date_sent).toDateString() : null,
+		datePaid: bill.date_paid ? new Date(bill.date_paid).toDateString() : null,
+	})) as ConsolidatedBill[];
+};
+
+export const addConsolidatedBill = async (
+	userId: string,
+	bill: ConsolidatedBill,
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const existingBill = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.findOne({
+			user_id: userId,
+			year: bill.year,
+			month: bill.month,
+		});
+	if (existingBill) {
+		throw new Error(
+			`Consolidated bill for ${bill.month}/${bill.year} already exists.`,
+		);
+	}
+
+	const result = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.insertOne({
+			user_id: userId,
+			year: bill.year,
+			month: bill.month,
+			tenant_id: bill.tenantId,
+			categories: bill.categories,
+			total_amount: bill.totalAmount,
+			paid: bill.paid,
+			date_sent: bill.dateSent,
+			date_paid: bill.datePaid,
+		});
+	revalidatePath("/dashboard/bills");
+	return {
+		acknowledged: result.acknowledged,
+		insertedId: result.insertedId.toString(),
 	};
 };

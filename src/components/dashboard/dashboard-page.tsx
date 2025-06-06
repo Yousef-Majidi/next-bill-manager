@@ -1,36 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAtom } from "jotai";
-import { CheckCircle, Clock, FileText, Mail } from "lucide-react";
+import { CheckCircle, Clock, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common";
-import { StatsSummary } from "@/components/dashboard";
-import { BillBreakdown } from "@/components/dashboard/bill-breakdown";
+import { ConsolidatedBillSection, StatsSummary } from "@/components/dashboard";
+import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog";
 import {
 	Badge,
-	Button,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Separator,
 } from "@/components/ui";
+import { DialogType, useDialogState } from "@/hooks";
+import { addConsolidatedBill } from "@/lib/data";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { constructEmail, fetchUserBills, sendEmail } from "@/lib/gmail";
 import { tenantsAtom, userAtom, utilityProvidersAtom } from "@/states/store";
-import { UtilityBill as Bill, Tenant, User, UtilityProvider } from "@/types";
+import {
+	UtilityBill as Bill,
+	ConsolidatedBill,
+	EmailContent,
+	Tenant,
+	UtilityProviderCategory as UtilityCategory,
+} from "@/types";
 
 const lastMonthBills = [
 	{
@@ -74,101 +72,215 @@ const lastMonthBills = [
 ];
 
 interface DashboardPageProps {
-	readonly loggedInUser: User;
-	readonly utilityProviders: UtilityProvider[];
 	readonly currentMonthBills: Bill[];
-	readonly tenants: Tenant[];
 }
 
-export const DashboardPage = ({
-	loggedInUser,
-	utilityProviders,
-	currentMonthBills,
-	tenants,
-}: DashboardPageProps) => {
-	const currentDate = new Date();
-	const [user, setUser] = useAtom(userAtom);
-	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
-	const [tenantsList, setTenantsList] = useAtom(tenantsAtom);
-	const [selectedTenant, setSelectedTenant] = useState("");
-	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const [billToSend, setBillToSend] = useState<any>(null);
-	const [currentMonthBill, setCurrentMonthBill] = useState<Bill[]>([]);
+export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
+	const currentDate = useMemo(() => new Date(), []);
+	const [user] = useAtom(userAtom);
+	const [tenantsList] = useAtom(tenantsAtom);
+	const [providersList] = useAtom(utilityProvidersAtom);
+	const { mainDialogOpen, toggleDialog } = useDialogState();
+	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
+	const [consolidatedBill, setConsolidatedBill] =
+		useState<ConsolidatedBill | null>(null);
+	const [selectedMonth, setSelectedMonth] = useState(
+		currentDate.getMonth() + 1,
+	); // 1-based month
+	const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
-	// const handleSendBill = () => {
-	// 	const tenant = tenants.find((t) => t.id === selectedTenant);
-	// 	if (tenant) {
-	// 		// Calculate tenant's share for each category
-	// 		const tenantShares = {
-	// 			electricity:
-	// 				(currentMonthBill.categories.electricity.amount *
-	// 					tenant.shares.electricity) /
-	// 				100,
-	// 			water:
-	// 				(currentMonthBill.categories.water.amount * tenant.shares.water) /
-	// 				100,
-	// 			gas: (currentMonthBill.categories.gas.amount * tenant.shares.gas) / 100,
-	// 		};
+	const handleSendBill = () => {
+		if (!selectedTenant) {
+			toast.warning("Please select a tenant to send the bill.");
+			return;
+		}
 
-	// 		const tenantTotalShare = Object.values(tenantShares).reduce(
-	// 			(sum, share) => sum + share,
-	// 			0,
-	// 		);
+		const tenant = tenantsList.find((t) => t.id === selectedTenant.id);
+		if (!tenant) {
+			toast.error("Selected tenant not found.");
+			return;
+		}
 
-	// 		setBillToSend({
-	// 			...currentMonthBill,
-	// 			tenant,
-	// 			tenantShares,
-	// 			tenantTotalShare,
-	// 		});
-	// 		setEmailDialogOpen(true);
-	// 	}
-	// };
-
-	const confirmSendEmail = () => {
-		console.log("Sending consolidated bill email to:", billToSend.tenant.email);
-		console.log("Bill details:", billToSend);
-		setEmailDialogOpen(false);
-		setBillToSend(null);
-		setSelectedTenant("");
+		if (!consolidatedBill) {
+			toast.error("No bills available for the current month.");
+			return;
+		}
+		setEmailContent(constructEmail(tenant, consolidatedBill));
+		toggleDialog(DialogType.MAIN);
 	};
 
-	// const lastMonthTotal = lastMonthBills.reduce(
-	// 	(sum, bill) => sum + bill.tenantTotalShare,
-	// 	0,
-	// );
-	// const paidAmount = lastMonthBills
-	// 	.filter((bill) => bill.paid)
-	// 	.reduce((sum, bill) => sum + bill.tenantTotalShare, 0);
-	// const unpaidAmount = lastMonthTotal - paidAmount;
+	const confirmSendEmail = async () => {
+		if (!emailContent) {
+			toast.error("No email content to send.");
+			return;
+		}
 
-	// Initialize user and providers if not already set
-	useEffect(() => {
-		if (!user) setUser(loggedInUser);
-		if (!providersList.length) setProvidersList(utilityProviders);
-		if (!tenantsList.length) setTenantsList(tenants);
-	}, [
-		loggedInUser,
-		utilityProviders,
-		tenants,
-		user,
-		providersList,
-		tenantsList,
-		setUser,
-		setProvidersList,
-		setTenantsList,
-	]);
+		const tenant = tenantsList.find((t) => t.id === selectedTenant?.id);
+		if (!tenant) {
+			toast.error("Selected tenant not found.");
+			return;
+		}
+		if (!consolidatedBill) {
+			toast.error("No consolidated bill available to add.");
+			return;
+		}
+		if (!user?.id) {
+			toast.error("User ID is missing. Please log in again.");
+			return;
+		}
+
+		try {
+			// const result = await sendEmail(emailContent, tenant);
+			// if (result.success) {
+			// 	toast.success(`Email sent to ${tenant.name} successfully!`);
+			// } else {
+			// 	toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
+			// }
+			const newBill = await addConsolidatedBill(user.id, consolidatedBill);
+			if (newBill.acknowledged) {
+				toast.success("Consolidated bill added successfully!");
+			} else {
+				toast.error("Failed to add consolidated bill. Please try again.");
+			}
+		} catch (error) {
+			console.error("Error sending email:", error);
+			toast.error("Failed to send email. Please try again.");
+		}
+
+		toggleDialog(DialogType.MAIN);
+		setEmailContent(null);
+		// setSelectedTenant(null);
+	};
+
+	const handleMonthChange = async (
+		event: React.ChangeEvent<HTMLSelectElement>,
+	) => {
+		const newMonth = parseInt(event.target.value, 10);
+		setSelectedMonth(newMonth);
+
+		await fetchAndSetBill(newMonth, selectedYear);
+	};
+
+	const handleYearChange = async (
+		event: React.ChangeEvent<HTMLSelectElement>,
+	) => {
+		const newYear = parseInt(event.target.value, 10);
+		setSelectedYear(newYear);
+
+		await fetchAndSetBill(selectedMonth, newYear);
+	};
+
+	const fetchAndSetBill = async (month: number, year: number) => {
+		try {
+			if (!user?.id || !tenantsList?.length) {
+				toast.error(
+					!user?.id
+						? "User not found. Please log in."
+						: "No tenants available.",
+				);
+				return;
+			}
+
+			const bills = await fetchUserBills(providersList, month, year);
+
+			const categories = bills.reduce(
+				(acc, bill) => {
+					const categoryKey = bill.utilityProvider
+						.category as keyof typeof UtilityCategory;
+					return {
+						...acc,
+						[categoryKey]: acc[categoryKey]
+							? {
+									...acc[categoryKey],
+									amount: acc[categoryKey].amount + bill.amount,
+								}
+							: {
+									gmailMessageId: bill.gmailMessageId,
+									amount: bill.amount,
+									providerId: bill.utilityProvider.id,
+									providerName: bill.utilityProvider.name,
+								},
+					};
+				},
+				{} as ConsolidatedBill["categories"],
+			);
+
+			const totalAmount = bills.reduce((sum, bill) => sum + bill.amount, 0);
+
+			// Construct a date for the last day of the given month/year
+			const lastDayOfMonth = new Date(year, month, 0);
+
+			const consolidatedBill: ConsolidatedBill = {
+				id: undefined,
+				userId: user.id,
+				month,
+				year,
+				tenantId: selectedTenant?.id || "",
+				categories,
+				totalAmount: Number(totalAmount.toFixed(2)),
+				paid: true,
+				dateSent: lastDayOfMonth.toDateString(),
+			};
+
+			setConsolidatedBill(consolidatedBill);
+		} catch (error) {
+			console.error("Error fetching bills for the selected date:", error);
+			toast.error(
+				"Failed to fetch bills for the selected date. Please try again.",
+			);
+		}
+	};
 
 	// Fetch user bills when component mounts
 	useEffect(() => {
-		setCurrentMonthBill(currentMonthBills);
-	}, [currentMonthBills]);
+		if (!tenantsList?.length || !user?.id) {
+			toast.error(
+				!user?.id ? "User not found. Please log in." : "No tenants available.",
+			);
+			return;
+		}
 
-	const currentMonthTotal = currentMonthBill.reduce(
-		(sum, bill) => sum + bill.amount,
-		0,
-	);
+		// const tenant = tenantsList[0];
+		// setSelectedTenant(tenant);
+		// const categories = currentMonthBills.reduce(
+		// 	(acc, bill) => {
+		// 		const categoryKey = bill.utilityProvider
+		// 			.category as keyof typeof UtilityCategory;
+		// 		return {
+		// 			...acc,
+		// 			[categoryKey]: acc[categoryKey]
+		// 				? {
+		// 						...acc[categoryKey],
+		// 						amount: acc[categoryKey].amount + bill.amount,
+		// 					}
+		// 				: {
+		// 						gmailMessageId: bill.gmailMessageId,
+		// 						amount: bill.amount,
+		// 						providerId: bill.utilityProvider.id,
+		// 						providerName: bill.utilityProvider.name,
+		// 					},
+		// 		};
+		// 	},
+		// 	{} as ConsolidatedBill["categories"],
+		// );
+		// const totalAmount = currentMonthBills.reduce(
+		// 	(sum, bill) => sum + bill.amount,
+		// 	0,
+		// );
+		// const consolidatedBill: ConsolidatedBill = {
+		// 	id: undefined,
+		// 	userId: user.id,
+		// 	month: currentDate.getMonth() + 1,
+		// 	year: currentDate.getFullYear(),
+		// 	tenantId: tenant.id,
+		// 	categories: categories,
+		// 	totalAmount: totalAmount,
+		// 	paid: false,
+		// 	dateSent: currentDate.toDateString(),
+		// };
+		// setConsolidatedBill(consolidatedBill);
+	}, [currentDate, currentMonthBills, tenantsList, user?.id]);
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -184,63 +296,52 @@ export const DashboardPage = ({
 					</Badge>
 				}
 			/>
-			<StatsSummary currentMonthTotal={currentMonthTotal} />
+			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
+			{/* A dropdown to let user select a different date */}
+			<div className="flex items-center gap-4">
+				<label htmlFor="month-select" className="font-medium">
+					Select Month:
+				</label>
+				<select
+					id="month-select"
+					className="rounded border px-2 py-1"
+					value={selectedMonth}
+					onChange={handleMonthChange}>
+					{Array.from({ length: 12 }).map((_, idx) => (
+						<option key={idx + 1} value={idx + 1}>
+							{new Date(0, idx).toLocaleDateString("en-US", { month: "long" })}
+						</option>
+					))}
+				</select>
+				<label htmlFor="year-select" className="font-medium">
+					Select Year:
+				</label>
+				<select
+					id="year-select"
+					className="rounded border px-2 py-1"
+					value={selectedYear}
+					onChange={handleYearChange}>
+					{Array.from({ length: 10 }).map((_, idx) => {
+						const year = currentDate.getFullYear() - idx;
+						return (
+							<option key={year} value={year}>
+								{year}
+							</option>
+						);
+					})}
+				</select>
+			</div>
 			{/* Current Month Bill */}
-			<Card>
-				<CardHeader>
-					<CardTitle>Current Month Bill</CardTitle>
-					<CardDescription>
-						Breakdown of utility bills for the current month
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-6">
-						{/* Bill Breakdown */}
-						<BillBreakdown currentMonthBills={currentMonthBill} />
+			{consolidatedBill && (
+				<ConsolidatedBillSection
+					consolidatedBill={consolidatedBill}
+					tenantsList={tenantsList}
+					selectedTenant={selectedTenant}
+					setSelectedTenant={setSelectedTenant}
+					handleSendBill={handleSendBill}
+				/>
+			)}
 
-						<Separator />
-
-						{/* Total and Send Section */}
-						<div className="flex items-center justify-between">
-							<div>
-								<h3 className="text-lg font-semibold">Total Bill Amount</h3>
-								<p className="text-primary text-3xl font-bold">
-									$
-									{currentMonthBills
-										.reduce((sum, bill) => sum + bill.amount, 0)
-										.toFixed(2)}
-								</p>
-							</div>
-
-							<div className="flex items-center gap-4">
-								<Select
-									value={selectedTenant}
-									onValueChange={setSelectedTenant}>
-									<SelectTrigger className="w-48">
-										<SelectValue placeholder="Select tenant to bill" />
-									</SelectTrigger>
-									<SelectContent>
-										{tenants.map((tenant) => (
-											<SelectItem
-												key={tenant.id}
-												value={tenant.id || tenant.name}>
-												{tenant.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-
-								<Button
-									onClick={() => console.log("send bills...")}
-									disabled={!selectedTenant}>
-									<Mail className="mr-2 h-4 w-4" />
-									Send Bill
-								</Button>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
 			{/* Last Month Bills Summary */}
 			<Card>
 				<CardHeader>
@@ -286,99 +387,15 @@ export const DashboardPage = ({
 				</CardContent>
 			</Card>
 			{/* Email Confirmation Dialog */}
-			<Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-				<DialogContent className="max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>
-							Send Consolidated Bill to {billToSend?.tenant?.name}
-						</DialogTitle>
-						<DialogDescription>
-							Review the bill details before sending to{" "}
-							{billToSend?.tenant?.email}
-						</DialogDescription>
-					</DialogHeader>
-
-					{billToSend && (
-						<div className="space-y-6">
-							<div className="bg-muted rounded-lg p-4">
-								<h4 className="mb-4 font-medium">
-									Bill Summary for {billToSend.month}
-								</h4>
-
-								<div className="space-y-3">
-									<div className="flex items-center justify-between">
-										<span className="font-medium">Electricity</span>
-										<div className="text-right">
-											<p className="font-medium">
-												${billToSend.tenantShares.electricity.toFixed(2)}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{billToSend.tenant.shares.electricity}% of $
-												{billToSend.categories.electricity.amount}
-											</p>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
-										<span className="font-medium">Water</span>
-										<div className="text-right">
-											<p className="font-medium">
-												${billToSend.tenantShares.water.toFixed(2)}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{billToSend.tenant.shares.water}% of $
-												{billToSend.categories.water.amount}
-											</p>
-										</div>
-									</div>
-
-									<div className="flex items-center justify-between">
-										<span className="font-medium">Gas</span>
-										<div className="text-right">
-											<p className="font-medium">
-												${billToSend.tenantShares.gas.toFixed(2)}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												{billToSend.tenant.shares.gas}% of $
-												{billToSend.categories.gas.amount}
-											</p>
-										</div>
-									</div>
-
-									<Separator />
-
-									<div className="flex items-center justify-between">
-										<span className="text-lg font-semibold">
-											Total Amount Due
-										</span>
-										<span className="text-primary text-lg font-bold">
-											${billToSend.tenantTotalShare.toFixed(2)}
-										</span>
-									</div>
-								</div>
-							</div>
-
-							<div className="rounded-lg border bg-blue-50 p-4">
-								<h5 className="mb-2 font-medium">Email Preview</h5>
-								<p className="text-muted-foreground text-sm">
-									This bill breakdown will be sent to {billToSend.tenant.email}{" "}
-									with payment instructions and due date information.
-								</p>
-							</div>
-						</div>
-					)}
-
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
-							Cancel
-						</Button>
-						<Button onClick={confirmSendEmail}>
-							<Mail className="mr-1 h-4 w-4" />
-							Send Email
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			{emailContent && selectedTenant && (
+				<EmailPreviewDialog
+					isOpen={mainDialogOpen}
+					tenant={selectedTenant}
+					emailContent={emailContent}
+					onClose={() => toggleDialog(DialogType.MAIN)}
+					onConfirm={confirmSendEmail}
+				/>
+			)}
 		</div>
 	);
 };

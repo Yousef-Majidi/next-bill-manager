@@ -14,7 +14,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui";
-import { useDialogState } from "@/hooks";
+import { DialogType, useDialogState } from "@/hooks";
 import { addUtilityProvider, deleteUtilityProvider } from "@/lib/data";
 import { userAtom, utilityProvidersAtom } from "@/states";
 import { UtilityProviderCategory, UtilityProviderFormData } from "@/types";
@@ -33,12 +33,11 @@ const categoryColors = {
 
 export const ProvidersPage = () => {
 	const {
-		addDialogOpen,
+		mainDialogOpen,
 		deleteDialogOpen,
 		itemIdToDelete,
 		setItemIdToDelete,
-		toggleAddDialog,
-		toggleDeleteDialog,
+		toggleDialog,
 	} = useDialogState();
 
 	const [user] = useAtom(userAtom);
@@ -63,7 +62,7 @@ export const ProvidersPage = () => {
 						category: data.category as UtilityProviderCategory,
 					},
 				]);
-				toggleAddDialog();
+				toggleDialog(DialogType.MAIN);
 			}
 		} catch (error) {
 			if (error instanceof Error) {
@@ -83,7 +82,7 @@ export const ProvidersPage = () => {
 				toast.success(
 					`${result.deletedCount} provider(s) deleted successfully`,
 				);
-				toggleDeleteDialog();
+				toggleDialog(DialogType.DELETE);
 				setProvidersList(providersList.filter((p) => p.id !== providerId));
 				setItemIdToDelete(null);
 				return;
@@ -106,7 +105,7 @@ export const ProvidersPage = () => {
 					subtitle={<p>Manage your utility service providers</p>}
 				/>
 
-				<Button onClick={toggleAddDialog}>
+				<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Provider
 				</Button>
@@ -131,7 +130,7 @@ export const ProvidersPage = () => {
 								size="sm"
 								onClick={() => {
 									setItemIdToDelete(provider.id || null);
-									toggleDeleteDialog();
+									toggleDialog(DialogType.DELETE);
 								}}
 								className="text-destructive hover:text-destructive">
 								<Trash2 className="h-4 w-4" />
@@ -153,8 +152,8 @@ export const ProvidersPage = () => {
 			</div>
 
 			<AddProviderDialog
-				isOpen={addDialogOpen}
-				onClose={toggleAddDialog}
+				isOpen={mainDialogOpen}
+				onClose={() => toggleDialog(DialogType.MAIN)}
 				onSubmit={handleAddProvider}
 			/>
 
@@ -162,7 +161,7 @@ export const ProvidersPage = () => {
 				isOpen={deleteDialogOpen}
 				title="Delete Provider"
 				description="Are you sure you want to delete this provider? This action cannot be undone."
-				onClose={toggleDeleteDialog}
+				onClose={() => toggleDialog(DialogType.DELETE)}
 				onConfirm={async () => {
 					if (itemIdToDelete) {
 						await handleDeleteProvider(itemIdToDelete);
@@ -178,7 +177,7 @@ export const ProvidersPage = () => {
 							Add your first utility provider to get started with bill
 							management
 						</p>
-						<Button onClick={toggleAddDialog}>
+						<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Provider
 						</Button>

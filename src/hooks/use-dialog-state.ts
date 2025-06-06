@@ -2,27 +2,24 @@
 
 import { useState } from "react";
 
+export enum DialogType {
+	MAIN = "main", // for add, edit, or email preview dialogs
+	DELETE = "delete", // for delete confirmation dialog
+}
+
 export const useDialogState = () => {
-	const [addDialogOpen, setAddDialogOpen] = useState<boolean>(false);
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+	const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
 	const [itemIdToDelete, setItemIdToDelete] = useState<string | null>(null);
 
-	const toggleAddDialog = () => {
-		setAddDialogOpen((prev) => !prev);
-	};
-
-	const toggleDeleteDialog = () => {
-		setDeleteDialogOpen((prev) => !prev);
+	const toggleDialog = (type: DialogType) => {
+		setOpenDialog((prev) => (prev === type ? null : type));
 	};
 
 	return {
-		addDialogOpen,
-		deleteDialogOpen,
+		mainDialogOpen: openDialog === DialogType.MAIN,
+		deleteDialogOpen: openDialog === DialogType.DELETE,
 		itemIdToDelete,
+		toggleDialog,
 		setItemIdToDelete,
-		toggleAddDialog,
-		toggleDeleteDialog,
-		setAddDialogOpen,
-		setDeleteDialogOpen,
 	};
 };
