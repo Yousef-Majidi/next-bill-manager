@@ -196,11 +196,19 @@ export const updateTenant = async (
 	};
 };
 
-export const getConsolidatedBills = async (userId: string) => {
+export const getConsolidatedBills = async (
+	userId: string,
+	date?: { year: number; month: number },
+) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const query: Record<string, unknown> = { user_id: userId };
+	if (date) {
+		query.year = date.year;
+		query.month = date.month;
+	}
 	const collection = await db
 		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
-		.find({ user_id: userId })
+		.find(query)
 		.toArray();
 	return collection.map((bill) => ({
 		id: bill._id.toString(),

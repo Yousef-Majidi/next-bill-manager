@@ -3,79 +3,35 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAtom } from "jotai";
-import { CheckCircle, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common";
 import { ConsolidatedBillSection, StatsSummary } from "@/components/dashboard";
 import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog";
-import {
-	Badge,
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui";
+import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
+import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
 import { calculateTotalBillAmount, getBillCategory } from "@/lib/common/utils";
 import { addConsolidatedBill } from "@/lib/data";
 import { constructEmail, sendEmail } from "@/lib/gmail";
 import { tenantsAtom, userAtom } from "@/states/store";
-import {
-	UtilityBill as Bill,
-	ConsolidatedBill,
-	EmailContent,
-	Tenant,
-} from "@/types";
-
-const lastMonthBills = [
-	{
-		id: "1",
-		month: "November 2024",
-		categories: {
-			electricity: { amount: 140, provider: "City Electric" },
-			water: { amount: 75, provider: "Metro Water" },
-			gas: { amount: 110, provider: "Natural Gas Co" },
-		},
-		totalAmount: 325,
-		tenant: "John Doe",
-		tenantTotalShare: 162.5,
-		tenantShares: {
-			electricity: 70, // 50% of 140
-			water: 37.5, // 50% of 75
-			gas: 55, // 50% of 110
-		},
-		paid: true,
-		dateSent: "2024-11-05",
-	},
-	{
-		id: "2",
-		month: "November 2024",
-		categories: {
-			electricity: { amount: 140, provider: "City Electric" },
-			water: { amount: 75, provider: "Metro Water" },
-			gas: { amount: 110, provider: "Natural Gas Co" },
-		},
-		totalAmount: 325,
-		tenant: "Jane Smith",
-		tenantTotalShare: 162.5,
-		tenantShares: {
-			electricity: 70, // 50% of 140
-			water: 37.5, // 50% of 75
-			gas: 55, // 50% of 110
-		},
-		paid: false,
-		dateSent: "2024-11-05",
-	},
-];
+import { ConsolidatedBill, EmailContent, Tenant, UtilityBill } from "@/types";
 
 interface DashboardPageProps {
-	readonly currentMonthBills: Bill[];
+	readonly currentMonthBills: UtilityBill[];
+	readonly lastMonthBills: ConsolidatedBill[];
 }
 
-export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
+export const DashboardPage = ({
+	currentMonthBills,
+	lastMonthBills,
+}: DashboardPageProps) => {
 	const currentDate = useMemo(() => new Date(), []);
+	const currentDateString = currentDate.toLocaleDateString("en-US", {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+	});
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
 	const { mainDialogOpen, toggleDialog } = useDialogState();
@@ -175,11 +131,7 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 				title={`Welcome ${user?.name || "User"}!`}
 				subtitle={
 					<Badge variant="outline" className="hidden sm:flex">
-						{currentDate.toLocaleDateString("en-US", {
-							month: "long",
-							day: "numeric",
-							year: "numeric",
-						})}
+						{currentDateString}
 					</Badge>
 				}
 			/>
@@ -196,49 +148,11 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			)}
 
 			{/* Last Month Bills Summary */}
-			<Card>
-				<CardHeader>
-					<CardTitle>Last Month Bills</CardTitle>
-					<CardDescription>
-						November 2024 - Bills sent to tenants
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-3">
-						{lastMonthBills.map((bill, index) => (
-							<div
-								key={index}
-								className="flex items-center justify-between rounded-lg border p-4">
-								<div className="flex items-center gap-4">
-									<div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-										<FileText className="h-5 w-5" />
-									</div>
-									<div>
-										<p className="font-medium">{bill.tenant}</p>
-										<p className="text-muted-foreground text-sm">
-											Total Bill: ${bill.totalAmount} | Tenant Share: $
-											{bill.tenantTotalShare}
-										</p>
-									</div>
-								</div>
-								<Badge variant={bill.paid ? "default" : "destructive"}>
-									{bill.paid ? (
-										<>
-											<CheckCircle className="mr-1 h-3 w-3" />
-											Paid
-										</>
-									) : (
-										<>
-											<Clock className="mr-1 h-3 w-3" />
-											Unpaid
-										</>
-									)}
-								</Badge>
-							</div>
-						))}
-					</div>
-				</CardContent>
-			</Card>
+			<LastMonthSummary
+				currentDate={currentDate}
+				lastMonthBills={lastMonthBills}
+				tenantsList={tenantsList}
+			/>
 			{/* Email Confirmation Dialog */}
 			{emailContent && selectedTenant && (
 				<EmailPreviewDialog
