@@ -40,6 +40,16 @@ export const DashboardPage = ({
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
 
+	const lastMonthTenant = useMemo(
+		() => findById(tenantsList, lastMonthBills[0]?.tenantId ?? ""),
+		[lastMonthBills, tenantsList],
+	);
+	const lastMonthTenantTotal = useMemo(() => {
+		return lastMonthBills[0] && lastMonthTenant
+			? getTenantShares(lastMonthBills[0], lastMonthTenant).tenantTotal
+			: 0;
+	}, [lastMonthBills, lastMonthTenant]);
+
 	useEffect(() => {
 		if (tenantsList?.length > 0) {
 			setSelectedTenant(tenantsList[0]);
@@ -103,15 +113,6 @@ export const DashboardPage = ({
 		toggleDialog(DialogType.MAIN);
 		setEmailContent(null);
 	};
-
-	const lastMonthTenant = findById(
-		tenantsList,
-		lastMonthBills[0]?.tenantId ?? "",
-	);
-	const lastMonthTenantTotal =
-		lastMonthBills[0] && lastMonthTenant
-			? getTenantShares(lastMonthBills[0], lastMonthTenant).tenantTotal
-			: 0;
 
 	return (
 		<div className="flex flex-col gap-6">
