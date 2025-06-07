@@ -11,7 +11,8 @@ import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog"
 import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
 import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
-import { addConsolidatedBill } from "@/lib/data";
+import { getTenantShares } from "@/lib/common/utils";
+import { addConsolidatedBill, findById } from "@/lib/data";
 import { constructEmail, sendEmail } from "@/lib/gmail";
 import { tenantsAtom, userAtom } from "@/states/store";
 import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
@@ -108,6 +109,15 @@ export const DashboardPage = ({
 		setEmailContent(null);
 	};
 
+	const lastMonthTenant = findById(
+		tenantsList,
+		lastMonthBills[0]?.tenantId ?? "",
+	);
+	const lastMonthTenantTotal =
+		lastMonthBills[0] && lastMonthTenant
+			? getTenantShares(lastMonthBills[0], lastMonthTenant).tenantTotal
+			: 0;
+
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
@@ -118,8 +128,11 @@ export const DashboardPage = ({
 					</Badge>
 				}
 			/>
-			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
-			{/* Current Month Bill */}
+
+			<StatsSummary
+				currentMonthTotal={consolidatedBill?.totalAmount || 0}
+				lastMonthTotal={lastMonthTenantTotal}
+			/>
 
 			<ConsolidatedBillSection
 				consolidatedBill={consolidatedBill}
@@ -129,12 +142,12 @@ export const DashboardPage = ({
 				handleSendBill={handleSendBill}
 			/>
 
-			{/* Last Month Bills Summary */}
 			<LastMonthSummary
 				currentDate={currentDate}
 				lastMonthBills={lastMonthBills}
 				tenantsList={tenantsList}
 			/>
+
 			{/* Email Confirmation Dialog */}
 			{emailContent && selectedTenant && (
 				<EmailPreviewDialog

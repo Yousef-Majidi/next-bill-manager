@@ -4,9 +4,13 @@ import { StatCard } from "@/components/dashboard/stat-card";
 
 interface StatsSummaryProps {
 	readonly currentMonthTotal: number;
+	readonly lastMonthTotal: number | null;
 }
 
-export const StatsSummary = ({ currentMonthTotal }: StatsSummaryProps) => {
+export const StatsSummary = ({
+	currentMonthTotal,
+	lastMonthTotal,
+}: StatsSummaryProps) => {
 	const now = new Date();
 	const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 	const formatMonthYear = (date: Date) =>
@@ -29,7 +33,9 @@ export const StatsSummary = ({ currentMonthTotal }: StatsSummaryProps) => {
 			<StatCard
 				title="Last Month Billed"
 				icon={<DollarSign className="text-muted-foreground h-4 w-4" />}
-				value="$0.00"
+				value={
+					lastMonthTotal !== null ? `$${lastMonthTotal.toFixed(2)}` : "$0.00"
+				}
 				description={lastMonthString}
 				className="text-blue-600"
 			/>
