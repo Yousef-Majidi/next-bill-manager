@@ -41,9 +41,9 @@ export const ConsolidatedBillSection = ({
 		return (
 			<Card className="h-full items-center">
 				<CardHeader className="w-full text-center">
-					<CardTitle>Current Month Bill</CardTitle>
+					<CardTitle>No bill available for this month.</CardTitle>
 					<CardDescription>
-						No bills available for the current month.
+						None of your providers have emailed you any bills yet...
 					</CardDescription>
 				</CardHeader>
 			</Card>

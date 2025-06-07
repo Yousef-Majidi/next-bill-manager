@@ -11,19 +11,18 @@ import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog"
 import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
 import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
-import { calculateTotalBillAmount, getBillCategory } from "@/lib/common/utils";
 import { addConsolidatedBill } from "@/lib/data";
 import { constructEmail, sendEmail } from "@/lib/gmail";
 import { tenantsAtom, userAtom } from "@/states/store";
-import { ConsolidatedBill, EmailContent, Tenant, UtilityBill } from "@/types";
+import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
 interface DashboardPageProps {
-	readonly currentMonthBills: UtilityBill[];
+	readonly currentMonthBill: ConsolidatedBill | null;
 	readonly lastMonthBills: ConsolidatedBill[];
 }
 
 export const DashboardPage = ({
-	currentMonthBills,
+	currentMonthBill,
 	lastMonthBills,
 }: DashboardPageProps) => {
 	const currentDate = useMemo(() => new Date(), []);
@@ -43,41 +42,12 @@ export const DashboardPage = ({
 	useEffect(() => {
 		if (tenantsList?.length > 0) {
 			setSelectedTenant(tenantsList[0]);
+			setConsolidatedBill(currentMonthBill);
 		} else if (tenantsList) {
 			toast.warning("No tenants available for this user.");
 			setSelectedTenant(null);
 		}
-	}, [tenantsList, setSelectedTenant, selectedTenant]);
-
-	// Fetch user bills when component mounts
-	useEffect(() => {
-		if (!user?.id || !selectedTenant) {
-			setConsolidatedBill(null);
-			return;
-		}
-
-		const categories = getBillCategory(currentMonthBills);
-		const totalAmount = calculateTotalBillAmount(currentMonthBills);
-
-		if (totalAmount <= 0) {
-			toast.warning("No bills available for the current month yet.");
-			setConsolidatedBill(null);
-			return;
-		}
-
-		const consolidatedBill: ConsolidatedBill = {
-			id: undefined, // Assigned on insertion
-			userId: user.id,
-			month: currentDate.getMonth() + 1,
-			year: currentDate.getFullYear(),
-			tenantId: selectedTenant.id,
-			categories: categories,
-			totalAmount: totalAmount,
-			paid: false,
-			dateSent: currentDate.toDateString(),
-		};
-		setConsolidatedBill(consolidatedBill);
-	}, [currentMonthBills, selectedTenant, user?.id, currentDate]);
+	}, [setSelectedTenant, selectedTenant, currentMonthBill, tenantsList]);
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {
