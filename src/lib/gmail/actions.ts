@@ -36,6 +36,7 @@ export const fetchUserBills = async (
 			const messages = response.data.messages || [];
 			if (messages.length === 0) {
 				bills.push({
+					id: null,
 					gmailMessageId: "",
 					utilityProvider: provider,
 					amount: 0,
@@ -52,6 +53,7 @@ export const fetchUserBills = async (
 			);
 
 			bills.push({
+				id: null, // Assuming id is generated later or not needed immediately
 				utilityProvider: provider,
 				gmailMessageId: billDetails.map((detail) => detail.messageId).join(","),
 				amount: billDetails.reduce(
