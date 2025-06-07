@@ -1,10 +1,9 @@
 "use server";
 
 import { DashboardPage } from "@/components/dashboard";
-import { calculateTotalBillAmount, getBillCategory } from "@/lib/common/utils";
+import { prepareConsolidatedBill } from "@/lib/common/utils";
 import { getConsolidatedBills, getUser, getUtilityProviders } from "@/lib/data";
 import { fetchUserBills } from "@/lib/gmail";
-import { ConsolidatedBill } from "@/types";
 
 export default async function Page() {
 	const loggedInUser = await getUser();
@@ -21,26 +20,16 @@ export default async function Page() {
 		year: currentDate.getFullYear(),
 	});
 
-	const categories = getBillCategory(fetchedBills);
-	const totalAmount = calculateTotalBillAmount(fetchedBills);
-	const consolidatedBillForCurrentMonth: ConsolidatedBill | null = {
-		id: null, // This will be assigned when the bill is added
+	const consolidatedBillForCurrentMonth = prepareConsolidatedBill({
 		userId: loggedInUser.id,
-		month: currentDate.getMonth() + 1,
-		year: currentDate.getFullYear(),
-		tenantId: null,
-		categories: categories,
-		totalAmount: totalAmount,
-		paid: false,
-		dateSent: null,
-		datePaid: null,
-	};
+		bills: fetchedBills,
+		currentDate,
+	});
+
 	return (
 		<main>
 			<DashboardPage
-				currentMonthBill={
-					totalAmount === 0 ? null : consolidatedBillForCurrentMonth
-				}
+				currentMonthBill={consolidatedBillForCurrentMonth}
 				lastMonthBills={lastMonthBills}
 			/>
 		</main>

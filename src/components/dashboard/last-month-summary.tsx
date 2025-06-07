@@ -40,7 +40,7 @@ export const LastMonthSummary = ({
 			<CardContent>
 				<div className="space-y-3">
 					{lastMonthBills.map((bill, index) => {
-						const tenant = findById(tenantsList, bill.tenantId);
+						const tenant = findById(tenantsList, bill.tenantId || "");
 						if (!tenant) return null;
 						const { tenantTotal } = getTenantShares(bill, tenant);
 						return (

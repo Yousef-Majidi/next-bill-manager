@@ -51,3 +51,31 @@ export const getBillCategory = (
 export const calculateTotalBillAmount = (bills: UtilityBill[]): number => {
 	return bills.reduce((sum, bill) => sum + bill.amount, 0);
 };
+
+export const prepareConsolidatedBill = ({
+	userId,
+	bills,
+	currentDate,
+}: {
+	userId: string;
+	bills: UtilityBill[];
+	currentDate: Date;
+}): ConsolidatedBill | null => {
+	const categories = getBillCategory(bills);
+	const totalAmount = calculateTotalBillAmount(bills);
+
+	if (totalAmount === 0) return null;
+
+	return {
+		id: null,
+		userId,
+		month: currentDate.getMonth() + 1,
+		year: currentDate.getFullYear(),
+		tenantId: null,
+		categories,
+		totalAmount,
+		paid: false,
+		dateSent: null,
+		datePaid: null,
+	};
+};

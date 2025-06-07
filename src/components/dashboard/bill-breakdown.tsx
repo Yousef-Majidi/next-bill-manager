@@ -15,7 +15,7 @@ interface BillBreakdownProps {
 export const BillBreakdown = ({ consolidatedBill }: BillBreakdownProps) => {
 	const { categories, tenantId } = consolidatedBill;
 	const [tenantsList] = useAtom(tenantsAtom);
-	const tenant = findById(tenantsList, tenantId);
+	const tenant = findById(tenantsList, tenantId || "");
 
 	return (
 		<div className="flex flex-wrap gap-4">
