@@ -48,7 +48,7 @@ export const DashboardPage = ({
 			toast.warning("No tenants available for this user.");
 			setSelectedTenant(null);
 		}
-	}, [setSelectedTenant, selectedTenant, currentMonthBill, tenantsList]);
+	}, [setSelectedTenant, currentMonthBill, tenantsList]);
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {
@@ -56,17 +56,12 @@ export const DashboardPage = ({
 			return;
 		}
 
-		const tenant = tenantsList.find((t) => t.id === selectedTenant.id);
-		if (!tenant) {
-			toast.error("Selected tenant not found.");
-			return;
-		}
-
 		if (!consolidatedBill) {
 			toast.error("No bills available for the current month.");
 			return;
 		}
-		setEmailContent(constructEmail(tenant, consolidatedBill));
+		const emailContent = constructEmail(selectedTenant, consolidatedBill);
+		setEmailContent(emailContent);
 		toggleDialog(DialogType.MAIN);
 	};
 
@@ -75,10 +70,8 @@ export const DashboardPage = ({
 			toast.error("No email content to send.");
 			return;
 		}
-
-		const tenant = tenantsList.find((t) => t.id === selectedTenant?.id);
-		if (!tenant) {
-			toast.error("Selected tenant not found.");
+		if (!selectedTenant) {
+			toast.error("No tenant selected to send the bill.");
 			return;
 		}
 		if (!consolidatedBill || consolidatedBill.totalAmount <= 0) {
@@ -91,14 +84,16 @@ export const DashboardPage = ({
 		}
 
 		try {
-			const result = await sendEmail(emailContent, tenant);
+			const result = await sendEmail(emailContent, selectedTenant);
 			if (result.success) {
 				const newBill = await addConsolidatedBill(user.id, consolidatedBill);
 				if (newBill.acknowledged) {
-					toast.success(`Email sent and bill added for ${tenant.name}!`);
+					toast.success(
+						`Email sent and bill added for ${selectedTenant.name}!`,
+					);
 				}
 			} else {
-				toast.error(`Failed to send email to ${tenant.name}.`);
+				toast.error(`Failed to send email to ${selectedTenant.name}.`);
 			}
 		} catch (error) {
 			console.error("Error sending email:", error);
