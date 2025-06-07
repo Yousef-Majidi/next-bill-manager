@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
@@ -21,11 +22,8 @@ export const isTokenExpired = async (tokenExp: number) => {
 
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
-	if (!session || !session.user) {
-		throw new Error("User is not authenticated.");
-	}
 	if (await isTokenExpired(session.accessTokenExp)) {
-		throw new Error("Access token is expired.");
+		redirect("/");
 	}
 	return {
 		id: session.providerAccountId,
