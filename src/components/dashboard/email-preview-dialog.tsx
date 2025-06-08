@@ -42,7 +42,7 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 	});
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="w-4xl">
+			<DialogContent className="min-w-4xl">
 				<DialogHeader>
 					<DialogTitle>Email Preview</DialogTitle>
 					<DialogDescription>
@@ -76,7 +76,7 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 					</Button>
 					<Button onClick={onConfirm}>
 						<Mail className="mr-1 h-4 w-4" />
-						Send Email
+						Send
 					</Button>
 				</DialogFooter>
 			</DialogContent>

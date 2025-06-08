@@ -112,7 +112,7 @@ export const ConsolidatedBillSection = ({
 
 							<Button onClick={handleSendBill} disabled={!selectedTenant}>
 								<Mail className="mr-2 h-4 w-4" />
-								Send Bill
+								Preview & Send Bill
 							</Button>
 						</div>
 					</div>
