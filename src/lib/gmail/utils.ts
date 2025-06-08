@@ -62,86 +62,82 @@ export const constructEmail = (
 	const monthString = date.toLocaleString("en-US", { month: "long" });
 	const subject = `Utility Bill for ${monthString} of ${bill.year}`;
 	const { shares, tenantTotal } = getTenantShares(bill, tenant);
+	const outstandingBalance = tenant.outstandingBalance;
+	const finalAmountDue = tenantTotal + outstandingBalance;
 
-	// Build category breakdown table rows
-	const categoryDetailsRows = Object.entries(bill.categories)
-		.map(
-			([category, details]) =>
-				`<tr>
-                    <td>${category}</td>
-                    <td>$${details.amount.toFixed(2)}</td>
-                    <td>${details.providerName}</td>
-                </tr>`,
-		)
-		.join("");
-
-	// Build tenant share table rows
-	const tenantSharesRows = Object.entries(shares)
-		.map(
-			([category, share]) =>
-				`<tr>
-                    <td>${category}</td>
-                    <td>$${share ? share.toFixed(2) : "0.00"}</td>
-                </tr>`,
-		)
+	const consolidatedRows = Object.entries(bill.categories)
+		.map(([category, details]) => {
+			const total = details.amount;
+			const tenantShare = shares[category as keyof typeof shares] ?? 0;
+			const percent =
+				total > 0 ? ((tenantShare / total) * 100).toFixed(1) : "0.0";
+			return `
+            <tr>
+                <td>${category}</td>
+                <td>$${total.toFixed(2)}</td>
+                <td>${details.providerName}</td>
+                <td>${percent}%</td>
+                <td>$${tenantShare.toFixed(2)}</td>
+            </tr>
+        `;
+		})
 		.join("");
 
 	// Construct the email body with HTML
 	const body = `
         <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                th, td {
-                    border: 1px solid #ddd;
-                    padding: 8px;
-                    text-align: left;
-                }
-                th {
-                    background-color: #f2f2f2;
-                }
-            </style>
-        </head>
-        <body>
-            <p>Hello ${tenant.name},</p>
-            <p>Here is your utility bills for ${monthString} ${bill.year}.</p>
-            <p><strong>Total Amount Due: $${tenantTotal}</strong> </p>
-            <p><strong>Breakdown:</strong></p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Amount</th>
-                        <th>Provider</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${categoryDetailsRows}
-                </tbody>
-            </table>
-            <p><strong>Your Share of the Bill:</strong></p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tenantSharesRows}
-                </tbody>
-            </table>
-            <p>Please ensure to make the payment by the due date.</p>
-            <p>If you have any questions or concerns, feel free to reach out.</p>
-			<p>If you need to view the original bill, please contact your landlord.</p>
-            <p>Thank you,</p>
-            <p>Sent from Next Bill Manager</p>
-        </body>
-        </html>
+<html>
+<head>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .summary-row {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <p>Hello ${tenant.name},</p>
+    <p>Here is your utility bills for ${monthString} ${bill.year}.</p>
+    
+    <p><strong>Bill Breakdown:</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Total Amount</th>
+                <th>Provider</th>
+                <th>Your % Share</th>
+                <th>Your $ Share</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${consolidatedRows}
+        </tbody>
+    </table>
+    <br/>
+    <div>
+        <p><strong>Your Amount Due for this Month:</strong> $${tenantTotal.toFixed(2)}</p>
+        <p><strong>Outstanding Balance:</strong> $${outstandingBalance.toFixed(2)}</p>
+        <p><strong>Final Amount Due:</strong> $${finalAmountDue.toFixed(2)}</p>
+    </div>
+    <p>Please ensure to make the payment by the due date.</p>
+    <p>If you have any questions or concerns, feel free to reach out.</p>
+    <p>If you need to view the original bill, please contact your landlord.</p>
+    <p>Thank you,</p>
+    <p>Sent from Next Bill Manager</p>
+</body>
+</html>
     `;
 
 	return {

@@ -52,7 +52,7 @@ export const calculateTotalBillAmount = (bills: UtilityBill[]): number => {
 	return bills.reduce((sum, bill) => sum + bill.amount, 0);
 };
 
-export const prepareConsolidatedBill = ({
+export const initializeConsolidatedBill = ({
 	userId,
 	bills,
 	currentDate,
