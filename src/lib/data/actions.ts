@@ -130,6 +130,7 @@ export const getTenants = async (userId: string) => {
 		name: tenant.name,
 		email: tenant.email,
 		shares: tenant.shares,
+		outstandingBalance: tenant.outstanding_balance,
 	})) as Tenant[];
 };
 
@@ -147,6 +148,7 @@ export const addTenant = async (userId: string, tenant: Omit<Tenant, "id">) => {
 		name: tenant.name,
 		email: tenant.email,
 		shares: tenant.shares,
+		outstanding_balance: tenant.outstandingBalance,
 	});
 	revalidatePath("/dashboard/tenants");
 	return {
@@ -175,15 +177,42 @@ export const deleteTenant = async (userId: string, tenantId: string) => {
 export const updateTenant = async (
 	userId: string,
 	tenantId: string,
-	tenant: Tenant,
+	updatedTenant: Tenant,
 ) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
 	const result = await db.collection(process.env.MONGODB_TENANTS!).updateOne(
 		{ _id: new ObjectId(tenantId), user_id: userId },
 		{
-			$set: { name: tenant.name, email: tenant.email, shares: tenant.shares },
+			$set: {
+				name: updatedTenant.name,
+				email: updatedTenant.email,
+				shares: updatedTenant.shares,
+				outstanding_balance: updatedTenant.outstandingBalance,
+			},
 		},
 	);
+	if (result.matchedCount === 0) {
+		throw new Error("Tenant not found or does not belong to user.");
+	}
+	revalidatePath("/dashboard/tenants");
+	return {
+		acknowledged: result.acknowledged,
+		modifiedCount: result.modifiedCount,
+	};
+};
+
+export const updateTenantBalance = async (
+	userId: string,
+	tenantId: string,
+	balance: number = 0,
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db
+		.collection(process.env.MONGODB_TENANTS!)
+		.updateOne(
+			{ _id: new ObjectId(tenantId), user_id: userId },
+			{ $set: { outstanding_balance: balance } },
+		);
 	if (result.matchedCount === 0) {
 		throw new Error("Tenant not found or does not belong to user.");
 	}

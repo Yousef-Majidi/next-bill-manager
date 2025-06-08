@@ -4,12 +4,14 @@ import { StatCard } from "@/components/dashboard/stat-card";
 
 interface StatsSummaryProps {
 	readonly currentMonthTotal: number;
-	readonly lastMonthTotal: number | null;
+	readonly lastMonthTotal: number;
+	readonly outstandingBalance: number;
 }
 
 export const StatsSummary = ({
 	currentMonthTotal,
 	lastMonthTotal,
+	outstandingBalance,
 }: StatsSummaryProps) => {
 	const now = new Date();
 	const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -33,9 +35,7 @@ export const StatsSummary = ({
 			<StatCard
 				title="Last Month Billed"
 				icon={<DollarSign className="text-muted-foreground h-4 w-4" />}
-				value={
-					lastMonthTotal !== null ? `$${lastMonthTotal.toFixed(2)}` : "$0.00"
-				}
+				value={lastMonthTotal.toFixed(2)}
 				description={lastMonthString}
 				className="text-blue-600"
 			/>
@@ -43,7 +43,7 @@ export const StatsSummary = ({
 			<StatCard
 				title="Paid Amount"
 				icon={<CheckCircle className="h-4 w-4 text-green-600" />}
-				value="$0.00"
+				value={(0.0).toFixed(2)}
 				description="Last month"
 				className="text-green-600"
 			/>
@@ -51,7 +51,7 @@ export const StatsSummary = ({
 			<StatCard
 				title="Outstanding"
 				icon={<Clock className="h-4 w-4 text-orange-600" />}
-				value="$0.00"
+				value={outstandingBalance.toFixed(2)}
 				description="Unpaid bills"
 				className="text-orange-600"
 			/>

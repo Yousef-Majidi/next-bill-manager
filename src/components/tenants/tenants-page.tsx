@@ -47,6 +47,7 @@ export const TenantsPage = () => {
 					[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water] ?? 0,
 					[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas] ?? 0,
 				},
+				outstandingBalance: 0,
 			});
 			if (result.acknowledged) {
 				toast.success(`Tenant "${result.insertedName}" added successfully`);
@@ -64,6 +65,7 @@ export const TenantsPage = () => {
 								newTenant.shares[UtilityCategory.Water] ?? 0,
 							[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas] ?? 0,
 						},
+						outstandingBalance: 0,
 					},
 				]);
 				toggleDialog(DialogType.MAIN);

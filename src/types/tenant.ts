@@ -8,4 +8,5 @@ export interface Tenant {
 	readonly shares: {
 		readonly [key in UtilityProviderCategory]: number;
 	};
+	readonly outstandingBalance: number;
 }
