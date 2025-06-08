@@ -14,41 +14,68 @@ import { DialogType, useDialogState } from "@/hooks";
 import { getTenantShares } from "@/lib/common/utils";
 import { addConsolidatedBill, findById } from "@/lib/data";
 import { constructEmail, sendEmail } from "@/lib/gmail";
-import { tenantsAtom, userAtom } from "@/states/store";
+import { billsHistoryAtom, tenantsAtom, userAtom } from "@/states/store";
 import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
 interface DashboardPageProps {
 	readonly currentMonthBill: ConsolidatedBill | null;
-	readonly lastMonthBills: ConsolidatedBill[];
 }
 
-export const DashboardPage = ({
-	currentMonthBill,
-	lastMonthBills,
-}: DashboardPageProps) => {
-	const currentDate = useMemo(() => new Date(), []);
-	const currentDateString = currentDate.toLocaleDateString("en-US", {
+export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
+	const now = useMemo(() => new Date(), []);
+	const currentDateString = now.toLocaleDateString("en-US", {
 		month: "long",
 		day: "numeric",
 		year: "numeric",
 	});
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
+	const [billsHistory] = useAtom(billsHistoryAtom);
 	const { mainDialogOpen, toggleDialog } = useDialogState();
 	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
+	// const [isLastMonthPaid, setIsLastMonthPaid] = useState<boolean>(false);
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
 
+	const outstandingBalance = useMemo(() => {
+		return billsHistory.reduce((sum, bill) => {
+			if (!bill.paid && bill.tenantId) {
+				const tenant = findById(tenantsList, bill.tenantId);
+				if (tenant) {
+					const { tenantTotal } = getTenantShares(bill, tenant);
+					return sum + tenantTotal;
+				}
+			}
+			return sum;
+		}, 0);
+	}, [billsHistory, tenantsList]);
+
+	const lastMonthConsolidatedBill = useMemo(() => {
+		const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+		const lastMonthYear = prevMonth.getFullYear();
+		const lastMonthMonth = prevMonth.getMonth();
+
+		return billsHistory.filter((bill) => {
+			const billDate = new Date(bill.year, bill.month - 1, 1);
+			return (
+				billDate.getFullYear() === lastMonthYear &&
+				billDate.getMonth() === lastMonthMonth
+			);
+		});
+	}, [billsHistory, now]);
+
 	const lastMonthTenant = useMemo(
-		() => findById(tenantsList, lastMonthBills[0]?.tenantId ?? ""),
-		[lastMonthBills, tenantsList],
+		() => findById(tenantsList, lastMonthConsolidatedBill[0]?.tenantId ?? ""),
+		[lastMonthConsolidatedBill, tenantsList],
 	);
+
 	const lastMonthTenantTotal = useMemo(() => {
-		return lastMonthBills[0] && lastMonthTenant
-			? getTenantShares(lastMonthBills[0], lastMonthTenant).tenantTotal
+		return lastMonthConsolidatedBill[0] && lastMonthTenant
+			? getTenantShares(lastMonthConsolidatedBill[0], lastMonthTenant)
+					.tenantTotal
 			: 0;
-	}, [lastMonthBills, lastMonthTenant]);
+	}, [lastMonthConsolidatedBill, lastMonthTenant]);
 
 	useEffect(() => {
 		if (tenantsList?.length > 0) {
@@ -128,6 +155,8 @@ export const DashboardPage = ({
 			<StatsSummary
 				currentMonthTotal={consolidatedBill?.totalAmount || 0}
 				lastMonthTotal={lastMonthTenantTotal}
+				// lastMonthPaid={isLastMonthPaid}
+				outstandingBalance={outstandingBalance}
 			/>
 
 			<ConsolidatedBillSection
@@ -139,8 +168,8 @@ export const DashboardPage = ({
 			/>
 
 			<LastMonthSummary
-				currentDate={currentDate}
-				lastMonthBills={lastMonthBills}
+				currentDate={now}
+				lastMonthBills={lastMonthConsolidatedBill}
 				tenantsList={tenantsList}
 			/>
 
