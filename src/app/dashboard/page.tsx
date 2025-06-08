@@ -1,26 +1,22 @@
 "use server";
 
 import { DashboardPage } from "@/components/dashboard";
-import { prepareConsolidatedBill } from "@/lib/common/utils";
-import { getConsolidatedBills, getUser, getUtilityProviders } from "@/lib/data";
+import { initializeConsolidatedBill } from "@/lib/common/utils";
+import { getUser, getUtilityProviders } from "@/lib/data";
 import { fetchUserBills } from "@/lib/gmail";
 
 export default async function Page() {
 	const loggedInUser = await getUser();
 	const availableProviders = await getUtilityProviders(loggedInUser.id);
 	const currentDate = new Date();
+	currentDate.setMonth(currentDate.getMonth() - 1); // Set to next month
 	const fetchedBills = await fetchUserBills(
 		availableProviders,
 		currentDate.getMonth() + 1, // getMonth() is zero-based
 		currentDate.getFullYear(),
 	);
 
-	const lastMonthBills = await getConsolidatedBills(loggedInUser?.id, {
-		month: currentDate.getMonth() - 1,
-		year: currentDate.getFullYear(),
-	});
-
-	const consolidatedBillForCurrentMonth = prepareConsolidatedBill({
+	const consolidatedBillForCurrentMonth = initializeConsolidatedBill({
 		userId: loggedInUser.id,
 		bills: fetchedBills,
 		currentDate,
@@ -28,10 +24,7 @@ export default async function Page() {
 
 	return (
 		<main>
-			<DashboardPage
-				currentMonthBill={consolidatedBillForCurrentMonth}
-				lastMonthBills={lastMonthBills}
-			/>
+			<DashboardPage currentMonthBill={consolidatedBillForCurrentMonth} />
 		</main>
 	);
 }
