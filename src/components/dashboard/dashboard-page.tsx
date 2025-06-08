@@ -143,6 +143,26 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 
 	return (
 		<div className="flex flex-col gap-6">
+			{(() => {
+				if (consolidatedBill?.month !== now.getMonth() + 1) {
+					return (
+						<div className="mb-2 rounded bg-red-100 px-4 py-2 font-mono font-bold text-red-700">
+							DEBUG MODE: Displaying bills for{" "}
+							{consolidatedBill
+								? new Date(
+										consolidatedBill.year,
+										consolidatedBill.month - 1,
+									).toLocaleString("en-US", {
+										month: "long",
+										year: "numeric",
+									})
+								: ""}
+							.
+						</div>
+					);
+				}
+				return null;
+			})()}
 			<PageHeader
 				title={`Welcome ${user?.name || "User"}!`}
 				subtitle={
