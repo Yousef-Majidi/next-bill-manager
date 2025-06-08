@@ -132,8 +132,7 @@ export const constructEmail = (
         <p><strong>Final Amount Due:</strong> $${finalAmountDue.toFixed(2)}</p>
     </div>
     <p>Please ensure to make the payment by the due date.</p>
-    <p>If you have any questions or concerns, feel free to reach out.</p>
-    <p>If you need to view the original bill, please contact your landlord.</p>
+    <p>If you have any questions, concerns or you'd like to view the original bill, please contact your landlord.</p>
     <p>Thank you,</p>
     <p>Sent from Next Bill Manager</p>
 </body>
