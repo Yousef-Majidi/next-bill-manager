@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import { z } from "zod";
@@ -18,20 +18,23 @@ import {
 } from "@/components/ui";
 import { type TenantFormSchema, tenantFormSchema } from "@/lib/common/utils";
 import {
+	Tenant,
 	TenantFormData,
 	UtilityProviderCategory as UtilityCategory,
 } from "@/types";
 
-interface AddTenantDialogProps {
+interface EditTenantDialogProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onSubmit: (data: TenantFormData) => void;
+	readonly tenant: Tenant | null;
 }
 
-export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
+export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({
 	isOpen,
 	onClose,
 	onSubmit,
+	tenant,
 }) => {
 	const [formData, setFormData] = useState<TenantFormSchema>({
 		name: "",
@@ -43,6 +46,23 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
 			[UtilityCategory.Gas]: 0,
 		},
 	});
+
+	// Update form data when tenant changes
+	useEffect(() => {
+		if (tenant) {
+			setFormData({
+				name: tenant.name,
+				email: tenant.email,
+				secondaryName: tenant.secondaryName || "",
+				shares: {
+					[UtilityCategory.Electricity]:
+						tenant.shares[UtilityCategory.Electricity],
+					[UtilityCategory.Water]: tenant.shares[UtilityCategory.Water],
+					[UtilityCategory.Gas]: tenant.shares[UtilityCategory.Gas],
+				},
+			});
+		}
+	}, [tenant]);
 
 	const validateForm = (): boolean => {
 		try {
@@ -74,16 +94,6 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
 		};
 
 		onSubmit(tenantData);
-		setFormData({
-			name: "",
-			email: "",
-			secondaryName: "",
-			shares: {
-				[UtilityCategory.Electricity]: 0,
-				[UtilityCategory.Water]: 0,
-				[UtilityCategory.Gas]: 0,
-			},
-		});
 	};
 
 	const updateShare = (category: string, value: number) => {
@@ -97,9 +107,9 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>Add New Tenant</DialogTitle>
+					<DialogTitle>Edit Tenant</DialogTitle>
 					<DialogDescription>
-						Add a new tenant and configure their utility share percentages
+						Update tenant information and utility share percentages
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit}>
@@ -182,7 +192,7 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
 						<Button type="button" variant="outline" onClick={onClose}>
 							Cancel
 						</Button>
-						<Button type="submit">Submit</Button>
+						<Button type="submit">Update</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

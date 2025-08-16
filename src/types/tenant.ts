@@ -5,6 +5,7 @@ export interface Tenant {
 	readonly userId: string;
 	readonly name: string;
 	readonly email: string;
+	readonly secondaryName?: string;
 	readonly shares: {
 		readonly [key in UtilityProviderCategory]: number;
 	};

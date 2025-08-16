@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { useAtom } from "jotai";
-import { Mail, Percent, Plus, Trash2, Users } from "lucide-react";
+import { Edit, Mail, Percent, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteDialog, PageHeader } from "@/components/common";
-import { AddTenantDialog } from "@/components/tenants";
+import { AddTenantDialog, EditTenantDialog } from "@/components/tenants";
 import {
 	Badge,
 	Button,
@@ -15,9 +17,10 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
-import { addTenant, deleteTenant } from "@/lib/data";
+import { addTenant, deleteTenant, updateTenant } from "@/lib/data";
 import { tenantsAtom, userAtom } from "@/states";
 import {
+	Tenant,
 	TenantFormData,
 	UtilityProviderCategory as UtilityCategory,
 } from "@/types";
@@ -25,6 +28,8 @@ import {
 export const TenantsPage = () => {
 	const [tenants, setTenants] = useAtom(tenantsAtom);
 	const [user] = useAtom(userAtom);
+	const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	const {
 		mainDialogOpen,
@@ -37,20 +42,9 @@ export const TenantsPage = () => {
 	const handleAddTenant = async (newTenant: TenantFormData) => {
 		if (!user) return;
 		try {
-			const result = await addTenant(user.id, {
-				userId: user.id,
-				name: newTenant.name,
-				email: newTenant.email,
-				shares: {
-					[UtilityCategory.Electricity]:
-						newTenant.shares[UtilityCategory.Electricity] ?? 0,
-					[UtilityCategory.Water]: newTenant.shares[UtilityCategory.Water] ?? 0,
-					[UtilityCategory.Gas]: newTenant.shares[UtilityCategory.Gas] ?? 0,
-				},
-				outstandingBalance: 0,
-			});
+			const result = await addTenant(user.id, newTenant);
 			if (result.acknowledged) {
-				toast.success(`Tenant "${result.insertedName}" added successfully`);
+				toast.success(`Tenant "${newTenant.name}" added successfully`);
 				setTenants((prev) => [
 					...prev,
 					{
@@ -58,6 +52,7 @@ export const TenantsPage = () => {
 						userId: user.id,
 						name: newTenant.name,
 						email: newTenant.email,
+						secondaryName: newTenant.secondaryName || undefined,
 						shares: {
 							[UtilityCategory.Electricity]:
 								newTenant.shares[UtilityCategory.Electricity] ?? 0,
@@ -78,6 +73,51 @@ export const TenantsPage = () => {
 			}
 
 			toast.error("An unexpected error occurred while adding the tenant");
+			console.error(error);
+		}
+	};
+
+	const handleEditTenant = async (updatedTenant: TenantFormData) => {
+		if (!user || !editingTenant) return;
+		try {
+			const result = await updateTenant(
+				user.id,
+				editingTenant.id,
+				updatedTenant,
+			);
+			if (result.acknowledged) {
+				toast.success(`Tenant "${updatedTenant.name}" updated successfully`);
+				setTenants((prev) =>
+					prev.map((t) =>
+						t.id === editingTenant.id
+							? {
+									...t,
+									name: updatedTenant.name,
+									email: updatedTenant.email,
+									secondaryName: updatedTenant.secondaryName || undefined,
+									shares: {
+										[UtilityCategory.Electricity]:
+											updatedTenant.shares[UtilityCategory.Electricity] ?? 0,
+										[UtilityCategory.Water]:
+											updatedTenant.shares[UtilityCategory.Water] ?? 0,
+										[UtilityCategory.Gas]:
+											updatedTenant.shares[UtilityCategory.Gas] ?? 0,
+									},
+								}
+							: t,
+					),
+				);
+				setEditDialogOpen(false);
+				setEditingTenant(null);
+				return;
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+				return;
+			}
+
+			toast.error("An unexpected error occurred while updating the tenant");
 			console.error(error);
 		}
 	};
@@ -130,18 +170,35 @@ export const TenantsPage = () => {
 										<Mail className="h-3 w-3" />
 										{tenant.email}
 									</div>
+									{tenant.secondaryName && (
+										<div className="text-muted-foreground flex items-center gap-1 text-sm">
+											<Mail className="h-3 w-3" />
+											{tenant.secondaryName}
+										</div>
+									)}
 								</div>
 							</div>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => {
-									setItemIdToDelete(tenant.id || null);
-									toggleDialog(DialogType.DELETE);
-								}}
-								className="text-destructive hover:text-destructive">
-								<Trash2 className="h-4 w-4" />
-							</Button>
+							<div className="flex items-center gap-1">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setEditingTenant(tenant);
+										setEditDialogOpen(true);
+									}}>
+									<Edit className="h-4 w-4" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setItemIdToDelete(tenant.id || null);
+										toggleDialog(DialogType.DELETE);
+									}}
+									className="text-destructive hover:text-destructive">
+									<Trash2 className="h-4 w-4" />
+								</Button>
+							</div>
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-2">
@@ -192,6 +249,16 @@ export const TenantsPage = () => {
 				isOpen={mainDialogOpen}
 				onClose={() => toggleDialog(DialogType.MAIN)}
 				onSubmit={handleAddTenant}
+			/>
+
+			<EditTenantDialog
+				isOpen={editDialogOpen}
+				onClose={() => {
+					setEditDialogOpen(false);
+					setEditingTenant(null);
+				}}
+				onSubmit={handleEditTenant}
+				tenant={editingTenant}
 			/>
 
 			<DeleteDialog

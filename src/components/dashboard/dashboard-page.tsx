@@ -12,8 +12,8 @@ import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
 import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
 import { getTenantShares } from "@/lib/common/utils";
-import { addConsolidatedBill, findById, updateTenantBalance } from "@/lib/data";
-import { constructEmail, queryForBillPayment, sendEmail } from "@/lib/gmail";
+import { addConsolidatedBill, findById } from "@/lib/data";
+import { constructEmail, processTenantPayments, sendEmail } from "@/lib/gmail";
 import { billsHistoryAtom, tenantsAtom, userAtom } from "@/states/store";
 import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
@@ -98,64 +98,43 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 				);
 			});
 
+			if (tenantsWithOutstanding.length === 0) {
+				return;
+			}
+
+			// Set date range for payment detection (last 30 days)
+			const endDate = new Date();
+			const startDate = new Date();
+			startDate.setDate(startDate.getDate() - 30);
+
+			const dateRange = {
+				start: startDate.toISOString().split("T")[0],
+				end: endDate.toISOString().split("T")[0],
+			};
+
 			for (const tenant of tenantsWithOutstanding) {
-				const lastUnpaidBill = billsHistory
-					.filter((bill) => bill.tenantId === tenant.id && !bill.paid)
-					.sort((a, b) => {
-						const dateA = new Date(a.year, a.month - 1, 1);
-						const dateB = new Date(b.year, b.month - 1, 1);
-						return dateB.getTime() - dateA.getTime();
-					})[0];
+				try {
+					const result = await processTenantPayments(
+						tenant,
+						billsHistory,
+						dateRange,
+					);
 
-				if (lastUnpaidBill) {
-					const start = "2025-04-30"; // Replace with your logic if needed
-					const end = now.toISOString().split("T")[0];
-
-					try {
-						const paymentDetails = await queryForBillPayment(tenant, {
-							start,
-							end,
-						});
-						if (!paymentDetails) {
-							toast.info(
-								`No payments found for ${tenant.name} from ${start} to ${end}.`,
-							);
-							continue;
-						}
-						if (
-							paymentDetails.sentFrom
-								.toLowerCase()
-								.includes(tenant.name.toLowerCase())
-						) {
-							const { tenantTotal } = getTenantShares(lastUnpaidBill, tenant);
-							console.log("tenantTotal:", tenantTotal);
-							console.log("outstandingBalance:", outstandingBalance);
-							const newOutstandingBalance =
-								outstandingBalance - Number(paymentDetails.amount);
-							console.log("New outstanding balance:", newOutstandingBalance);
-							// const result = await updateTenantBalance(
-							// 	user?.id,
-							// 	tenant.id,
-							// 	newOutstandingBalance,
-							// );
-							// if (result.acknowledged) {
-							// 	toast.success(
-							// 		`Updated balance for ${tenant.name} to ${newOutstandingBalance}.`,
-							// 	);
-							// } else {
-							// 	toast.error(`Failed to update balance for ${tenant.name}.`);
-							// }
-						}
-					} catch (error) {
-						console.error(`Error querying payments for ${tenant.name}:`, error);
-						toast.error(`Failed to query payments for ${tenant.name}.`);
+					if (result.processed) {
+						toast.success(result.message);
+					} else {
+						// Only show info for tenants with outstanding bills
+						console.log(result.message);
 					}
+				} catch (error) {
+					console.error(`Error processing payments for ${tenant.name}:`, error);
+					toast.error(`Failed to process payments for ${tenant.name}.`);
 				}
 			}
 		};
 
 		checkPayments();
-	}, [billsHistory, now, outstandingBalance, tenantsList, user]);
+	}, [billsHistory, tenantsList, user]);
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {
