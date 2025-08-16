@@ -7,3 +7,10 @@ export interface EmailContent {
 		readonly fileSize: number; // in bytes
 	}[];
 }
+
+export interface Payment {
+	readonly gmailMessageId: string;
+	readonly date: string;
+	readonly sentFrom: string;
+	readonly amount: string;
+}

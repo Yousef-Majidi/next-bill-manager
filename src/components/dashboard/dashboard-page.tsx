@@ -12,8 +12,8 @@ import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
 import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
 import { getTenantShares } from "@/lib/common/utils";
-import { addConsolidatedBill, findById } from "@/lib/data";
-import { constructEmail, sendEmail } from "@/lib/gmail";
+import { addConsolidatedBill, findById, updateTenantBalance } from "@/lib/data";
+import { constructEmail, queryForBillPayment, sendEmail } from "@/lib/gmail";
 import { billsHistoryAtom, tenantsAtom, userAtom } from "@/states/store";
 import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
@@ -38,6 +38,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
 
+	// TODO: Tenants now track their own balances, so this is not needed
 	const outstandingBalance = useMemo(() => {
 		return billsHistory.reduce((sum, bill) => {
 			if (!bill.paid && bill.tenantId) {
@@ -86,6 +87,75 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			setSelectedTenant(null);
 		}
 	}, [setSelectedTenant, currentMonthBill, tenantsList]);
+
+	useEffect(() => {
+		if (!user) return;
+
+		const checkPayments = async () => {
+			const tenantsWithOutstanding = tenantsList.filter((tenant) => {
+				return billsHistory.some(
+					(bill) => bill.tenantId === tenant.id && !bill.paid,
+				);
+			});
+
+			for (const tenant of tenantsWithOutstanding) {
+				const lastUnpaidBill = billsHistory
+					.filter((bill) => bill.tenantId === tenant.id && !bill.paid)
+					.sort((a, b) => {
+						const dateA = new Date(a.year, a.month - 1, 1);
+						const dateB = new Date(b.year, b.month - 1, 1);
+						return dateB.getTime() - dateA.getTime();
+					})[0];
+
+				if (lastUnpaidBill) {
+					const start = "2025-04-30"; // Replace with your logic if needed
+					const end = now.toISOString().split("T")[0];
+
+					try {
+						const paymentDetails = await queryForBillPayment(tenant, {
+							start,
+							end,
+						});
+						if (!paymentDetails) {
+							toast.info(
+								`No payments found for ${tenant.name} from ${start} to ${end}.`,
+							);
+							continue;
+						}
+						if (
+							paymentDetails.sentFrom
+								.toLowerCase()
+								.includes(tenant.name.toLowerCase())
+						) {
+							const { tenantTotal } = getTenantShares(lastUnpaidBill, tenant);
+							console.log("tenantTotal:", tenantTotal);
+							console.log("outstandingBalance:", outstandingBalance);
+							const newOutstandingBalance =
+								outstandingBalance - Number(paymentDetails.amount);
+							console.log("New outstanding balance:", newOutstandingBalance);
+							// const result = await updateTenantBalance(
+							// 	user?.id,
+							// 	tenant.id,
+							// 	newOutstandingBalance,
+							// );
+							// if (result.acknowledged) {
+							// 	toast.success(
+							// 		`Updated balance for ${tenant.name} to ${newOutstandingBalance}.`,
+							// 	);
+							// } else {
+							// 	toast.error(`Failed to update balance for ${tenant.name}.`);
+							// }
+						}
+					} catch (error) {
+						console.error(`Error querying payments for ${tenant.name}:`, error);
+						toast.error(`Failed to query payments for ${tenant.name}.`);
+					}
+				}
+			}
+		};
+
+		checkPayments();
+	}, [billsHistory, now, outstandingBalance, tenantsList, user]);
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {

@@ -1,13 +1,14 @@
 "use server";
 
 import { getUser } from "@/lib/data";
-import { parseMessages } from "@/lib/gmail";
+import { parseMessages, parsePaymentMessage } from "@/lib/gmail";
 import { getGmailClient } from "@/lib/gmail/client";
 import {
 	UtilityBill as Bill,
 	EmailContent,
 	Tenant,
 	UtilityProvider,
+	UtilityProviderCategory,
 } from "@/types";
 
 export const fetchUserBills = async (
@@ -64,6 +65,20 @@ export const fetchUserBills = async (
 				year,
 			});
 		}
+		// Manually adding water bill integration is in place for now
+		bills.push({
+			id: null,
+			gmailMessageId: "manually-added",
+			utilityProvider: {
+				id: null,
+				userId: loggedInUser.id,
+				name: "Manually Added",
+				category: UtilityProviderCategory.Water,
+			},
+			amount: 440.25,
+			month,
+			year,
+		});
 		return bills;
 	} catch (error) {
 		console.error("Error fetching bills:", error);
@@ -107,5 +122,34 @@ export const sendEmail = async (emailContent: EmailContent, tenant: Tenant) => {
 	} catch (error) {
 		console.error("Error sending email:", error);
 		throw new Error("Failed to send email");
+	}
+};
+
+export const queryForBillPayment = async (
+	tenant: Tenant,
+	dateRange = { start: "", end: "" },
+) => {
+	try {
+		const loggedInUser = await getUser();
+		if (!loggedInUser.accessToken) {
+			throw new Error("User is not logged in");
+		}
+		const gmailClient = getGmailClient(loggedInUser.accessToken);
+
+		const query = `from:${tenant.name} after:${dateRange.start} before:${dateRange.end}`;
+		const response = await gmailClient.users.messages.list({
+			userId: "me",
+			q: query,
+		});
+
+		const messages = response.data.messages || [];
+		if (messages.length === 0) {
+			return null;
+		}
+
+		return await parsePaymentMessage(gmailClient, messages);
+	} catch (error) {
+		console.error("Error querying for bill payment:", error);
+		throw new Error("Failed to query for bill payment");
 	}
 };

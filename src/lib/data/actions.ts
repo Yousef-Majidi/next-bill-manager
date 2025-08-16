@@ -216,7 +216,7 @@ export const updateTenantBalance = async (
 	if (result.matchedCount === 0) {
 		throw new Error("Tenant not found or does not belong to user.");
 	}
-	revalidatePath("/dashboard/tenants");
+	revalidatePath("/dashboard");
 	return {
 		acknowledged: result.acknowledged,
 		modifiedCount: result.modifiedCount,

@@ -9,7 +9,7 @@ export default async function Page() {
 	const loggedInUser = await getUser();
 	const availableProviders = await getUtilityProviders(loggedInUser.id);
 	const currentDate = new Date();
-	currentDate.setMonth(currentDate.getMonth() - 1); // Set to prev month for testing
+	// currentDate.setMonth(currentDate.getMonth() - 1); // Set to prev month for testing
 	const fetchedBills = await fetchUserBills(
 		availableProviders,
 		currentDate.getMonth() + 1, // getMonth() is zero-based

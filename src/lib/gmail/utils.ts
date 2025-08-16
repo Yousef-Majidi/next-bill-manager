@@ -1,7 +1,7 @@
 import { gmail_v1 } from "googleapis";
 
 import { getTenantShares } from "@/lib/common/utils";
-import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
+import { ConsolidatedBill, EmailContent, Payment, Tenant } from "@/types";
 
 export const extractDollarAmount = (text: string): string[] => {
 	// const dollarAmountRegex = /\$[0-9,]+(?:\.[0-9]{2})?/g; // Matches dollar amounts like $123.45 or $1,234.56
@@ -10,12 +10,42 @@ export const extractDollarAmount = (text: string): string[] => {
 	return matches ? matches : [];
 };
 
+export const parsePaymentMessage = async (
+	gmailClient: gmail_v1.Gmail,
+	messages: gmail_v1.Schema$Message[],
+): Promise<Payment | null> => {
+	for (const message of messages) {
+		const messageId = message.id!;
+		const messageDetails = await gmailClient.users.messages.get({
+			userId: "me",
+			id: messageId,
+		});
+
+		const payload = messageDetails.data.payload;
+		const body = getMessageBody(payload || {});
+		const paymentMessageDetails = parsePaymentDetails(body);
+
+		if (!paymentMessageDetails) {
+			continue;
+		}
+
+		return {
+			gmailMessageId: messageId,
+			date: paymentMessageDetails.date,
+			sentFrom: paymentMessageDetails.sentFrom,
+			amount: paymentMessageDetails.amount,
+		};
+	}
+
+	return null;
+};
+
 export const parseMessages = async (
 	gmailClient: gmail_v1.Gmail,
 	messages: gmail_v1.Schema$Message[],
 	providerName: string,
 ) => {
-	const billDetails: { messageId: string; dollarAmount: number }[] = [];
+	const billDetails: { messageId: string; dollarAmount: number }[] = []; // TODO: Refactor this to use UtilityBill type
 	for (const message of messages) {
 		const messageId = message.id;
 		const messageDetails = await gmailClient.users.messages.get({
@@ -37,9 +67,9 @@ export const parseMessages = async (
 			continue;
 		}
 
-		const body = messageDetails.data.snippet || "";
+		const snippet = messageDetails.data.snippet || "";
 
-		const extractedAmounts = extractDollarAmount(body);
+		const extractedAmounts = extractDollarAmount(snippet);
 		for (const amount of extractedAmounts) {
 			const numericAmount = parseFloat(amount.replace(/[$,]/g, ""));
 			if (!isNaN(numericAmount)) {
@@ -167,5 +197,42 @@ export const constructEmail = (
 	return {
 		subject,
 		body,
+	};
+};
+
+const getMessageBody = (payload: gmail_v1.Schema$MessagePart): string => {
+	if (payload.body && payload.body.data) {
+		return Buffer.from(payload.body.data, "base64").toString("utf-8");
+	}
+	if (payload.parts && Array.isArray(payload.parts)) {
+		for (const part of payload.parts) {
+			// Prefer text/plain, fallback to text/html
+			if (part.mimeType === "text/plain" || part.mimeType === "text/html") {
+				if (part.body && part.body.data) {
+					return Buffer.from(part.body.data, "base64").toString("utf-8");
+				}
+			}
+			// Recursively check nested parts
+			const nested = getMessageBody(part);
+			if (nested) return nested;
+		}
+	}
+	return "";
+};
+
+const parsePaymentDetails = (body: string): Payment | null => {
+	const dateMatch = body.match(/Date:\s*(.+)/i);
+	const sentFromMatch = body.match(/Sent From:\s*(.+)/i);
+	const amountMatch = body.match(/Amount:\s*\$?([\d,]+\.\d{2})/i);
+
+	if (!dateMatch || !sentFromMatch || !amountMatch) {
+		return null;
+	}
+
+	return {
+		gmailMessageId: "", // Placeholder, as we don't have the message ID here
+		date: dateMatch[1].trim(),
+		sentFrom: sentFromMatch[1].trim(),
+		amount: amountMatch[1].trim(),
 	};
 };
