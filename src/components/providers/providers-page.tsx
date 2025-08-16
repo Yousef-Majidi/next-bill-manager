@@ -47,6 +47,7 @@ export const ProvidersPage = () => {
 		if (!user) return;
 		try {
 			const result = await addUtilityProvider(user.id, {
+				id: "",
 				userId: user.id,
 				name: data.name,
 				category: data.category as UtilityProviderCategory,

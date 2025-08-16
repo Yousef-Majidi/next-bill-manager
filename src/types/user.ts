@@ -1,7 +1,7 @@
 export interface User {
-	id: string;
-	name: string;
-	email: string;
-	accessToken?: string;
-	accessTokenExp?: number;
+	readonly id: string;
+	readonly name: string;
+	readonly email: string;
+	readonly accessToken: string;
+	readonly accessTokenExp: number;
 }

@@ -1,11 +1,14 @@
 "use server";
 
-import { getUser } from "@/lib/data";
-import { parseMessages } from "@/lib/gmail";
+import { getTenantShares, roundToCurrency } from "@/lib/common/utils";
+import { getUser, markBillAsPaid, updateTenantBalance } from "@/lib/data";
+import { parseMessages, parsePaymentMessage } from "@/lib/gmail";
 import { getGmailClient } from "@/lib/gmail/client";
 import {
 	UtilityBill as Bill,
+	ConsolidatedBill,
 	EmailContent,
+	Payment,
 	Tenant,
 	UtilityProvider,
 } from "@/types";
@@ -36,6 +39,7 @@ export const fetchUserBills = async (
 			const messages = response.data.messages || [];
 			if (messages.length === 0) {
 				bills.push({
+					id: null,
 					gmailMessageId: "",
 					utilityProvider: provider,
 					amount: 0,
@@ -52,6 +56,7 @@ export const fetchUserBills = async (
 			);
 
 			bills.push({
+				id: null, // Assuming id is generated later or not needed immediately
 				utilityProvider: provider,
 				gmailMessageId: billDetails.map((detail) => detail.messageId).join(","),
 				amount: billDetails.reduce(
@@ -105,5 +110,178 @@ export const sendEmail = async (emailContent: EmailContent, tenant: Tenant) => {
 	} catch (error) {
 		console.error("Error sending email:", error);
 		throw new Error("Failed to send email");
+	}
+};
+
+export const queryForBillPayment = async (
+	tenant: Tenant,
+	dateRange = { start: "", end: "" },
+) => {
+	try {
+		const loggedInUser = await getUser();
+		if (!loggedInUser.accessToken) {
+			throw new Error("User is not logged in");
+		}
+		const gmailClient = getGmailClient(loggedInUser.accessToken);
+
+		// Search for payments from either primary name or secondary name
+		const searchNames = [tenant.name];
+		if (tenant.secondaryName) {
+			searchNames.push(tenant.secondaryName);
+		}
+
+		// Try each name in the search
+		for (const name of searchNames) {
+			const query = `from:"${name}" after:${dateRange.start} before:${dateRange.end}`;
+			const response = await gmailClient.users.messages.list({
+				userId: "me",
+				q: query,
+			});
+
+			const messages = response.data.messages || [];
+			if (messages.length > 0) {
+				const payment = await parsePaymentMessage(gmailClient, messages);
+				if (payment) {
+					return payment;
+				}
+			}
+		}
+
+		return null;
+	} catch (error) {
+		console.error("Error querying for bill payment:", error);
+		throw new Error("Failed to query for bill payment");
+	}
+};
+
+export const processTenantPayments = async (
+	tenant: Tenant,
+	billsHistory: ConsolidatedBill[],
+	dateRange: { start: string; end: string },
+) => {
+	try {
+		const loggedInUser = await getUser();
+		if (!loggedInUser.accessToken) {
+			throw new Error("User is not logged in");
+		}
+
+		// Find all unpaid bills for this tenant
+		const unpaidBills = billsHistory.filter(
+			(bill) => bill.tenantId === tenant.id && !bill.paid,
+		);
+
+		if (unpaidBills.length === 0) {
+			return { processed: false, message: "No unpaid bills found for tenant" };
+		}
+
+		// Sort unpaid bills by date (oldest first to process oldest bills first)
+		const sortedUnpaidBills = unpaidBills.sort((a, b) => {
+			const dateA = new Date(a.year, a.month - 1, 1);
+			const dateB = new Date(b.year, b.month - 1, 1);
+			return dateA.getTime() - dateB.getTime();
+		});
+
+		// Search for payments from either primary name or secondary name
+		const searchNames = [tenant.name];
+		if (tenant.secondaryName) {
+			searchNames.push(tenant.secondaryName);
+		}
+
+		const gmailClient = getGmailClient(loggedInUser.accessToken);
+
+		// Try each name in the search
+		for (const name of searchNames) {
+			const query = `from:"${name}" after:${dateRange.start} before:${dateRange.end}`;
+			const response = await gmailClient.users.messages.list({
+				userId: "me",
+				q: query,
+			});
+
+			const messages = response.data.messages || [];
+			if (messages.length > 0) {
+				const payment = await parsePaymentMessage(gmailClient, messages);
+				if (payment) {
+					const paymentAmount = roundToCurrency(Number(payment.amount));
+
+					// Check each unpaid bill to see if the payment matches
+					for (const bill of sortedUnpaidBills) {
+						// Calculate tenant's share for this bill
+						const { tenantTotal } = getTenantShares(bill, tenant);
+
+						// Calculate expected amount for this specific bill
+						// For the first unpaid bill, include outstanding balance
+						// For subsequent bills, just the tenant's share
+						const isFirstUnpaidBill = bill === sortedUnpaidBills[0];
+						const expectedAmount = isFirstUnpaidBill
+							? tenantTotal + tenant.outstandingBalance
+							: tenantTotal;
+
+						const tolerance = 0.01; // $0.01 tolerance for rounding differences
+
+						if (Math.abs(paymentAmount - expectedAmount) <= tolerance) {
+							// Payment matches this bill! Process it
+							return await processPaymentMatch(
+								loggedInUser.id,
+								tenant,
+								bill,
+								payment,
+								paymentAmount,
+							);
+						}
+					}
+
+					// Payment found but doesn't match any unpaid bill
+					const totalUnpaid =
+						sortedUnpaidBills.reduce((sum, bill) => {
+							const { tenantTotal } = getTenantShares(bill, tenant);
+							return sum + tenantTotal;
+						}, 0) + tenant.outstandingBalance;
+					return {
+						processed: false,
+						message: `Payment found for ${tenant.name} ($${paymentAmount}) but doesn't match any unpaid bill. Total tenant unpaid: $${totalUnpaid}`,
+					};
+				}
+			}
+		}
+
+		return {
+			processed: false,
+			message: `No payments found for ${tenant.name}`,
+		};
+	} catch (error) {
+		console.error("Error processing tenant payments:", error);
+		throw new Error("Failed to process tenant payments");
+	}
+};
+
+const processPaymentMatch = async (
+	userId: string,
+	tenant: Tenant,
+	bill: ConsolidatedBill,
+	payment: Payment,
+	paymentAmount: number,
+) => {
+	try {
+		// Mark bill as paid
+		if (bill.id) {
+			await markBillAsPaid(userId, bill.id, payment.gmailMessageId);
+		}
+
+		// Update tenant balance
+		const newBalance = roundToCurrency(
+			Math.max(0, tenant.outstandingBalance - paymentAmount),
+		);
+		await updateTenantBalance(userId, tenant.id, newBalance);
+
+		return {
+			processed: true,
+			message: `Payment of $${paymentAmount} processed for ${tenant.name}`,
+			paymentAmount,
+			billId: bill.id,
+			newBalance,
+		};
+	} catch (error) {
+		console.error("Error processing payment match:", error);
+		throw new Error("Failed to process payment match");
 	}
 };

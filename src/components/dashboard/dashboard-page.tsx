@@ -3,92 +3,179 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAtom } from "jotai";
-import { CheckCircle, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common";
 import { ConsolidatedBillSection, StatsSummary } from "@/components/dashboard";
 import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog";
-import {
-	Badge,
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui";
+import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
+import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
-import { addConsolidatedBill } from "@/lib/data";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { constructEmail, fetchUserBills, sendEmail } from "@/lib/gmail";
-import { tenantsAtom, userAtom, utilityProvidersAtom } from "@/states/store";
-import {
-	UtilityBill as Bill,
-	ConsolidatedBill,
-	EmailContent,
-	Tenant,
-	UtilityProviderCategory as UtilityCategory,
-} from "@/types";
-
-const lastMonthBills = [
-	{
-		id: "1",
-		month: "November 2024",
-		categories: {
-			electricity: { amount: 140, provider: "City Electric" },
-			water: { amount: 75, provider: "Metro Water" },
-			gas: { amount: 110, provider: "Natural Gas Co" },
-		},
-		totalAmount: 325,
-		tenant: "John Doe",
-		tenantTotalShare: 162.5,
-		tenantShares: {
-			electricity: 70, // 50% of 140
-			water: 37.5, // 50% of 75
-			gas: 55, // 50% of 110
-		},
-		paid: true,
-		dateSent: "2024-11-05",
-	},
-	{
-		id: "2",
-		month: "November 2024",
-		categories: {
-			electricity: { amount: 140, provider: "City Electric" },
-			water: { amount: 75, provider: "Metro Water" },
-			gas: { amount: 110, provider: "Natural Gas Co" },
-		},
-		totalAmount: 325,
-		tenant: "Jane Smith",
-		tenantTotalShare: 162.5,
-		tenantShares: {
-			electricity: 70, // 50% of 140
-			water: 37.5, // 50% of 75
-			gas: 55, // 50% of 110
-		},
-		paid: false,
-		dateSent: "2024-11-05",
-	},
-];
+import { getTenantShares } from "@/lib/common/utils";
+import { addConsolidatedBill, findById } from "@/lib/data";
+import { constructEmail, processTenantPayments, sendEmail } from "@/lib/gmail";
+import { billsHistoryAtom, tenantsAtom, userAtom } from "@/states/store";
+import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
 
 interface DashboardPageProps {
-	readonly currentMonthBills: Bill[];
+	readonly currentMonthBill: ConsolidatedBill | null;
 }
 
-export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
-	const currentDate = useMemo(() => new Date(), []);
+export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
+	const now = useMemo(() => new Date(), []);
+	const currentDateString = now.toLocaleDateString("en-US", {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+	});
 	const [user] = useAtom(userAtom);
 	const [tenantsList] = useAtom(tenantsAtom);
-	const [providersList] = useAtom(utilityProvidersAtom);
+	const [billsHistory] = useAtom(billsHistoryAtom);
 	const { mainDialogOpen, toggleDialog } = useDialogState();
 	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
+	// const [isLastMonthPaid, setIsLastMonthPaid] = useState<boolean>(false);
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
-	const [selectedMonth, setSelectedMonth] = useState(
-		currentDate.getMonth() + 1,
-	); // 1-based month
-	const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+	const handleWaterAmountChange = (amount: number) => {
+		if (consolidatedBill) {
+			const updatedBill = {
+				...consolidatedBill,
+				categories: {
+					...consolidatedBill.categories,
+					Water: {
+						...consolidatedBill.categories.Water,
+						amount: amount,
+					},
+				},
+				totalAmount: Object.values({
+					...consolidatedBill.categories,
+					Water: {
+						...consolidatedBill.categories.Water,
+						amount: amount,
+					},
+				}).reduce((sum, category) => sum + category.amount, 0),
+			};
+			setConsolidatedBill(updatedBill);
+
+			if (amount === 0) {
+				toast.success("Water bill amount reset to $0.00");
+			} else {
+				toast.success(`Water bill amount updated to $${amount.toFixed(2)}`);
+			}
+		}
+	};
+
+	// TODO: Tenants now track their own balances, so this is not needed
+	const outstandingBalance = useMemo(() => {
+		return billsHistory.reduce((sum, bill) => {
+			if (!bill.paid && bill.tenantId) {
+				const tenant = findById(tenantsList, bill.tenantId);
+				if (tenant) {
+					const { tenantTotal } = getTenantShares(bill, tenant);
+					return sum + tenantTotal;
+				}
+			}
+			return sum;
+		}, 0);
+	}, [billsHistory, tenantsList]);
+
+	const lastMonthConsolidatedBill = useMemo(() => {
+		const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+		const lastMonthYear = prevMonth.getFullYear();
+		const lastMonthMonth = prevMonth.getMonth();
+
+		return billsHistory.filter((bill) => {
+			const billDate = new Date(bill.year, bill.month - 1, 1);
+			return (
+				billDate.getFullYear() === lastMonthYear &&
+				billDate.getMonth() === lastMonthMonth
+			);
+		});
+	}, [billsHistory, now]);
+
+	const lastMonthTenant = useMemo(
+		() => findById(tenantsList, lastMonthConsolidatedBill[0]?.tenantId ?? ""),
+		[lastMonthConsolidatedBill, tenantsList],
+	);
+
+	const lastMonthTenantTotal = useMemo(() => {
+		return lastMonthConsolidatedBill[0] && lastMonthTenant
+			? getTenantShares(lastMonthConsolidatedBill[0], lastMonthTenant)
+					.tenantTotal
+			: 0;
+	}, [lastMonthConsolidatedBill, lastMonthTenant]);
+
+	const paidAmount = useMemo(() => {
+		return lastMonthConsolidatedBill.reduce((sum, bill) => {
+			if (bill.paid && bill.tenantId) {
+				const tenant = findById(tenantsList, bill.tenantId);
+				if (tenant) {
+					const { tenantTotal } = getTenantShares(bill, tenant);
+					return sum + tenantTotal;
+				}
+			}
+			return sum;
+		}, 0);
+	}, [lastMonthConsolidatedBill, tenantsList]);
+
+	useEffect(() => {
+		if (tenantsList?.length > 0) {
+			setSelectedTenant(tenantsList[0]);
+			setConsolidatedBill(currentMonthBill);
+		} else if (tenantsList) {
+			toast.warning("No tenants available for this user.");
+			setSelectedTenant(null);
+		}
+	}, [setSelectedTenant, currentMonthBill, tenantsList]);
+
+	useEffect(() => {
+		if (!user) return;
+
+		const checkPayments = async () => {
+			const tenantsWithOutstanding = tenantsList.filter((tenant) => {
+				return billsHistory.some(
+					(bill) => bill.tenantId === tenant.id && !bill.paid,
+				);
+			});
+
+			if (tenantsWithOutstanding.length === 0) {
+				return;
+			}
+
+			// Set date range for payment detection (last 30 days)
+			const endDate = new Date();
+			const startDate = new Date();
+			startDate.setDate(startDate.getDate() - 30);
+
+			const dateRange = {
+				start: startDate.toISOString().split("T")[0],
+				end: endDate.toISOString().split("T")[0],
+			};
+
+			for (const tenant of tenantsWithOutstanding) {
+				try {
+					const result = await processTenantPayments(
+						tenant,
+						billsHistory,
+						dateRange,
+					);
+
+					if (result.processed) {
+						toast.success(result.message);
+					} else {
+						toast.info(result.message);
+					}
+				} catch (error) {
+					console.error(`Error processing payments for ${tenant.name}:`, error);
+					toast.error(`Failed to process payments for ${tenant.name}.`);
+				}
+			}
+		};
+
+		checkPayments();
+	}, [billsHistory, tenantsList, user]);
 
 	const handleSendBill = () => {
 		if (!selectedTenant) {
@@ -96,17 +183,12 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			return;
 		}
 
-		const tenant = tenantsList.find((t) => t.id === selectedTenant.id);
-		if (!tenant) {
-			toast.error("Selected tenant not found.");
-			return;
-		}
-
 		if (!consolidatedBill) {
 			toast.error("No bills available for the current month.");
 			return;
 		}
-		setEmailContent(constructEmail(tenant, consolidatedBill));
+		const emailContent = constructEmail(selectedTenant, consolidatedBill);
+		setEmailContent(emailContent);
 		toggleDialog(DialogType.MAIN);
 	};
 
@@ -115,13 +197,11 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 			toast.error("No email content to send.");
 			return;
 		}
-
-		const tenant = tenantsList.find((t) => t.id === selectedTenant?.id);
-		if (!tenant) {
-			toast.error("Selected tenant not found.");
+		if (!selectedTenant) {
+			toast.error("No tenant selected to send the bill.");
 			return;
 		}
-		if (!consolidatedBill) {
+		if (!consolidatedBill || consolidatedBill.totalAmount <= 0) {
 			toast.error("No consolidated bill available to add.");
 			return;
 		}
@@ -131,17 +211,23 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 		}
 
 		try {
-			// const result = await sendEmail(emailContent, tenant);
-			// if (result.success) {
-			// 	toast.success(`Email sent to ${tenant.name} successfully!`);
-			// } else {
-			// 	toast.error(`Failed to send email to ${tenant.name}. Please try again.`);
-			// }
-			const newBill = await addConsolidatedBill(user.id, consolidatedBill);
-			if (newBill.acknowledged) {
-				toast.success("Consolidated bill added successfully!");
+			const result = await sendEmail(emailContent, selectedTenant);
+			if (result.success) {
+				// Update the consolidated bill with tenant ID and sent date before saving
+				const billToSave = {
+					...consolidatedBill,
+					tenantId: selectedTenant.id,
+					dateSent: new Date().toISOString(),
+				};
+
+				const newBill = await addConsolidatedBill(user.id, billToSave);
+				if (newBill.acknowledged) {
+					toast.success(
+						`Email sent and bill added for ${selectedTenant.name}!`,
+					);
+				}
 			} else {
-				toast.error("Failed to add consolidated bill. Please try again.");
+				toast.error(`Failed to send email to ${selectedTenant.name}.`);
 			}
 		} catch (error) {
 			console.error("Error sending email:", error);
@@ -150,242 +236,61 @@ export const DashboardPage = ({ currentMonthBills }: DashboardPageProps) => {
 
 		toggleDialog(DialogType.MAIN);
 		setEmailContent(null);
-		// setSelectedTenant(null);
 	};
-
-	const handleMonthChange = async (
-		event: React.ChangeEvent<HTMLSelectElement>,
-	) => {
-		const newMonth = parseInt(event.target.value, 10);
-		setSelectedMonth(newMonth);
-
-		await fetchAndSetBill(newMonth, selectedYear);
-	};
-
-	const handleYearChange = async (
-		event: React.ChangeEvent<HTMLSelectElement>,
-	) => {
-		const newYear = parseInt(event.target.value, 10);
-		setSelectedYear(newYear);
-
-		await fetchAndSetBill(selectedMonth, newYear);
-	};
-
-	const fetchAndSetBill = async (month: number, year: number) => {
-		try {
-			if (!user?.id || !tenantsList?.length) {
-				toast.error(
-					!user?.id
-						? "User not found. Please log in."
-						: "No tenants available.",
-				);
-				return;
-			}
-
-			const bills = await fetchUserBills(providersList, month, year);
-
-			const categories = bills.reduce(
-				(acc, bill) => {
-					const categoryKey = bill.utilityProvider
-						.category as keyof typeof UtilityCategory;
-					return {
-						...acc,
-						[categoryKey]: acc[categoryKey]
-							? {
-									...acc[categoryKey],
-									amount: acc[categoryKey].amount + bill.amount,
-								}
-							: {
-									gmailMessageId: bill.gmailMessageId,
-									amount: bill.amount,
-									providerId: bill.utilityProvider.id,
-									providerName: bill.utilityProvider.name,
-								},
-					};
-				},
-				{} as ConsolidatedBill["categories"],
-			);
-
-			const totalAmount = bills.reduce((sum, bill) => sum + bill.amount, 0);
-
-			// Construct a date for the last day of the given month/year
-			const lastDayOfMonth = new Date(year, month, 0);
-
-			const consolidatedBill: ConsolidatedBill = {
-				id: undefined,
-				userId: user.id,
-				month,
-				year,
-				tenantId: selectedTenant?.id || "",
-				categories,
-				totalAmount: Number(totalAmount.toFixed(2)),
-				paid: true,
-				dateSent: lastDayOfMonth.toDateString(),
-			};
-
-			setConsolidatedBill(consolidatedBill);
-		} catch (error) {
-			console.error("Error fetching bills for the selected date:", error);
-			toast.error(
-				"Failed to fetch bills for the selected date. Please try again.",
-			);
-		}
-	};
-
-	// Fetch user bills when component mounts
-	useEffect(() => {
-		if (!tenantsList?.length || !user?.id) {
-			toast.error(
-				!user?.id ? "User not found. Please log in." : "No tenants available.",
-			);
-			return;
-		}
-
-		// const tenant = tenantsList[0];
-		// setSelectedTenant(tenant);
-		// const categories = currentMonthBills.reduce(
-		// 	(acc, bill) => {
-		// 		const categoryKey = bill.utilityProvider
-		// 			.category as keyof typeof UtilityCategory;
-		// 		return {
-		// 			...acc,
-		// 			[categoryKey]: acc[categoryKey]
-		// 				? {
-		// 						...acc[categoryKey],
-		// 						amount: acc[categoryKey].amount + bill.amount,
-		// 					}
-		// 				: {
-		// 						gmailMessageId: bill.gmailMessageId,
-		// 						amount: bill.amount,
-		// 						providerId: bill.utilityProvider.id,
-		// 						providerName: bill.utilityProvider.name,
-		// 					},
-		// 		};
-		// 	},
-		// 	{} as ConsolidatedBill["categories"],
-		// );
-		// const totalAmount = currentMonthBills.reduce(
-		// 	(sum, bill) => sum + bill.amount,
-		// 	0,
-		// );
-		// const consolidatedBill: ConsolidatedBill = {
-		// 	id: undefined,
-		// 	userId: user.id,
-		// 	month: currentDate.getMonth() + 1,
-		// 	year: currentDate.getFullYear(),
-		// 	tenantId: tenant.id,
-		// 	categories: categories,
-		// 	totalAmount: totalAmount,
-		// 	paid: false,
-		// 	dateSent: currentDate.toDateString(),
-		// };
-		// setConsolidatedBill(consolidatedBill);
-	}, [currentDate, currentMonthBills, tenantsList, user?.id]);
 
 	return (
 		<div className="flex flex-col gap-6">
+			{(() => {
+				if (consolidatedBill?.month !== now.getMonth() + 1) {
+					return (
+						<div className="mb-2 rounded bg-red-100 px-4 py-2 font-mono font-bold text-red-700">
+							DEBUG MODE: Displaying bills for{" "}
+							{consolidatedBill
+								? new Date(
+										consolidatedBill.year,
+										consolidatedBill.month - 1,
+									).toLocaleString("en-US", {
+										month: "long",
+										year: "numeric",
+									})
+								: ""}
+							.
+						</div>
+					);
+				}
+				return null;
+			})()}
 			<PageHeader
 				title={`Welcome ${user?.name || "User"}!`}
 				subtitle={
 					<Badge variant="outline" className="hidden sm:flex">
-						{currentDate.toLocaleDateString("en-US", {
-							month: "long",
-							day: "numeric",
-							year: "numeric",
-						})}
+						{currentDateString}
 					</Badge>
 				}
 			/>
-			<StatsSummary currentMonthTotal={consolidatedBill?.totalAmount || 0} />
-			{/* A dropdown to let user select a different date */}
-			<div className="flex items-center gap-4">
-				<label htmlFor="month-select" className="font-medium">
-					Select Month:
-				</label>
-				<select
-					id="month-select"
-					className="rounded border px-2 py-1"
-					value={selectedMonth}
-					onChange={handleMonthChange}>
-					{Array.from({ length: 12 }).map((_, idx) => (
-						<option key={idx + 1} value={idx + 1}>
-							{new Date(0, idx).toLocaleDateString("en-US", { month: "long" })}
-						</option>
-					))}
-				</select>
-				<label htmlFor="year-select" className="font-medium">
-					Select Year:
-				</label>
-				<select
-					id="year-select"
-					className="rounded border px-2 py-1"
-					value={selectedYear}
-					onChange={handleYearChange}>
-					{Array.from({ length: 10 }).map((_, idx) => {
-						const year = currentDate.getFullYear() - idx;
-						return (
-							<option key={year} value={year}>
-								{year}
-							</option>
-						);
-					})}
-				</select>
-			</div>
-			{/* Current Month Bill */}
-			{consolidatedBill && (
-				<ConsolidatedBillSection
-					consolidatedBill={consolidatedBill}
-					tenantsList={tenantsList}
-					selectedTenant={selectedTenant}
-					setSelectedTenant={setSelectedTenant}
-					handleSendBill={handleSendBill}
-				/>
-			)}
 
-			{/* Last Month Bills Summary */}
-			<Card>
-				<CardHeader>
-					<CardTitle>Last Month Bills</CardTitle>
-					<CardDescription>
-						November 2024 - Bills sent to tenants
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-3">
-						{lastMonthBills.map((bill, index) => (
-							<div
-								key={index}
-								className="flex items-center justify-between rounded-lg border p-4">
-								<div className="flex items-center gap-4">
-									<div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-										<FileText className="h-5 w-5" />
-									</div>
-									<div>
-										<p className="font-medium">{bill.tenant}</p>
-										<p className="text-muted-foreground text-sm">
-											Total Bill: ${bill.totalAmount} | Tenant Share: $
-											{bill.tenantTotalShare}
-										</p>
-									</div>
-								</div>
-								<Badge variant={bill.paid ? "default" : "destructive"}>
-									{bill.paid ? (
-										<>
-											<CheckCircle className="mr-1 h-3 w-3" />
-											Paid
-										</>
-									) : (
-										<>
-											<Clock className="mr-1 h-3 w-3" />
-											Unpaid
-										</>
-									)}
-								</Badge>
-							</div>
-						))}
-					</div>
-				</CardContent>
-			</Card>
+			<StatsSummary
+				currentMonthTotal={consolidatedBill?.totalAmount || 0}
+				lastMonthTotal={lastMonthTenantTotal}
+				outstandingBalance={outstandingBalance}
+				paidAmount={paidAmount}
+			/>
+
+			<ConsolidatedBillSection
+				consolidatedBill={consolidatedBill}
+				tenantsList={tenantsList}
+				selectedTenant={selectedTenant}
+				setSelectedTenant={setSelectedTenant}
+				handleSendBill={handleSendBill}
+				onWaterAmountChange={handleWaterAmountChange}
+			/>
+
+			<LastMonthSummary
+				currentDate={now}
+				lastMonthBills={lastMonthConsolidatedBill}
+				tenantsList={tenantsList}
+			/>
+
 			{/* Email Confirmation Dialog */}
 			{emailContent && selectedTenant && (
 				<EmailPreviewDialog

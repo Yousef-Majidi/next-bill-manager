@@ -21,11 +21,13 @@ export const authConfig = {
 			isNewUser?: boolean;
 			session?: Session;
 		}) => {
-			if (!account) return token;
-			if (account.access_token) {
-				token.accessToken = account.access_token;
-				token.accessTokenExp = account.expires_at;
-				token.providerAccountId = account.providerAccountId;
+			if (account) {
+				if (account.access_token) {
+					token.accessToken = account.access_token;
+					token.accessTokenExp = account.expires_at;
+					token.providerAccountId = account.providerAccountId;
+				}
+				return token;
 			}
 
 			const now = Math.floor(Date.now() / 1000);

@@ -1,15 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth";
 
+import { roundToCurrency } from "@/lib/common/utils";
 import { authOptions } from "@/lib/server/auth";
 import client from "@/lib/server/mongodb";
 import {
 	ConsolidatedBill,
 	Tenant,
+	TenantFormData,
 	User,
 	UtilityProvider,
 	UtilityProviderCategory,
@@ -21,11 +24,8 @@ export const isTokenExpired = async (tokenExp: number) => {
 
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
-	if (!session || !session.user) {
-		throw new Error("User is not authenticated.");
-	}
 	if (await isTokenExpired(session.accessTokenExp)) {
-		throw new Error("Access token is expired.");
+		redirect("/");
 	}
 	return {
 		id: session.providerAccountId,
@@ -120,42 +120,52 @@ export const updateUtilityProvider = async (
 	};
 };
 
-export const getTenants = async (userId: string) => {
-	const db = client.db(process.env.MONGODB_DATABASE_NAME);
-	const collection = await db
-		.collection(process.env.MONGODB_TENANTS!)
-		.find({ user_id: userId })
-		.toArray();
-	return collection.map((tenant) => ({
-		id: tenant._id.toString(),
-		userId: tenant.user_id,
-		name: tenant.name,
-		email: tenant.email,
-		shares: tenant.shares,
-	})) as Tenant[];
+export const getTenants = async (userId: string): Promise<Tenant[]> => {
+	try {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const collection = await db
+			.collection(process.env.MONGODB_TENANTS!)
+			.find({ user_id: userId })
+			.toArray();
+
+		return collection.map((tenant) => ({
+			id: tenant._id.toString(),
+			userId: tenant.user_id,
+			name: tenant.name,
+			email: tenant.email,
+			secondaryName: tenant.secondary_name ?? undefined,
+			shares: tenant.shares,
+			outstandingBalance: tenant.outstanding_balance,
+		})) as Tenant[];
+	} catch (error) {
+		console.error("Error getting tenants:", error);
+		throw new Error("Failed to get tenants");
+	}
 };
 
-export const addTenant = async (userId: string, tenant: Omit<Tenant, "id">) => {
-	const db = client.db(process.env.MONGODB_DATABASE_NAME);
-	const existingTenant = await db
-		.collection(process.env.MONGODB_TENANTS!)
-		.findOne({ user_id: userId, email: tenant.email });
-	if (existingTenant) {
-		throw new Error(`Tenant with email "${tenant.email}" already exists.`);
-	}
+export const addTenant = async (
+	userId: string,
+	tenant: TenantFormData,
+): Promise<{ acknowledged: boolean; insertedId: string }> => {
+	try {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const result = await db.collection(process.env.MONGODB_TENANTS!).insertOne({
+			user_id: userId,
+			name: tenant.name,
+			email: tenant.email,
+			secondary_name: tenant.secondaryName ?? null,
+			shares: tenant.shares,
+			outstanding_balance: 0,
+		});
 
-	const result = await db.collection(process.env.MONGODB_TENANTS!).insertOne({
-		user_id: userId,
-		name: tenant.name,
-		email: tenant.email,
-		shares: tenant.shares,
-	});
-	revalidatePath("/dashboard/tenants");
-	return {
-		acknowledged: result.acknowledged,
-		insertedId: result.insertedId.toString(),
-		insertedName: tenant.name,
-	};
+		return {
+			acknowledged: result.acknowledged,
+			insertedId: result.insertedId.toString(),
+		};
+	} catch (error) {
+		console.error("Error adding tenant:", error);
+		throw new Error("Failed to add tenant");
+	}
 };
 
 export const deleteTenant = async (userId: string, tenantId: string) => {
@@ -177,30 +187,93 @@ export const deleteTenant = async (userId: string, tenantId: string) => {
 export const updateTenant = async (
 	userId: string,
 	tenantId: string,
-	tenant: Tenant,
+	updatedTenant: TenantFormData,
+): Promise<{ acknowledged: boolean }> => {
+	try {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const result = await db.collection(process.env.MONGODB_TENANTS!).updateOne(
+			{ _id: new ObjectId(tenantId), user_id: userId },
+			{
+				$set: {
+					name: updatedTenant.name,
+					email: updatedTenant.email,
+					secondary_name: updatedTenant.secondaryName ?? null,
+					shares: updatedTenant.shares,
+				},
+			},
+		);
+
+		return { acknowledged: result.acknowledged };
+	} catch (error) {
+		console.error("Error updating tenant:", error);
+		throw new Error("Failed to update tenant");
+	}
+};
+
+export const updateTenantBalance = async (
+	userId: string,
+	tenantId: string,
+	balance: number = 0,
 ) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
-	const result = await db.collection(process.env.MONGODB_TENANTS!).updateOne(
-		{ _id: new ObjectId(tenantId), user_id: userId },
-		{
-			$set: { name: tenant.name, email: tenant.email, shares: tenant.shares },
-		},
-	);
+	const result = await db
+		.collection(process.env.MONGODB_TENANTS!)
+		.updateOne(
+			{ _id: new ObjectId(tenantId), user_id: userId },
+			{ $set: { outstanding_balance: roundToCurrency(balance) } },
+		);
 	if (result.matchedCount === 0) {
 		throw new Error("Tenant not found or does not belong to user.");
 	}
-	revalidatePath("/dashboard/tenants");
+	revalidatePath("/dashboard");
 	return {
 		acknowledged: result.acknowledged,
 		modifiedCount: result.modifiedCount,
 	};
 };
 
-export const getConsolidatedBills = async (userId: string) => {
+export const markBillAsPaid = async (
+	userId: string,
+	billId: string,
+	paymentMessageId: string,
+) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const result = await db
+		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+		.updateOne(
+			{ _id: new ObjectId(billId), user_id: userId },
+			{
+				$set: {
+					paid: true,
+					date_paid: new Date().toISOString(),
+					payment_message_id: paymentMessageId,
+				},
+			},
+		);
+	if (result.matchedCount === 0) {
+		throw new Error("Bill not found or does not belong to user.");
+	}
+	revalidatePath("/dashboard");
+	return {
+		acknowledged: result.acknowledged,
+		modifiedCount: result.modifiedCount,
+	};
+};
+
+export const getConsolidatedBills = async (
+	userId: string,
+	date?: { year: number; month: number },
+) => {
+	const db = client.db(process.env.MONGODB_DATABASE_NAME);
+	const query: Record<string, unknown> = { user_id: userId };
+	if (date) {
+		query.year = date.year;
+		query.month = date.month;
+	}
 	const collection = await db
 		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
-		.find({ user_id: userId })
+		.find(query)
+		.sort({ year: -1, month: -1 }) // Sort by year descending, then month descending
 		.toArray();
 	return collection.map((bill) => ({
 		id: bill._id.toString(),
@@ -260,7 +333,7 @@ export const addConsolidatedBill = async (
 			month: bill.month,
 			tenant_id: bill.tenantId,
 			categories: bill.categories,
-			total_amount: bill.totalAmount,
+			total_amount: roundToCurrency(bill.totalAmount),
 			paid: bill.paid,
 			date_sent: bill.dateSent,
 			date_paid: bill.datePaid,

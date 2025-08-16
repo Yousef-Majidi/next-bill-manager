@@ -23,11 +23,12 @@ import { getTenantShares } from "@/lib/common/utils";
 import { ConsolidatedBill, Tenant } from "@/types";
 
 interface ConsolidatedBillSectionProps {
-	readonly consolidatedBill: ConsolidatedBill;
+	readonly consolidatedBill: ConsolidatedBill | null;
 	readonly tenantsList: Tenant[];
 	readonly selectedTenant: Tenant | null;
 	readonly setSelectedTenant: Dispatch<SetStateAction<Tenant | null>>;
 	readonly handleSendBill: () => void;
+	readonly onWaterAmountChange?: (amount: number) => void;
 }
 
 export const ConsolidatedBillSection = ({
@@ -36,7 +37,21 @@ export const ConsolidatedBillSection = ({
 	selectedTenant,
 	setSelectedTenant,
 	handleSendBill,
+	onWaterAmountChange,
 }: ConsolidatedBillSectionProps) => {
+	if (!consolidatedBill) {
+		return (
+			<Card className="h-full items-center">
+				<CardHeader className="w-full text-center">
+					<CardTitle>No bill available for this month.</CardTitle>
+					<CardDescription>
+						None of your providers have emailed you any bills yet...
+					</CardDescription>
+				</CardHeader>
+			</Card>
+		);
+	}
+
 	const tenantShares = selectedTenant
 		? getTenantShares(consolidatedBill, selectedTenant)
 		: null;
@@ -58,7 +73,11 @@ export const ConsolidatedBillSection = ({
 						</p>
 					)}
 					{consolidatedBill && (
-						<BillBreakdown consolidatedBill={consolidatedBill} />
+						<BillBreakdown
+							consolidatedBill={consolidatedBill}
+							onWaterAmountChange={onWaterAmountChange}
+							selectedTenant={selectedTenant}
+						/>
 					)}
 
 					<Separator />
@@ -99,7 +118,7 @@ export const ConsolidatedBillSection = ({
 
 							<Button onClick={handleSendBill} disabled={!selectedTenant}>
 								<Mail className="mr-2 h-4 w-4" />
-								Send Bill
+								Preview & Send Bill
 							</Button>
 						</div>
 					</div>

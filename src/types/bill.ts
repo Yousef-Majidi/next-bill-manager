@@ -4,7 +4,7 @@ import {
 } from "@/types";
 
 export interface UtilityBill {
-	readonly id?: string;
+	readonly id: string | null;
 	readonly gmailMessageId: string;
 	readonly utilityProvider: UtilityProvider;
 	readonly amount: number;
@@ -13,11 +13,11 @@ export interface UtilityBill {
 }
 
 export interface ConsolidatedBill {
-	id?: string;
+	readonly id: string | null;
 	readonly userId: string;
 	readonly month: number;
 	readonly year: number;
-	readonly tenantId: string;
+	readonly tenantId: string | null;
 	readonly categories: {
 		readonly [K in keyof typeof UtilityCategory]: {
 			readonly gmailMessageId: string;
@@ -28,6 +28,6 @@ export interface ConsolidatedBill {
 	};
 	readonly totalAmount: number;
 	readonly paid: boolean;
-	readonly dateSent?: string;
-	readonly datePaid?: string;
+	readonly dateSent: string | null;
+	readonly datePaid: string | null;
 }

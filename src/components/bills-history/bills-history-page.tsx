@@ -6,10 +6,14 @@ import { useAtom } from "jotai";
 import {
 	Calendar,
 	CheckCircle,
+	ChevronDown,
+	ChevronUp,
 	Clock,
 	DollarSign,
 	Eye,
 	FileText,
+	Filter,
+	X,
 	Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +29,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
+	Input,
+	Label,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -36,22 +42,162 @@ import { getTenantShares } from "@/lib/common/utils";
 import { findById } from "@/lib/data";
 import { billsHistoryAtom, tenantsAtom } from "@/states";
 
+interface FilterState {
+	tenants: string[];
+	years: string[];
+	months: string[];
+	status: string;
+	amountRange: string;
+	providers: string[];
+	dateRange: {
+		start: string;
+		end: string;
+	};
+}
+
 export const BillsHistoryPage = () => {
-	const [filterMonth, setFilterMonth] = useState("all");
-	const [filterStatus, setFilterStatus] = useState("all");
-	const [billsHistory] = useAtom(billsHistoryAtom);
-	const [tenantsList] = useAtom(tenantsAtom);
-	const filteredBills = billsHistory.filter((bill) => {
-		const monthMatch =
-			filterMonth === "all" || bill.month.toString() === filterMonth;
-		const statusMatch =
-			filterStatus === "all" ||
-			(filterStatus === "paid" && bill.paid) ||
-			(filterStatus === "unpaid" && !bill.paid);
-		return monthMatch && statusMatch;
+	const [filterExpanded, setFilterExpanded] = useState(false);
+	const [filters, setFilters] = useState<FilterState>({
+		tenants: [],
+		years: [],
+		months: [],
+		status: "all",
+		amountRange: "all",
+		providers: [],
+		dateRange: { start: "", end: "" },
 	});
 
-	const uniqueMonths = [...new Set(billsHistory.map((bill) => bill.month))];
+	const [billsHistory] = useAtom(billsHistoryAtom);
+	const [tenantsList] = useAtom(tenantsAtom);
+
+	// Get unique values for filter options
+	const uniqueYears = [...new Set(billsHistory.map((bill) => bill.year))].sort(
+		(a, b) => b - a,
+	);
+	const uniqueMonths = [
+		...new Set(billsHistory.map((bill) => bill.month)),
+	].sort((a, b) => b - a);
+	const uniqueTenants = tenantsList.filter((tenant) =>
+		billsHistory.some((bill) => bill.tenantId === tenant.id),
+	);
+
+	// Filter bills based on all criteria
+	const filteredBills = billsHistory.filter((bill) => {
+		const tenant = findById(tenantsList, bill.tenantId!);
+		if (!tenant) return false;
+
+		// Tenant filter
+		if (
+			filters.tenants.length > 0 &&
+			!filters.tenants.includes(bill.tenantId!)
+		) {
+			return false;
+		}
+
+		// Year filter
+		if (
+			filters.years.length > 0 &&
+			!filters.years.includes(bill.year.toString())
+		) {
+			return false;
+		}
+
+		// Month filter
+		if (
+			filters.months.length > 0 &&
+			!filters.months.includes(bill.month.toString())
+		) {
+			return false;
+		}
+
+		// Status filter
+		if (filters.status !== "all") {
+			const isPaid = filters.status === "paid";
+			if (bill.paid !== isPaid) return false;
+		}
+
+		// Amount range filter
+		if (filters.amountRange !== "all") {
+			const { tenantTotal } = getTenantShares(bill, tenant);
+			switch (filters.amountRange) {
+				case "0-100":
+					if (tenantTotal > 100) return false;
+					break;
+				case "100-500":
+					if (tenantTotal <= 100 || tenantTotal > 500) return false;
+					break;
+				case "500+":
+					if (tenantTotal <= 500) return false;
+					break;
+			}
+		}
+
+		// Provider filter
+		if (filters.providers.length > 0) {
+			const hasMatchingProvider = filters.providers.some((provider) =>
+				Object.values(bill.categories).some(
+					(cat) => cat.providerName === provider,
+				),
+			);
+			if (!hasMatchingProvider) return false;
+		}
+
+		// Date range filter
+		if (filters.dateRange.start && bill.dateSent) {
+			const sentDate = new Date(bill.dateSent);
+			const startDate = new Date(filters.dateRange.start);
+			if (sentDate < startDate) return false;
+		}
+
+		if (filters.dateRange.end && bill.dateSent) {
+			const sentDate = new Date(bill.dateSent);
+			const endDate = new Date(filters.dateRange.end);
+			if (sentDate > endDate) return false;
+		}
+
+		return true;
+	});
+
+	// Get unique providers from bills
+	const uniqueProviders = [
+		...new Set(
+			billsHistory.flatMap((bill) =>
+				Object.values(bill.categories).map((cat) => cat.providerName),
+			),
+		),
+	].sort();
+
+	// Update filter function
+	const updateFilter = <K extends keyof FilterState>(
+		key: K,
+		value: FilterState[K],
+	) => {
+		setFilters((prev) => ({ ...prev, [key]: value }));
+	};
+
+	// Clear all filters
+	const clearAllFilters = () => {
+		setFilters({
+			tenants: [],
+			years: [],
+			months: [],
+			status: "all",
+			amountRange: "all",
+			providers: [],
+			dateRange: { start: "", end: "" },
+		});
+	};
+
+	// Get active filter count
+	const activeFilterCount = [
+		filters.tenants.length,
+		filters.years.length,
+		filters.months.length,
+		filters.status !== "all" ? 1 : 0,
+		filters.amountRange !== "all" ? 1 : 0,
+		filters.providers.length,
+		filters.dateRange.start || filters.dateRange.end ? 1 : 0,
+	].reduce((sum, count) => sum + count, 0);
 
 	return (
 		<div className="space-y-6">
@@ -89,7 +235,7 @@ export const BillsHistoryPage = () => {
 									$
 									{billsHistory
 										.reduce((sum, bill) => {
-											const tenant = findById(tenantsList, bill.tenantId);
+											const tenant = findById(tenantsList, bill.tenantId!);
 											if (!tenant) return sum;
 											const tenantShares = getTenantShares(bill, tenant);
 											return sum + (tenantShares?.tenantTotal || 0);
@@ -122,38 +268,322 @@ export const BillsHistoryPage = () => {
 				</Card>
 			</div>
 
-			{/* Filters */}
-			<div className="flex gap-4">
-				<Select value={filterMonth} onValueChange={setFilterMonth}>
-					<SelectTrigger className="w-[200px]">
-						<SelectValue placeholder="Filter by month" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">All Months</SelectItem>
-						{uniqueMonths.map((month) => (
-							<SelectItem key={month} value={month.toString()}>
-								{month}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+			{/* Results Summary with Compact Filters */}
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-4">
+					<p className="text-muted-foreground">
+						Showing {filteredBills.length} of {billsHistory.length} bills
+					</p>
 
-				<Select value={filterStatus} onValueChange={setFilterStatus}>
-					<SelectTrigger className="w-[200px]">
-						<SelectValue placeholder="Filter by status" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="all">All Status</SelectItem>
-						<SelectItem value="paid">Paid</SelectItem>
-						<SelectItem value="unpaid">Unpaid</SelectItem>
-					</SelectContent>
-				</Select>
+					{/* Compact Filter Controls */}
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setFilterExpanded(!filterExpanded)}
+							className="flex items-center gap-2">
+							<Filter className="h-3 w-3" />
+							Filters
+							{activeFilterCount > 0 && (
+								<Badge variant="secondary" className="ml-1 text-xs">
+									{activeFilterCount}
+								</Badge>
+							)}
+							{filterExpanded ? (
+								<ChevronUp className="h-3 w-3" />
+							) : (
+								<ChevronDown className="h-3 w-3" />
+							)}
+						</Button>
+						{activeFilterCount > 0 && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={clearAllFilters}
+								className="text-muted-foreground hover:text-foreground text-xs">
+								Clear all
+							</Button>
+						)}
+					</div>
+				</div>
 			</div>
+
+			{/* Active Filter Badges */}
+			{activeFilterCount > 0 && (
+				<div className="flex flex-wrap gap-2">
+					{filters.tenants.map((tenantId) => {
+						const tenant = findById(tenantsList, tenantId);
+						return tenant ? (
+							<Badge
+								key={tenantId}
+								variant="secondary"
+								className="flex items-center gap-1">
+								Tenant: {tenant.name}
+								<X
+									className="h-3 w-3 cursor-pointer"
+									onClick={() =>
+										updateFilter(
+											"tenants",
+											filters.tenants.filter((id) => id !== tenantId),
+										)
+									}
+								/>
+							</Badge>
+						) : null;
+					})}
+					{filters.years.map((year) => (
+						<Badge
+							key={year}
+							variant="secondary"
+							className="flex items-center gap-1">
+							Year: {year}
+							<X
+								className="h-3 w-3 cursor-pointer"
+								onClick={() =>
+									updateFilter(
+										"years",
+										filters.years.filter((y) => y !== year),
+									)
+								}
+							/>
+						</Badge>
+					))}
+					{filters.months.map((month) => (
+						<Badge
+							key={month}
+							variant="secondary"
+							className="flex items-center gap-1">
+							Month: {month}
+							<X
+								className="h-3 w-3 cursor-pointer"
+								onClick={() =>
+									updateFilter(
+										"months",
+										filters.months.filter((m) => m !== month),
+									)
+								}
+							/>
+						</Badge>
+					))}
+					{filters.status !== "all" && (
+						<Badge variant="secondary" className="flex items-center gap-1">
+							Status: {filters.status}
+							<X
+								className="h-3 w-3 cursor-pointer"
+								onClick={() => updateFilter("status", "all")}
+							/>
+						</Badge>
+					)}
+					{filters.amountRange !== "all" && (
+						<Badge variant="secondary" className="flex items-center gap-1">
+							Amount: {filters.amountRange}
+							<X
+								className="h-3 w-3 cursor-pointer"
+								onClick={() => updateFilter("amountRange", "all")}
+							/>
+						</Badge>
+					)}
+					{filters.providers.map((provider) => (
+						<Badge
+							key={provider}
+							variant="secondary"
+							className="flex items-center gap-1">
+							Provider: {provider}
+							<X
+								className="h-3 w-3 cursor-pointer"
+								onClick={() =>
+									updateFilter(
+										"providers",
+										filters.providers.filter((p) => p !== provider),
+									)
+								}
+							/>
+						</Badge>
+					))}
+					{(filters.dateRange.start || filters.dateRange.end) && (
+						<Badge variant="secondary" className="flex items-center gap-1">
+							Date Range: {filters.dateRange.start || "Start"} -{" "}
+							{filters.dateRange.end || "End"}
+							<X
+								className="h-3 w-3 cursor-pointer"
+								onClick={() =>
+									updateFilter("dateRange", { start: "", end: "" })
+								}
+							/>
+						</Badge>
+					)}
+				</div>
+			)}
+
+			{/* Filter Controls */}
+			{filterExpanded && (
+				<Card>
+					<CardContent className="p-4">
+						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+							{/* Tenant Filter */}
+							<div className="space-y-2">
+								<Label>Tenants</Label>
+								<Select
+									value=""
+									onValueChange={(value) => {
+										if (value && !filters.tenants.includes(value)) {
+											updateFilter("tenants", [...filters.tenants, value]);
+										}
+									}}>
+									<SelectTrigger>
+										<SelectValue placeholder="Select tenants" />
+									</SelectTrigger>
+									<SelectContent>
+										{uniqueTenants.map((tenant) => (
+											<SelectItem key={tenant.id} value={tenant.id}>
+												{tenant.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Year Filter */}
+							<div className="space-y-2">
+								<Label>Years</Label>
+								<Select
+									value=""
+									onValueChange={(value) => {
+										if (value && !filters.years.includes(value)) {
+											updateFilter("years", [...filters.years, value]);
+										}
+									}}>
+									<SelectTrigger>
+										<SelectValue placeholder="Select years" />
+									</SelectTrigger>
+									<SelectContent>
+										{uniqueYears.map((year) => (
+											<SelectItem key={year} value={year.toString()}>
+												{year}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Month Filter */}
+							<div className="space-y-2">
+								<Label>Months</Label>
+								<Select
+									value=""
+									onValueChange={(value) => {
+										if (value && !filters.months.includes(value)) {
+											updateFilter("months", [...filters.months, value]);
+										}
+									}}>
+									<SelectTrigger>
+										<SelectValue placeholder="Select months" />
+									</SelectTrigger>
+									<SelectContent>
+										{uniqueMonths.map((month) => (
+											<SelectItem key={month} value={month.toString()}>
+												{month}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Status Filter */}
+							<div className="space-y-2">
+								<Label>Status</Label>
+								<Select
+									value={filters.status}
+									onValueChange={(value) => updateFilter("status", value)}>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">All Status</SelectItem>
+										<SelectItem value="paid">Paid</SelectItem>
+										<SelectItem value="unpaid">Unpaid</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Amount Range Filter */}
+							<div className="space-y-2">
+								<Label>Amount Range</Label>
+								<Select
+									value={filters.amountRange}
+									onValueChange={(value) => updateFilter("amountRange", value)}>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">All Amounts</SelectItem>
+										<SelectItem value="0-100">$0 - $100</SelectItem>
+										<SelectItem value="100-500">$100 - $500</SelectItem>
+										<SelectItem value="500+">$500+</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Provider Filter */}
+							<div className="space-y-2">
+								<Label>Providers</Label>
+								<Select
+									value=""
+									onValueChange={(value) => {
+										if (value && !filters.providers.includes(value)) {
+											updateFilter("providers", [...filters.providers, value]);
+										}
+									}}>
+									<SelectTrigger>
+										<SelectValue placeholder="Select providers" />
+									</SelectTrigger>
+									<SelectContent>
+										{uniqueProviders.map((provider) => (
+											<SelectItem key={provider} value={provider}>
+												{provider}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Date Range Filters */}
+							<div className="space-y-2">
+								<Label>Date Sent From</Label>
+								<Input
+									type="date"
+									value={filters.dateRange.start}
+									onChange={(e) =>
+										updateFilter("dateRange", {
+											...filters.dateRange,
+											start: e.target.value,
+										})
+									}
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<Label>Date Sent To</Label>
+								<Input
+									type="date"
+									value={filters.dateRange.end}
+									onChange={(e) =>
+										updateFilter("dateRange", {
+											...filters.dateRange,
+											end: e.target.value,
+										})
+									}
+								/>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 
 			{/* Bills List */}
 			<div className="space-y-4">
 				{filteredBills.map((bill) => {
-					const tenant = findById(tenantsList, bill.tenantId);
+					const tenant = findById(tenantsList, bill.tenantId!);
 					if (!tenant) return null;
 					const { tenantTotal, shares } = getTenantShares(bill, tenant);
 					return (

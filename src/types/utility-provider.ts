@@ -5,8 +5,8 @@ export enum UtilityProviderCategory {
 }
 
 export interface UtilityProvider {
-	id?: string;
-	userId: string;
-	name: string;
-	category: UtilityProviderCategory;
+	readonly id: string | null;
+	readonly userId: string;
+	readonly name: string;
+	readonly category: UtilityProviderCategory;
 }
