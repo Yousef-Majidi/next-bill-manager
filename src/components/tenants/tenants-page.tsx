@@ -52,7 +52,9 @@ export const TenantsPage = () => {
 						userId: user.id,
 						name: newTenant.name,
 						email: newTenant.email,
-						secondaryName: newTenant.secondaryName || undefined,
+						...(newTenant.secondaryName
+							? { secondaryName: newTenant.secondaryName }
+							: {}),
 						shares: {
 							[UtilityCategory.Electricity]:
 								newTenant.shares[UtilityCategory.Electricity] ?? 0,
@@ -94,7 +96,9 @@ export const TenantsPage = () => {
 									...t,
 									name: updatedTenant.name,
 									email: updatedTenant.email,
-									secondaryName: updatedTenant.secondaryName || undefined,
+									...(updatedTenant.secondaryName
+										? { secondaryName: updatedTenant.secondaryName }
+										: {}),
 									shares: {
 										[UtilityCategory.Electricity]:
 											updatedTenant.shares[UtilityCategory.Electricity] ?? 0,

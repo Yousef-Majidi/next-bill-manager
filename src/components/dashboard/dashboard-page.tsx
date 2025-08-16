@@ -122,8 +122,11 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 
 	useEffect(() => {
 		if (tenantsList?.length > 0) {
-			setSelectedTenant(tenantsList[0]);
-			setConsolidatedBill(currentMonthBill);
+			const firstTenant = tenantsList[0];
+			if (firstTenant) {
+				setSelectedTenant(firstTenant);
+				setConsolidatedBill(currentMonthBill);
+			}
 		} else if (tenantsList) {
 			toast.warning("No tenants available for this user.");
 			setSelectedTenant(null);
@@ -150,8 +153,8 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			startDate.setDate(startDate.getDate() - 30);
 
 			const dateRange = {
-				start: startDate.toISOString().split("T")[0],
-				end: endDate.toISOString().split("T")[0],
+				start: startDate.toISOString().split("T")[0] ?? "",
+				end: endDate.toISOString().split("T")[0] ?? "",
 			};
 
 			for (const tenant of tenantsWithOutstanding) {

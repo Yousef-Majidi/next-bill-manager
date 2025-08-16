@@ -52,7 +52,9 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
 			if (error instanceof z.ZodError) {
 				// Show first error as toast
 				const firstError = error.errors[0];
-				toast.error(firstError.message);
+				if (firstError) {
+					toast.error(firstError.message);
+				}
 			}
 			return false;
 		}
@@ -69,8 +71,15 @@ export const AddTenantDialog: React.FC<AddTenantDialogProps> = ({
 		const tenantData: TenantFormData = {
 			name: formData.name,
 			email: formData.email,
-			secondaryName: formData.secondaryName || undefined,
-			shares: formData.shares,
+			...(formData.secondaryName
+				? { secondaryName: formData.secondaryName }
+				: {}),
+			shares: {
+				[UtilityCategory.Electricity]:
+					formData.shares[UtilityCategory.Electricity] ?? 0,
+				[UtilityCategory.Water]: formData.shares[UtilityCategory.Water] ?? 0,
+				[UtilityCategory.Gas]: formData.shares[UtilityCategory.Gas] ?? 0,
+			},
 		};
 
 		onSubmit(tenantData);
