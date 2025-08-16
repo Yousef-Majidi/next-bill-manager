@@ -301,3 +301,20 @@ export type DatabaseResult = z.infer<typeof DatabaseResultSchema>;
 export type InsertResult = z.infer<typeof InsertResultSchema>;
 export type UpdateResult = z.infer<typeof UpdateResultSchema>;
 export type DeleteResult = z.infer<typeof DeleteResultSchema>;
+
+// Array schemas for database operations
+export const TenantsArraySchema = z.array(TenantDocumentSchema);
+export const UtilityProvidersArraySchema = z.array(
+	UtilityProviderDocumentSchema,
+);
+export const ConsolidatedBillsArraySchema = z.array(
+	ConsolidatedBillDocumentSchema,
+);
+export const UtilityBillsArraySchema = z.array(UtilityBillDocumentSchema);
+
+export type TenantsArray = z.infer<typeof TenantsArraySchema>;
+export type UtilityProvidersArray = z.infer<typeof UtilityProvidersArraySchema>;
+export type ConsolidatedBillsArray = z.infer<
+	typeof ConsolidatedBillsArraySchema
+>;
+export type UtilityBillsArray = z.infer<typeof UtilityBillsArraySchema>;
