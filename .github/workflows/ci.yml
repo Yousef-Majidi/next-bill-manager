@@ -185,7 +185,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
-          path: .next/
+          path: |
+            .next/
+            public/
           retention-days: 7
 
   security:
