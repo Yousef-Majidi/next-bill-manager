@@ -3,9 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
+	const secret = process.env.GOOGLE_CLIENT_SECRET;
+	if (!secret) {
+		console.error("GOOGLE_CLIENT_SECRET is not defined");
+		return NextResponse.redirect(new URL("/", request.url));
+	}
+
 	const token = await getToken({
 		req: request,
-		secret: process.env.GOOGLE_CLIENT_SECRET,
+		secret,
 	});
 	const { pathname } = new URL(request.url);
 

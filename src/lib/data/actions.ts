@@ -24,15 +24,24 @@ export const isTokenExpired = async (tokenExp: number) => {
 
 export const getUser = async () => {
 	const session = await getServerSession(authOptions);
-	if (await isTokenExpired(session.accessTokenExp)) {
+	if (!session) {
+		redirect("/");
+	}
+	if (!session.user) {
+		redirect("/");
+	}
+	if (
+		session.accessTokenExp &&
+		(await isTokenExpired(session.accessTokenExp))
+	) {
 		redirect("/");
 	}
 	return {
-		id: session.providerAccountId,
-		name: session.user.name,
-		email: session.user.email,
-		accessToken: session.accessToken,
-		accessTokenExp: session.accessTokenExp,
+		id: session.providerAccountId ?? "",
+		name: session.user.name ?? "",
+		email: session.user.email ?? "",
+		accessToken: session.accessToken ?? "",
+		accessTokenExp: session.accessTokenExp ?? 0,
 	} as User;
 };
 
@@ -265,7 +274,9 @@ export const getConsolidatedBills = async (
 	date?: { year: number; month: number },
 ) => {
 	const db = client.db(process.env.MONGODB_DATABASE_NAME);
-	const query: Record<string, unknown> = { user_id: userId };
+	const query: { user_id: string; year?: number; month?: number } = {
+		user_id: userId,
+	};
 	if (date) {
 		query.year = date.year;
 		query.month = date.month;

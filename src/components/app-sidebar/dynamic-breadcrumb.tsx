@@ -38,6 +38,8 @@ export function DynamicBreadcrumb() {
 	const breadcrumbs = [];
 	for (let i = 1; i < segments.length; i++) {
 		const segment = segments[i];
+		if (!segment) continue;
+
 		const label =
 			breadcrumbMap[segment] ||
 			segment.charAt(0).toUpperCase() + segment.slice(1);

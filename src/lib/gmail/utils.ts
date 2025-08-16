@@ -225,7 +225,7 @@ const parsePaymentDetails = (body: string): Payment | null => {
 	const sentFromMatch = body.match(/Sent From:\s*(.+)/i);
 	const amountMatch = body.match(/Amount:\s*\$?([\d,]+\.\d{2})/i);
 
-	if (!dateMatch || !sentFromMatch || !amountMatch) {
+	if (!dateMatch?.[1] || !sentFromMatch?.[1] || !amountMatch?.[1]) {
 		return null;
 	}
 
