@@ -101,9 +101,6 @@ importers:
       "@next/eslint-plugin-next":
         specifier: ^15.3.3
         version: 15.3.3
-      "@playwright/test":
-        specifier: ^1.54.2
-        version: 1.54.2
       "@tailwindcss/postcss":
         specifier: ^4
         version: 4.1.7
@@ -137,6 +134,9 @@ importers:
       "@vitest/browser":
         specifier: ^3.2.4
         version: 3.2.4(msw@2.10.5(@types/node@20.17.50)(typescript@5.8.3))(playwright@1.54.2)(vite@7.1.2(@types/node@20.17.50)(jiti@2.4.2)(lightningcss@1.30.1)(yaml@2.8.1))(vitest@3.2.4)
+      "@vitest/coverage-v8":
+        specifier: ^3.2.4
+        version: 3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)
       "@vitest/ui":
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -494,6 +494,13 @@ packages:
         integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==,
       }
     engines: { node: ">=6.9.0" }
+
+  "@bcoe/v8-coverage@1.0.2":
+    resolution:
+      {
+        integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==,
+      }
+    engines: { node: ">=18" }
 
   "@bundled-es-modules/cookie@2.0.1":
     resolution:
@@ -1178,6 +1185,13 @@ packages:
         integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==,
       }
     engines: { node: ">=18.0.0" }
+
+  "@istanbuljs/schema@0.1.3":
+    resolution:
+      {
+        integrity: sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA==,
+      }
+    engines: { node: ">=8" }
 
   "@jridgewell/gen-mapping@0.3.13":
     resolution:
@@ -2660,6 +2674,18 @@ packages:
       webdriverio:
         optional: true
 
+  "@vitest/coverage-v8@3.2.4":
+    resolution:
+      {
+        integrity: sha512-EyF9SXU6kS5Ku/U82E259WSnvg6c8KTjppUncuNdm5QHpe17mwREHnjDzozC8x9MZ0xfBUFSaLkRv4TMA75ALQ==,
+      }
+    peerDependencies:
+      "@vitest/browser": 3.2.4
+      vitest: 3.2.4
+    peerDependenciesMeta:
+      "@vitest/browser":
+        optional: true
+
   "@vitest/expect@3.2.4":
     resolution:
       {
@@ -2911,6 +2937,12 @@ packages:
         integrity: sha512-6t10qk83GOG8p0vKmaCr8eiilZwO171AvbROMtvvNiwrTly62t+7XkA8RdIIVbpMhCASAsxgAzdRSwh6nw/5Dg==,
       }
     engines: { node: ">=4" }
+
+  ast-v8-to-istanbul@0.3.4:
+    resolution:
+      {
+        integrity: sha512-cxrAnZNLBnQwBPByK4CeDaw5sWZtMilJE/Q3iDA0aamgaIVNDF9T6K2/8DfYDZEejZ2jNnDrG9m8MY72HFd0KA==,
+      }
 
   async-function@1.0.0:
     resolution:
@@ -4439,6 +4471,12 @@ packages:
       }
     engines: { node: ">=18" }
 
+  html-escaper@2.0.2:
+    resolution:
+      {
+        integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==,
+      }
+
   htmlparser2@8.0.2:
     resolution:
       {
@@ -4849,6 +4887,34 @@ packages:
         integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==,
       }
 
+  istanbul-lib-coverage@3.2.2:
+    resolution:
+      {
+        integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==,
+      }
+    engines: { node: ">=8" }
+
+  istanbul-lib-report@3.0.1:
+    resolution:
+      {
+        integrity: sha512-GCfE1mtsHGOELCU8e/Z7YWzpmybrx/+dSTfLrvY8qRmaY6zXTKWn6WQIjaAFw069icm6GVMNkgu0NzI4iPZUNw==,
+      }
+    engines: { node: ">=10" }
+
+  istanbul-lib-source-maps@5.0.6:
+    resolution:
+      {
+        integrity: sha512-yg2d+Em4KizZC5niWhQaIomgf5WlL4vOOjZ5xGCmF8SnPE/mDWWXgvRExdcpCgh9lLRRa1/fSYp2ymmbJ1pI+A==,
+      }
+    engines: { node: ">=10" }
+
+  istanbul-reports@3.1.7:
+    resolution:
+      {
+        integrity: sha512-BewmUXImeuRk2YY0PVbxgKAysvhRPUQE0h5QRM++nVWyubKGV0l8qQ5op8+B2DOmwSe63Jivj0BjkPQVf8fP5g==,
+      }
+    engines: { node: ">=8" }
+
   iterator.prototype@1.1.5:
     resolution:
       {
@@ -5255,6 +5321,19 @@ packages:
       {
         integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==,
       }
+
+  magicast@0.3.5:
+    resolution:
+      {
+        integrity: sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ==,
+      }
+
+  make-dir@4.0.0:
+    resolution:
+      {
+        integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==,
+      }
+    engines: { node: ">=10" }
 
   math-intrinsics@1.1.0:
     resolution:
@@ -6851,6 +6930,13 @@ packages:
       }
     engines: { node: ">=18" }
 
+  test-exclude@7.0.1:
+    resolution:
+      {
+        integrity: sha512-pFYqmTw68LXVjeWJMST4+borgQP2AyMNbg1BpZh9LbyhUeNkeaPF9gzfPGUAnSMV3qPYdWUwDIjjCLiSDOl7vg==,
+      }
+    engines: { node: ">=18" }
+
   tiny-invariant@1.3.3:
     resolution:
       {
@@ -7785,6 +7871,8 @@ snapshots:
       "@babel/helper-string-parser": 7.27.1
       "@babel/helper-validator-identifier": 7.27.1
 
+  "@bcoe/v8-coverage@1.0.2": {}
+
   "@bundled-es-modules/cookie@2.0.1":
     dependencies:
       cookie: 0.7.2
@@ -8111,6 +8199,8 @@ snapshots:
     dependencies:
       minipass: 7.1.2
 
+  "@istanbuljs/schema@0.1.3": {}
+
   "@jridgewell/gen-mapping@0.3.13":
     dependencies:
       "@jridgewell/sourcemap-codec": 1.5.0
@@ -8241,6 +8331,7 @@ snapshots:
   "@playwright/test@1.54.2":
     dependencies:
       playwright: 1.54.2
+    optional: true
 
   "@polka/url@1.0.0-next.29": {}
 
@@ -9002,6 +9093,27 @@ snapshots:
       - utf-8-validate
       - vite
 
+  "@vitest/coverage-v8@3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)":
+    dependencies:
+      "@ampproject/remapping": 2.3.0
+      "@bcoe/v8-coverage": 1.0.2
+      ast-v8-to-istanbul: 0.3.4
+      debug: 4.4.1
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.1.7
+      magic-string: 0.30.17
+      magicast: 0.3.5
+      std-env: 3.9.0
+      test-exclude: 7.0.1
+      tinyrainbow: 2.0.0
+      vitest: 3.2.4(@types/node@20.17.50)(@vitest/browser@3.2.4)(@vitest/ui@3.2.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.10.5(@types/node@20.17.50)(typescript@5.8.3))(yaml@2.8.1)
+    optionalDependencies:
+      "@vitest/browser": 3.2.4(msw@2.10.5(@types/node@20.17.50)(typescript@5.8.3))(playwright@1.54.2)(vite@7.1.2(@types/node@20.17.50)(jiti@2.4.2)(lightningcss@1.30.1)(yaml@2.8.1))(vitest@3.2.4)
+    transitivePeerDependencies:
+      - supports-color
+
   "@vitest/expect@3.2.4":
     dependencies:
       "@types/chai": 5.2.2
@@ -9191,6 +9303,12 @@ snapshots:
   ast-types@0.16.1:
     dependencies:
       tslib: 2.8.1
+
+  ast-v8-to-istanbul@0.3.4:
+    dependencies:
+      "@jridgewell/trace-mapping": 0.3.30
+      estree-walker: 3.0.3
+      js-tokens: 9.0.1
 
   async-function@1.0.0: {}
 
@@ -10309,6 +10427,8 @@ snapshots:
     dependencies:
       whatwg-encoding: 3.1.1
 
+  html-escaper@2.0.2: {}
+
   htmlparser2@8.0.2:
     dependencies:
       domelementtype: 2.3.0
@@ -10525,6 +10645,27 @@ snapshots:
   isarray@2.0.5: {}
 
   isexe@2.0.0: {}
+
+  istanbul-lib-coverage@3.2.2: {}
+
+  istanbul-lib-report@3.0.1:
+    dependencies:
+      istanbul-lib-coverage: 3.2.2
+      make-dir: 4.0.0
+      supports-color: 7.2.0
+
+  istanbul-lib-source-maps@5.0.6:
+    dependencies:
+      "@jridgewell/trace-mapping": 0.3.30
+      debug: 4.4.1
+      istanbul-lib-coverage: 3.2.2
+    transitivePeerDependencies:
+      - supports-color
+
+  istanbul-reports@3.1.7:
+    dependencies:
+      html-escaper: 2.0.2
+      istanbul-lib-report: 3.0.1
 
   iterator.prototype@1.1.5:
     dependencies:
@@ -10769,6 +10910,16 @@ snapshots:
   magic-string@0.30.17:
     dependencies:
       "@jridgewell/sourcemap-codec": 1.5.0
+
+  magicast@0.3.5:
+    dependencies:
+      "@babel/parser": 7.28.3
+      "@babel/types": 7.28.2
+      source-map-js: 1.2.1
+
+  make-dir@4.0.0:
+    dependencies:
+      semver: 7.7.2
 
   math-intrinsics@1.1.0: {}
 
@@ -11115,13 +11266,15 @@ snapshots:
 
   pkce-challenge@5.0.0: {}
 
-  playwright-core@1.54.2: {}
+  playwright-core@1.54.2:
+    optional: true
 
   playwright@1.54.2:
     dependencies:
       playwright-core: 1.54.2
     optionalDependencies:
       fsevents: 2.3.2
+    optional: true
 
   possible-typed-array-names@1.1.0: {}
 
@@ -11756,6 +11909,12 @@ snapshots:
       minizlib: 3.0.2
       mkdirp: 3.0.1
       yallist: 5.0.0
+
+  test-exclude@7.0.1:
+    dependencies:
+      "@istanbuljs/schema": 0.1.3
+      glob: 10.4.5
+      minimatch: 9.0.5
 
   tiny-invariant@1.3.3: {}
 

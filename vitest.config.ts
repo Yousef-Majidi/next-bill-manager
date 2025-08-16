@@ -13,6 +13,29 @@ export default defineConfig({
 			"src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
 			"src/test/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
 		],
+		coverage: {
+			provider: "v8",
+			reporter: ["text", "json", "html", "lcov"],
+			exclude: [
+				"node_modules/",
+				"src/test/",
+				".next/",
+				"**/*.d.ts",
+				"**/*.config.*",
+				"**/*.setup.*",
+				"src/types/",
+				"src/lib/common/error-handling.ts",
+				"src/lib/common/type-utils.ts",
+			],
+			thresholds: {
+				global: {
+					branches: 70,
+					functions: 70,
+					lines: 70,
+					statements: 70,
+				},
+			},
+		},
 	},
 	resolve: {
 		alias: {
