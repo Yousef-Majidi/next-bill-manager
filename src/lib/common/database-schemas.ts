@@ -44,9 +44,9 @@ export const TenantDocumentSchema = z.object({
 	user_id: NonEmptyStringSchema,
 	name: NonEmptyStringSchema,
 	email: EmailSchema,
-	secondary_name: z.string().nullable(),
-	shares: z.record(UtilityProviderCategorySchema, z.number().min(0).max(100)),
-	outstanding_balance: NonNegativeNumberSchema,
+	secondary_name: z.string().nullable().optional(),
+	shares: z.record(z.string(), z.number().min(0).max(100)),
+	outstanding_balance: NonNegativeNumberSchema.optional().default(0),
 	created_at: DateStringSchema.optional(),
 	updated_at: DateStringSchema.optional(),
 });
@@ -56,20 +56,20 @@ export const ConsolidatedBillDocumentSchema = z.object({
 	user_id: NonEmptyStringSchema,
 	year: z.number().min(2020).max(2030),
 	month: z.number().min(1).max(12),
-	tenant_id: ObjectIdSchema.nullable(),
+	tenant_id: ObjectIdSchema.nullable().optional(),
 	categories: z.record(
-		UtilityProviderCategorySchema,
+		z.string(),
 		z.object({
 			gmail_message_id: NonEmptyStringSchema,
-			provider_id: ObjectIdSchema,
+			provider_id: z.union([ObjectIdSchema, z.string()]),
 			provider_name: NonEmptyStringSchema,
-			amount: PositiveNumberSchema,
+			amount: z.number().min(0), // Allow zero for Water bills
 		}),
 	),
 	total_amount: PositiveNumberSchema,
-	paid: z.boolean(),
-	date_sent: DateStringSchema.nullable(),
-	date_paid: DateStringSchema.nullable(),
+	paid: z.boolean().optional().default(false),
+	date_sent: z.union([z.string(), z.date()]).nullable().optional(), // Allow both string and Date objects
+	date_paid: z.union([z.string(), z.date()]).nullable().optional(), // Allow both string and Date objects
 	payment_message_id: NonEmptyStringSchema.optional(),
 	created_at: DateStringSchema.optional(),
 	updated_at: DateStringSchema.optional(),
@@ -123,7 +123,7 @@ export const TenantInsertSchema = z.object({
 	name: NonEmptyStringSchema,
 	email: EmailSchema,
 	secondary_name: z.string().nullable(),
-	shares: z.record(UtilityProviderCategorySchema, z.number().min(0).max(100)),
+	shares: z.record(z.string(), z.number().min(0).max(100)),
 	outstanding_balance: NonNegativeNumberSchema.default(0),
 	created_at: DateStringSchema.optional(),
 	updated_at: DateStringSchema.optional(),
@@ -133,20 +133,20 @@ export const ConsolidatedBillInsertSchema = z.object({
 	user_id: NonEmptyStringSchema,
 	year: z.number().min(2020).max(2030),
 	month: z.number().min(1).max(12),
-	tenant_id: ObjectIdSchema.nullable(),
+	tenant_id: ObjectIdSchema.nullable().optional(),
 	categories: z.record(
-		UtilityProviderCategorySchema,
+		z.string(),
 		z.object({
 			gmail_message_id: NonEmptyStringSchema,
-			provider_id: ObjectIdSchema,
+			provider_id: z.union([ObjectIdSchema, z.string()]),
 			provider_name: NonEmptyStringSchema,
-			amount: PositiveNumberSchema,
+			amount: z.number().min(0), // Allow zero for Water bills
 		}),
 	),
 	total_amount: PositiveNumberSchema,
 	paid: z.boolean().default(false),
-	date_sent: DateStringSchema.nullable(),
-	date_paid: DateStringSchema.nullable(),
+	date_sent: z.union([z.string(), z.date()]).nullable().optional(), // Allow both string and Date objects
+	date_paid: z.union([z.string(), z.date()]).nullable().optional(), // Allow both string and Date objects
 	payment_message_id: NonEmptyStringSchema.optional(),
 	created_at: DateStringSchema.optional(),
 	updated_at: DateStringSchema.optional(),
