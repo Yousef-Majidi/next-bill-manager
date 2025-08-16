@@ -1,9 +1,14 @@
-"use server";
+import type { Metadata } from "next";
 
 import { DashboardPage } from "@/components/dashboard";
 import { initializeConsolidatedBill } from "@/lib/common/utils";
 import { getUser, getUtilityProviders } from "@/lib/data";
 import { fetchUserBills } from "@/lib/gmail";
+
+export const metadata: Metadata = {
+	title: "Dashboard | Next Bill Manager",
+	description: "View your bill management dashboard",
+};
 
 export default async function Page() {
 	const loggedInUser = await getUser();
