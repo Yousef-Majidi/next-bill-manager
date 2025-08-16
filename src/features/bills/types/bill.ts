@@ -1,7 +1,7 @@
 import {
 	UtilityProviderCategory as UtilityCategory,
 	UtilityProvider,
-} from "@/types";
+} from "@/features/providers/types";
 
 export interface UtilityBill {
 	readonly id: string | null;

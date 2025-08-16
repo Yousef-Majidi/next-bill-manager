@@ -1,4 +1,4 @@
-import { UtilityProviderCategory } from "@/types/utility-provider";
+import { UtilityProviderCategory } from "@/features/providers/types";
 
 export interface Tenant {
 	readonly id: string;
