@@ -9,10 +9,8 @@ import { getServerSession } from "next-auth";
 import {
 	ConsolidatedBillDocumentSchema,
 	ConsolidatedBillInsertSchema,
-	ConsolidatedBillsArraySchema,
 	TenantDocumentSchema,
 	TenantInsertSchema,
-	TenantsArraySchema,
 	UtilityProviderDocumentSchema,
 	UtilityProviderInsertSchema,
 	UtilityProvidersArraySchema,
@@ -261,46 +259,69 @@ export const getTenants = async (userId: string): Promise<Tenant[]> => {
 			.find({ user_id: userId })
 			.toArray();
 
-		// Validate each tenant document
-		const validatedTenants = collection.map((tenant: unknown) => {
-			const validation = validateWithSchema(TenantDocumentSchema, tenant);
-			if (!validation.success) {
+		// Process each tenant document with safe validation
+		const validatedTenants = collection
+			.map((tenant: unknown) => {
+				// First try to validate with the strict schema
+				const validation = validateWithSchema(TenantDocumentSchema, tenant);
+
+				if (validation.success) {
+					return validation.data;
+				}
+
+				// If strict validation fails, try to normalize the data for existing records
+				if (isObjectType(tenant)) {
+					const normalizedTenant = {
+						_id: safeGetProperty(tenant, "_id"),
+						user_id: safeGetProperty(tenant, "user_id") || userId,
+						name: safeGetProperty(tenant, "name") || "",
+						email: safeGetProperty(tenant, "email") || "",
+						secondary_name: safeGetProperty(tenant, "secondary_name") || null,
+						shares: safeGetProperty(tenant, "shares") || {},
+						outstanding_balance:
+							safeGetProperty(tenant, "outstanding_balance") || 0,
+						created_at: safeGetProperty(tenant, "created_at"),
+						updated_at: safeGetProperty(tenant, "updated_at"),
+					};
+
+					// Try validation with normalized data
+					const normalizedValidation = validateWithSchema(
+						TenantDocumentSchema,
+						normalizedTenant,
+					);
+
+					if (normalizedValidation.success) {
+						return normalizedValidation.data;
+					}
+				}
+
+				// If all validation fails, log the error and skip this record
 				const tenantId = isObjectType(tenant)
 					? safeGetProperty(tenant, "_id")?.toString()
 					: undefined;
-				throw createDatabaseError(
-					`Invalid tenant data: ${validation.error}`,
-					"READ",
-					"tenants",
-					tenantId,
+				console.warn(
+					`Skipping invalid tenant document: ${tenantId}`,
+					validation.error,
 				);
-			}
-			return validation.data;
-		});
-
-		// Validate array
-		const arrayValidation = validateWithSchema(
-			TenantsArraySchema,
-			validatedTenants,
-		);
-		if (!arrayValidation.success) {
-			throw createDatabaseError(
-				`Invalid tenants array: ${arrayValidation.error}`,
-				"READ",
-				"tenants",
-			);
-		}
+				return null;
+			})
+			.filter(Boolean); // Remove null entries
 
 		// Transform to application format
-		return arrayValidation.data.map((tenant) => ({
-			id: tenant._id.toString(),
-			userId: tenant.user_id,
-			name: tenant.name,
-			email: tenant.email,
-			secondaryName: tenant.secondary_name ?? undefined,
-			shares: tenant.shares,
-			outstandingBalance: tenant.outstanding_balance,
-		})) as Tenant[];
+		return validatedTenants
+			.map((tenant) => {
+				if (!tenant) return null;
+				return {
+					id: tenant._id.toString(),
+					userId: tenant.user_id,
+					name: tenant.name,
+					email: tenant.email,
+					secondaryName: tenant.secondary_name ?? undefined,
+					shares: tenant.shares,
+					outstandingBalance: tenant.outstanding_balance,
+				};
+			})
+			.filter(Boolean) as Tenant[];
 	});
 
 	if (!result.success) {
@@ -512,70 +533,100 @@ export const getConsolidatedBills = async (
 			.sort({ year: -1, month: -1 })
 			.toArray();
 
-		// Validate each bill document
-		const validatedBills = collection.map((bill: unknown) => {
-			const validation = validateWithSchema(
-				ConsolidatedBillDocumentSchema,
-				bill,
-			);
-			if (!validation.success) {
+		// Process each bill document with safe validation
+		const validatedBills = collection
+			.map((bill: unknown) => {
+				// First try to validate with the strict schema
+				const validation = validateWithSchema(
+					ConsolidatedBillDocumentSchema,
+					bill,
+				);
+
+				if (validation.success) {
+					return validation.data;
+				}
+
+				// If strict validation fails, try to normalize the data for existing records
+				if (isObjectType(bill)) {
+					const normalizedBill = {
+						_id: safeGetProperty(bill, "_id"),
+						user_id: safeGetProperty(bill, "user_id") || userId,
+						year: safeGetProperty(bill, "year") || new Date().getFullYear(),
+						month: safeGetProperty(bill, "month") || new Date().getMonth() + 1,
+						tenant_id: safeGetProperty(bill, "tenant_id") || null,
+						categories: safeGetProperty(bill, "categories") || {},
+						total_amount: safeGetProperty(bill, "total_amount") || 0,
+						paid: safeGetProperty(bill, "paid") || false,
+						date_sent: safeGetProperty(bill, "date_sent") || null,
+						date_paid: safeGetProperty(bill, "date_paid") || null,
+						payment_message_id: safeGetProperty(bill, "payment_message_id"),
+						created_at: safeGetProperty(bill, "created_at"),
+						updated_at: safeGetProperty(bill, "updated_at"),
+					};
+
+					// Try validation with normalized data
+					const normalizedValidation = validateWithSchema(
+						ConsolidatedBillDocumentSchema,
+						normalizedBill,
+					);
+
+					if (normalizedValidation.success) {
+						return normalizedValidation.data;
+					}
+				}
+
+				// If all validation fails, log the error and skip this record
 				const billId = isObjectType(bill)
 					? safeGetProperty(bill, "_id")?.toString()
 					: undefined;
-				throw createDatabaseError(
-					`Invalid bill data: ${validation.error}`,
-					"READ",
-					"consolidated_bills",
-					billId,
+				console.warn(
+					`Skipping invalid bill document: ${billId}`,
+					validation.error,
 				);
-			}
-			return validation.data;
-		});
-
-		// Validate array
-		const arrayValidation = validateWithSchema(
-			ConsolidatedBillsArraySchema,
-			validatedBills,
-		);
-		if (!arrayValidation.success) {
-			throw createDatabaseError(
-				`Invalid bills array: ${arrayValidation.error}`,
-				"READ",
-				"consolidated_bills",
-			);
-		}
+				return null;
+			})
+			.filter(Boolean); // Remove null entries
 
 		// Transform to application format
-		return arrayValidation.data.map((bill) => ({
-			id: bill._id.toString(),
-			userId: bill.user_id,
-			month: bill.month,
-			year: bill.year,
-			tenantId: bill.tenant_id,
-			categories: Object.fromEntries(
-				Object.entries(bill.categories).map(([key, value]) => {
-					const categoryValue = value as {
-						gmail_message_id: string;
-						provider_id: string;
-						provider_name: string;
-						amount: number;
-					};
-					return [
-						key,
-						{
-							gmailMessageId: categoryValue.gmail_message_id,
-							providerId: categoryValue.provider_id,
-							providerName: categoryValue.provider_name,
-							amount: categoryValue.amount,
-						},
-					];
-				}),
-			),
-			totalAmount: bill.total_amount,
-			paid: bill.paid,
-			dateSent: bill.date_sent ? new Date(bill.date_sent).toDateString() : null,
-			datePaid: bill.date_paid ? new Date(bill.date_paid).toDateString() : null,
-		})) as ConsolidatedBill[];
+		return validatedBills
+			.map((bill) => {
+				if (!bill) return null;
+				return {
+					id: bill._id.toString(),
+					userId: bill.user_id,
+					month: bill.month,
+					year: bill.year,
+					tenantId: bill.tenant_id,
+					categories: Object.fromEntries(
+						Object.entries(bill.categories).map(([key, value]) => {
+							const categoryValue = value as {
+								gmail_message_id: string;
+								provider_id: string;
+								provider_name: string;
+								amount: number;
+							};
+							return [
+								key,
+								{
+									gmailMessageId: categoryValue.gmail_message_id,
+									providerId: categoryValue.provider_id,
+									providerName: categoryValue.provider_name,
+									amount: categoryValue.amount,
+								},
+							];
+						}),
+					),
+					totalAmount: bill.total_amount,
+					paid: bill.paid,
+					dateSent: bill.date_sent
+						? new Date(bill.date_sent).toDateString()
+						: null,
+					datePaid: bill.date_paid
+						? new Date(bill.date_paid).toDateString()
+						: null,
+				};
+			})
+			.filter(Boolean) as ConsolidatedBill[];
 	});
 
 	if (!result.success) {

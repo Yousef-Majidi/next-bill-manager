@@ -1,5 +1,7 @@
 "use server";
 
+import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { isObjectType } from "@/lib/common/type-utils";
 import { getTenantShares, roundToCurrency } from "@/lib/common/utils";
 import { getUser, markBillAsPaid, updateTenantBalance } from "@/lib/data";
 import { parseMessages, parsePaymentMessage } from "@/lib/gmail";
@@ -18,9 +20,9 @@ export const fetchUserBills = async (
 	month: number,
 	year: number,
 ): Promise<Bill[]> => {
-	try {
+	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 		const gmailClient = getGmailClient(loggedInUser.accessToken);
@@ -68,16 +70,20 @@ export const fetchUserBills = async (
 			});
 		}
 		return bills;
-	} catch (error) {
-		console.error("Error fetching bills:", error);
+	});
+
+	if (!result.success) {
+		console.error("Error fetching bills:", result.error);
 		throw new Error("Failed to fetch bills");
 	}
+
+	return result.data;
 };
 
 export const sendEmail = async (emailContent: EmailContent, tenant: Tenant) => {
-	try {
+	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 		const gmailClient = getGmailClient(loggedInUser.accessToken);
@@ -97,29 +103,33 @@ export const sendEmail = async (emailContent: EmailContent, tenant: Tenant) => {
 			email.body,
 		].join("\r\n");
 
-		const result = await gmailClient.users.messages.send({
+		const gmailResult = await gmailClient.users.messages.send({
 			userId: "me",
 			requestBody: {
 				raw: btoa(rawEmail), // Base64 encode the email content
 			},
 		});
 
-		return result.status === 200
-			? { success: true, messageId: result.data.id }
+		return gmailResult.status === 200
+			? { success: true, messageId: gmailResult.data.id }
 			: { success: false, error: "Failed to send email" };
-	} catch (error) {
-		console.error("Error sending email:", error);
+	});
+
+	if (!result.success) {
+		console.error("Error sending email:", result.error);
 		throw new Error("Failed to send email");
 	}
+
+	return result.data;
 };
 
 export const queryForBillPayment = async (
 	tenant: Tenant,
 	dateRange = { start: "", end: "" },
 ) => {
-	try {
+	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 		const gmailClient = getGmailClient(loggedInUser.accessToken);
@@ -141,17 +151,21 @@ export const queryForBillPayment = async (
 			const messages = response.data.messages || [];
 			if (messages.length > 0) {
 				const payment = await parsePaymentMessage(gmailClient, messages);
-				if (payment) {
+				if (isObjectType(payment)) {
 					return payment;
 				}
 			}
 		}
 
 		return null;
-	} catch (error) {
-		console.error("Error querying for bill payment:", error);
+	});
+
+	if (!result.success) {
+		console.error("Error querying for bill payment:", result.error);
 		throw new Error("Failed to query for bill payment");
 	}
+
+	return result.data;
 };
 
 export const processTenantPayments = async (
@@ -159,9 +173,9 @@ export const processTenantPayments = async (
 	billsHistory: ConsolidatedBill[],
 	dateRange: { start: string; end: string },
 ) => {
-	try {
+	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 
@@ -200,7 +214,7 @@ export const processTenantPayments = async (
 			const messages = response.data.messages || [];
 			if (messages.length > 0) {
 				const payment = await parsePaymentMessage(gmailClient, messages);
-				if (payment) {
+				if (isObjectType(payment)) {
 					const paymentAmount = roundToCurrency(Number(payment.amount));
 
 					// Check each unpaid bill to see if the payment matches
@@ -248,10 +262,14 @@ export const processTenantPayments = async (
 			processed: false,
 			message: `No payments found for ${tenant.name}`,
 		};
-	} catch (error) {
-		console.error("Error processing tenant payments:", error);
+	});
+
+	if (!result.success) {
+		console.error("Error processing tenant payments:", result.error);
 		throw new Error("Failed to process tenant payments");
 	}
+
+	return result.data;
 };
 
 const processPaymentMatch = async (
@@ -261,7 +279,7 @@ const processPaymentMatch = async (
 	payment: Payment,
 	paymentAmount: number,
 ) => {
-	try {
+	const result = await safeExecuteAsync(async () => {
 		// Mark bill as paid
 		if (bill.id) {
 			await markBillAsPaid(userId, bill.id, payment.gmailMessageId);
@@ -280,8 +298,12 @@ const processPaymentMatch = async (
 			billId: bill.id,
 			newBalance,
 		};
-	} catch (error) {
-		console.error("Error processing payment match:", error);
+	});
+
+	if (!result.success) {
+		console.error("Error processing payment match:", result.error);
 		throw new Error("Failed to process payment match");
 	}
+
+	return result.data;
 };
