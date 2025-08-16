@@ -17,7 +17,11 @@
 		"test-code-organization": "node scripts/test-code-organization.mjs",
 		"validate-all": "pnpm run validate-structure && pnpm run validate-exports && pnpm run check-dependencies && pnpm run test-code-organization",
 		"pre-commit": "pnpm run validate-all",
-		"prepare": "husky"
+		"prepare": "husky",
+		"db:migrate": "node scripts/migrate.mjs scripts/migrations/migrate-consolidated-bills.mjs",
+		"db:backup": "node scripts/migrate.mjs scripts/migrations/backup-all-collections.mjs",
+		"db:restore": "node scripts/migrate.mjs scripts/migrations/restore-all-collections.mjs",
+		"db:diagnose": "node scripts/migrate.mjs scripts/migrations/diagnose-all-collections.mjs"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": [
@@ -42,6 +46,7 @@
 		"autoprefixer": "^10.4.21",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"dotenv": "^17.2.1",
 		"googleapis": "^149.0.0",
 		"jotai": "^2.12.4",
 		"lucide-react": "^0.511.0",
