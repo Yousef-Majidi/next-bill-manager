@@ -14,7 +14,8 @@
 		"check-dependencies": "node scripts/check-dependencies.mjs",
 		"validate-structure": "node scripts/validate-feature-structure.mjs",
 		"validate-exports": "node scripts/validate-barrel-exports.mjs",
-		"validate-all": "pnpm run validate-structure && pnpm run validate-exports && pnpm run check-dependencies",
+		"test-code-organization": "node scripts/test-code-organization.mjs",
+		"validate-all": "pnpm run validate-structure && pnpm run validate-exports && pnpm run check-dependencies && pnpm run test-code-organization",
 		"pre-commit": "pnpm run validate-all",
 		"prepare": "husky"
 	},
