@@ -11,7 +11,6 @@ import {
 	Payment,
 	Tenant,
 	UtilityProvider,
-	UtilityProviderCategory,
 } from "@/types";
 
 export const fetchUserBills = async (
@@ -68,20 +67,6 @@ export const fetchUserBills = async (
 				year,
 			});
 		}
-		// Manually adding water bill integration is in place for now
-		bills.push({
-			id: null,
-			gmailMessageId: "manually-added",
-			utilityProvider: {
-				id: null,
-				userId: loggedInUser.id,
-				name: "Manually Added",
-				category: UtilityProviderCategory.Water,
-			},
-			amount: 440.25,
-			month,
-			year,
-		});
 		return bills;
 	} catch (error) {
 		console.error("Error fetching bills:", error);
@@ -185,13 +170,6 @@ export const processTenantPayments = async (
 			(bill) => bill.tenantId === tenant.id && !bill.paid,
 		);
 
-		console.log(`Processing payments for ${tenant.name}:`);
-		console.log(`- Outstanding balance: $${tenant.outstandingBalance}`);
-		console.log(
-			`- Unpaid bills:`,
-			unpaidBills.map((b) => `${b.month}/${b.year}: $${b.totalAmount}`),
-		);
-
 		if (unpaidBills.length === 0) {
 			return { processed: false, message: "No unpaid bills found for tenant" };
 		}
@@ -239,10 +217,6 @@ export const processTenantPayments = async (
 							: tenantTotal;
 
 						const tolerance = 0.01; // $0.01 tolerance for rounding differences
-
-						console.log(
-							`Checking bill ${bill.month}/${bill.year}: tenant share $${tenantTotal}, expected $${expectedAmount}, payment $${paymentAmount}`,
-						);
 
 						if (Math.abs(paymentAmount - expectedAmount) <= tolerance) {
 							// Payment matches this bill! Process it

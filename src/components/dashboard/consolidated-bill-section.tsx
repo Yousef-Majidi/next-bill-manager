@@ -28,6 +28,7 @@ interface ConsolidatedBillSectionProps {
 	readonly selectedTenant: Tenant | null;
 	readonly setSelectedTenant: Dispatch<SetStateAction<Tenant | null>>;
 	readonly handleSendBill: () => void;
+	readonly onWaterAmountChange?: (amount: number) => void;
 }
 
 export const ConsolidatedBillSection = ({
@@ -36,6 +37,7 @@ export const ConsolidatedBillSection = ({
 	selectedTenant,
 	setSelectedTenant,
 	handleSendBill,
+	onWaterAmountChange,
 }: ConsolidatedBillSectionProps) => {
 	if (!consolidatedBill) {
 		return (
@@ -71,7 +73,11 @@ export const ConsolidatedBillSection = ({
 						</p>
 					)}
 					{consolidatedBill && (
-						<BillBreakdown consolidatedBill={consolidatedBill} />
+						<BillBreakdown
+							consolidatedBill={consolidatedBill}
+							onWaterAmountChange={onWaterAmountChange}
+							selectedTenant={selectedTenant}
+						/>
 					)}
 
 					<Separator />

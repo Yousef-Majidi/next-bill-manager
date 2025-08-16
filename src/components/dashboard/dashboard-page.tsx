@@ -38,6 +38,35 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
 
+	const handleWaterAmountChange = (amount: number) => {
+		if (consolidatedBill) {
+			const updatedBill = {
+				...consolidatedBill,
+				categories: {
+					...consolidatedBill.categories,
+					Water: {
+						...consolidatedBill.categories.Water,
+						amount: amount,
+					},
+				},
+				totalAmount: Object.values({
+					...consolidatedBill.categories,
+					Water: {
+						...consolidatedBill.categories.Water,
+						amount: amount,
+					},
+				}).reduce((sum, category) => sum + category.amount, 0),
+			};
+			setConsolidatedBill(updatedBill);
+
+			if (amount === 0) {
+				toast.success("Water bill amount reset to $0.00");
+			} else {
+				toast.success(`Water bill amount updated to $${amount.toFixed(2)}`);
+			}
+		}
+	};
+
 	// TODO: Tenants now track their own balances, so this is not needed
 	const outstandingBalance = useMemo(() => {
 		return billsHistory.reduce((sum, bill) => {
@@ -77,6 +106,19 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 					.tenantTotal
 			: 0;
 	}, [lastMonthConsolidatedBill, lastMonthTenant]);
+
+	const paidAmount = useMemo(() => {
+		return lastMonthConsolidatedBill.reduce((sum, bill) => {
+			if (bill.paid && bill.tenantId) {
+				const tenant = findById(tenantsList, bill.tenantId);
+				if (tenant) {
+					const { tenantTotal } = getTenantShares(bill, tenant);
+					return sum + tenantTotal;
+				}
+			}
+			return sum;
+		}, 0);
+	}, [lastMonthConsolidatedBill, tenantsList]);
 
 	useEffect(() => {
 		if (tenantsList?.length > 0) {
@@ -123,8 +165,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 					if (result.processed) {
 						toast.success(result.message);
 					} else {
-						// Only show info for tenants with outstanding bills
-						console.log(result.message);
+						toast.info(result.message);
 					}
 				} catch (error) {
 					console.error(`Error processing payments for ${tenant.name}:`, error);
@@ -172,7 +213,14 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 		try {
 			const result = await sendEmail(emailContent, selectedTenant);
 			if (result.success) {
-				const newBill = await addConsolidatedBill(user.id, consolidatedBill);
+				// Update the consolidated bill with tenant ID and sent date before saving
+				const billToSave = {
+					...consolidatedBill,
+					tenantId: selectedTenant.id,
+					dateSent: new Date().toISOString(),
+				};
+
+				const newBill = await addConsolidatedBill(user.id, billToSave);
 				if (newBill.acknowledged) {
 					toast.success(
 						`Email sent and bill added for ${selectedTenant.name}!`,
@@ -224,8 +272,8 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			<StatsSummary
 				currentMonthTotal={consolidatedBill?.totalAmount || 0}
 				lastMonthTotal={lastMonthTenantTotal}
-				// lastMonthPaid={isLastMonthPaid}
 				outstandingBalance={outstandingBalance}
+				paidAmount={paidAmount}
 			/>
 
 			<ConsolidatedBillSection
@@ -234,6 +282,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 				selectedTenant={selectedTenant}
 				setSelectedTenant={setSelectedTenant}
 				handleSendBill={handleSendBill}
+				onWaterAmountChange={handleWaterAmountChange}
 			/>
 
 			<LastMonthSummary
