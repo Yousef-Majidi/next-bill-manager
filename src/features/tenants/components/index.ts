@@ -1,0 +1,2 @@
+// tenants components exports
+export {};

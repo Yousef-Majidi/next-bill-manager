@@ -1,0 +1,2 @@
+// tenants hooks exports
+export {};
