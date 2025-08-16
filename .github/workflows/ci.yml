@@ -78,7 +78,7 @@ jobs:
         run: pnpm run validate-all
 
       - name: Run type checking
-        run: pnpm run build --dry-run
+        run: pnpm run build
 
       - name: Run quality gate (CI mode)
         run: node scripts/quality-gate.mjs --ci
