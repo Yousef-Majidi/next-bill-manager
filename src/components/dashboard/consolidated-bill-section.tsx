@@ -75,7 +75,7 @@ export const ConsolidatedBillSection = ({
 					{consolidatedBill && (
 						<BillBreakdown
 							consolidatedBill={consolidatedBill}
-							onWaterAmountChange={onWaterAmountChange}
+							onWaterAmountChange={onWaterAmountChange ?? undefined}
 							selectedTenant={selectedTenant}
 						/>
 					)}
@@ -97,7 +97,7 @@ export const ConsolidatedBillSection = ({
 
 						<div className="flex items-center gap-4">
 							<Select
-								value={selectedTenant?.id}
+								{...(selectedTenant?.id ? { value: selectedTenant.id } : {})}
 								onValueChange={(tenantId) => {
 									const tenant = tenantsList.find((t) => t.id === tenantId);
 									setSelectedTenant(tenant ?? null);

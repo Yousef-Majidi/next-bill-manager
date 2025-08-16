@@ -10,9 +10,30 @@
 		"dev": "next dev --turbopack",
 		"build": "next build",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "next lint",
+		"check-dependencies": "node scripts/check-dependencies.mjs",
+		"validate-structure": "node scripts/validate-feature-structure.mjs",
+		"validate-exports": "node scripts/validate-barrel-exports.mjs",
+		"test-code-organization": "node scripts/test-code-organization.mjs",
+		"validate-all": "pnpm run validate-structure && pnpm run validate-exports && pnpm run check-dependencies && pnpm run test-code-organization",
+		"pre-commit": "pnpm run validate-all",
+		"prepare": "husky",
+		"db:migrate": "node scripts/migrate.mjs scripts/migrations/migrate-consolidated-bills.mjs",
+		"db:backup": "node scripts/migrate.mjs scripts/migrations/backup-all-collections.mjs",
+		"db:restore": "node scripts/migrate.mjs scripts/migrations/restore-all-collections.mjs",
+		"db:diagnose": "node scripts/migrate.mjs scripts/migrations/diagnose-all-collections.mjs"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx}": [
+			"eslint --fix",
+			"prettier --write"
+		],
+		"*.{json,md,yml,yaml}": [
+			"prettier --write"
+		]
 	},
 	"dependencies": {
+		"@hookform/resolvers": "^5.2.1",
 		"@radix-ui/react-avatar": "^1.1.10",
 		"@radix-ui/react-dialog": "^1.1.14",
 		"@radix-ui/react-label": "^2.1.7",
@@ -25,6 +46,7 @@
 		"autoprefixer": "^10.4.21",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"dotenv": "^17.2.1",
 		"googleapis": "^149.0.0",
 		"jotai": "^2.12.4",
 		"lucide-react": "^0.511.0",
@@ -35,6 +57,7 @@
 		"postcss": "^8.5.4",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
+		"react-hook-form": "^7.62.0",
 		"sanitize-html": "^2.17.0",
 		"sonner": "^2.0.3",
 		"tailwind-merge": "^3.3.0",
@@ -52,8 +75,13 @@
 		"eslint": "^9",
 		"eslint-config-next": "15.3.2",
 		"eslint-config-prettier": "^10.1.5",
+		"eslint-plugin-filename-rules": "^1.3.1",
+		"eslint-plugin-import": "^2.31.1",
 		"eslint-plugin-prettier": "^5.4.0",
 		"eslint-plugin-react-hooks": "^5.2.0",
+		"glob": "^10.3.10",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.5",
 		"prettier": "^3.5.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"shadcn": "^2.6.0",

@@ -1,0 +1,2 @@
+// bills components exports
+export {};

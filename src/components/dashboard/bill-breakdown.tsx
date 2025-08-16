@@ -24,8 +24,8 @@ import {
 
 interface BillBreakdownProps {
 	readonly consolidatedBill: ConsolidatedBill;
-	readonly onWaterAmountChange?: (amount: number) => void;
-	readonly selectedTenant?: Tenant | null;
+	readonly onWaterAmountChange?: ((amount: number) => void) | undefined;
+	readonly selectedTenant?: Tenant | null | undefined;
 }
 
 export const BillBreakdown = ({

@@ -1,7 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import NextAuthConfig from "next-auth";
 import { Account, Profile, Session, User } from "next-auth";
 import { JWT } from "next-auth/jwt";
+
+// extend the Session type to include our custom properties
+declare module "next-auth" {
+	interface Session {
+		accessToken?: string | undefined;
+		accessTokenExp?: number | undefined;
+		providerAccountId?: string | undefined;
+	}
+}
+
+// extend the JWT type to include our custom properties
+declare module "next-auth/jwt" {
+	interface JWT {
+		accessToken?: string | undefined;
+		accessTokenExp?: number | undefined;
+		providerAccountId?: string | undefined;
+	}
+}
 
 export const authConfig = {
 	pages: {
@@ -24,7 +41,7 @@ export const authConfig = {
 			if (account) {
 				if (account.access_token) {
 					token.accessToken = account.access_token;
-					token.accessTokenExp = account.expires_at;
+					token.accessTokenExp = account.expires_at ?? undefined;
 					token.providerAccountId = account.providerAccountId;
 				}
 				return token;
@@ -38,11 +55,11 @@ export const authConfig = {
 			}
 			return token;
 		},
-		session: ({ session, token }: { session: any; token: JWT }) => {
+		session: ({ session, token }: { session: Session; token: JWT }) => {
 			if (token.accessToken) {
 				session.accessToken = token.accessToken;
-				session.accessTokenExp = token.accessTokenExp;
-				session.providerAccountId = token.providerAccountId;
+				session.accessTokenExp = token.accessTokenExp ?? undefined;
+				session.providerAccountId = token.providerAccountId ?? undefined;
 			}
 
 			return session;

@@ -1,36 +1,190 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next Bill Manager
 
-## Getting Started
+A modern, feature-rich bill management application built with Next.js 15, TypeScript, and Tailwind CSS. This application helps property managers and landlords efficiently manage billing, tenant information, and utility providers.
 
-First, run the development server:
+## 🚀 Features
+
+- **Bill Management**: Create, track, and manage bills with detailed breakdowns
+- **Tenant Management**: Organize tenant information and billing relationships
+- **Provider Management**: Manage utility providers and service accounts
+- **Dashboard Analytics**: Comprehensive overview with statistics and insights
+- **Email Integration**: Automated email notifications and bill distribution
+- **Authentication**: Secure user authentication with NextAuth.js
+- **Responsive Design**: Modern UI that works on all devices
+- **Type Safety**: Comprehensive TypeScript configuration with runtime validation
+- **Performance Optimized**: Caching, lazy evaluation, and performance monitoring
+
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript (strict configuration)
+- **Styling**: Tailwind CSS 4
+- **UI Components**: Radix UI + shadcn/ui
+- **State Management**: Jotai
+- **Authentication**: NextAuth.js
+- **Database**: MongoDB
+- **Email**: Gmail API integration
+- **Validation**: Zod with runtime type checking
+- **Package Manager**: pnpm
+
+## 🔒 Type Safety & Validation
+
+This application implements a comprehensive type safety system:
+
+- **Strict TypeScript Configuration**: Zero compilation errors with strict mode
+- **Runtime Validation**: Zod schemas ensure data integrity at runtime
+- **Type-Safe Utilities**: Safe operations for arrays, objects, and common patterns
+- **Performance Optimizations**: Caching and lazy evaluation for better performance
+- **Structured Error Handling**: Discriminated unions for error types
+- **Form Integration**: Seamless integration with React Hook Form
+- **Database Safety**: Type-safe database operations with schema validation
+
+See the [Type Safety Guide](docs/TYPE_SAFETY_GUIDE.md) for detailed information and examples.
+
+## 📋 Prerequisites
+
+- Node.js 18+
+- pnpm 10.11.0+
+- MongoDB database
+- Gmail API credentials (for email features)
+
+## 🚀 Quick Start
+
+### 1. Clone the repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+git clone <repository-url>
+cd next-bill-manager
+```
+
+### 2. Install dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Set up environment variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Database
+MONGODB_URI=your_mongodb_connection_string
+
+# Authentication
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Gmail API (for email features)
+GMAIL_CLIENT_ID=your_gmail_client_id
+GMAIL_CLIENT_SECRET=your_gmail_client_secret
+GMAIL_REFRESH_TOKEN=your_gmail_refresh_token
+```
+
+### 4. Run the development server
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+next-bill-manager/
+├── src/
+│   ├── app/                    # Next.js app router pages
+│   ├── components/             # Shared UI components
+│   ├── features/               # Feature-based modules
+│   │   ├── bills/             # Bill management feature
+│   │   ├── tenants/           # Tenant management feature
+│   │   ├── providers/         # Provider management feature
+│   │   ├── dashboard/         # Dashboard analytics feature
+│   │   ├── auth/              # Authentication feature
+│   │   └── email/             # Email integration feature
+│   ├── lib/                   # Utility libraries and configurations
+│   ├── hooks/                 # Shared React hooks
+│   ├── states/                # Global state management
+│   └── types/                 # Global TypeScript types
+├── scripts/                   # Build and validation scripts
+└── docs/                      # Documentation
+```
 
-## Learn More
+## 🧪 Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm build` - Build the application for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+- `pnpm validate-all` - Run all validation scripts
+- `pnpm check-dependencies` - Validate feature dependencies
+- `pnpm validate-structure` - Validate feature structure
+- `pnpm validate-exports` - Validate barrel exports
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📚 Documentation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Comprehensive technical architecture and code organization
+- **[Contributing Guidelines](docs/CONTRIBUTING.md)** - Development standards and contribution process
+- **[API Documentation](docs/API.md)** - Server actions and API reference
+- **[Type Safety Guide](docs/TYPE_SAFETY_GUIDE.md)** - Comprehensive type safety system and validation
+- **[Type Safety Examples](docs/TYPE_SAFETY_EXAMPLES.md)** - Practical examples of type safety implementation
 
-## Deploy on Vercel
+## 🔧 Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project follows a feature-based architecture with strict dependency rules and comprehensive validation. See the [Contributing Guidelines](docs/CONTRIBUTING.md) for detailed development standards.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Code Organization
+
+- **Feature Isolation**: Each feature is self-contained with minimal cross-dependencies
+- **Barrel Exports**: Clean import/export patterns using index files
+- **Type Safety**: Strict TypeScript configuration with comprehensive type definitions and runtime validation
+- **Validation**: Automated scripts ensure code organization compliance and type safety
+
+### Type Safety System
+
+The application implements a comprehensive type safety system:
+
+- **Strict TypeScript Configuration**: Zero compilation errors with strict mode enabled
+- **Runtime Validation**: Zod schemas ensure data integrity at runtime
+- **Type-Safe Utilities**: Safe operations for arrays, objects, and common patterns
+- **Performance Optimizations**: Caching and lazy evaluation for better performance
+- **Structured Error Handling**: Discriminated unions for error types
+- **Form Integration**: Seamless integration with React Hook Form
+- **Database Safety**: Type-safe database operations with schema validation
+
+### Validation Scripts
+
+The project includes several validation scripts to maintain code quality:
+
+- **Dependency Checking**: Ensures features follow dependency rules
+- **Structure Validation**: Validates feature directory structure
+- **Export Validation**: Ensures proper barrel export patterns
+- **Code Organization Testing**: Comprehensive code organization validation
+- **Type Safety Validation**: Ensures strict TypeScript compliance
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow the [Contributing Guidelines](docs/CONTRIBUTING.md)
+4. Run validation scripts (`pnpm validate-all`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+
+1. Check the [documentation](docs/)
+2. Search existing issues
+3. Create a new issue with detailed information
+
+---
+
+Built with ❤️ using Next.js, TypeScript, and Tailwind CSS

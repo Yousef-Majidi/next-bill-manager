@@ -8,8 +8,8 @@ export interface UtilityProviderFormData {
 export interface TenantFormData {
 	readonly name: string;
 	readonly email: string;
-	readonly secondaryName?: string;
+	readonly secondaryName?: string | undefined;
 	readonly shares: {
-		readonly [key in UtilityProviderCategory]?: number;
+		readonly [key in UtilityProviderCategory]?: number | undefined;
 	};
 }
