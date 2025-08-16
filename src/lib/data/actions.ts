@@ -273,6 +273,7 @@ export const getConsolidatedBills = async (
 	const collection = await db
 		.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
 		.find(query)
+		.sort({ year: -1, month: -1 }) // Sort by year descending, then month descending
 		.toArray();
 	return collection.map((bill) => ({
 		id: bill._id.toString(),

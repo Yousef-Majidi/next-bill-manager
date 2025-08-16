@@ -51,7 +51,9 @@ export const BillsHistoryPage = () => {
 		return monthMatch && statusMatch;
 	});
 
-	const uniqueMonths = [...new Set(billsHistory.map((bill) => bill.month))];
+	const uniqueMonths = [
+		...new Set(billsHistory.map((bill) => bill.month)),
+	].sort((a, b) => b - a); // Sort months in descending order (most recent first)
 
 	return (
 		<div className="space-y-6">
@@ -89,7 +91,7 @@ export const BillsHistoryPage = () => {
 									$
 									{billsHistory
 										.reduce((sum, bill) => {
-											const tenant = findById(tenantsList, bill.tenantId);
+											const tenant = findById(tenantsList, bill.tenantId!);
 											if (!tenant) return sum;
 											const tenantShares = getTenantShares(bill, tenant);
 											return sum + (tenantShares?.tenantTotal || 0);
@@ -153,7 +155,7 @@ export const BillsHistoryPage = () => {
 			{/* Bills List */}
 			<div className="space-y-4">
 				{filteredBills.map((bill) => {
-					const tenant = findById(tenantsList, bill.tenantId);
+					const tenant = findById(tenantsList, bill.tenantId!);
 					if (!tenant) return null;
 					const { tenantTotal, shares } = getTenantShares(bill, tenant);
 					return (
