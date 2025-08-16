@@ -61,147 +61,155 @@ All API endpoints require authentication unless explicitly marked as public.
 
 ## Server Actions
 
+The application uses Next.js Server Actions with comprehensive type safety and error handling. All server actions are implemented with:
+
+- **Type-safe validation** using Zod schemas
+- **Structured error handling** with discriminated unions
+- **Safe execution** with proper error boundaries
+- **Database operations** with MongoDB and type-safe collections
+
 ### Bills API
 
-#### Create Bill
+#### Create Consolidated Bill
 
 ```typescript
-// Server Action: features/bills/actions/createBill.ts
-export async function createBill(
-	data: CreateBillData,
-): Promise<ApiResponse<Bill>> {
-	try {
-		// Validate input
-		const validatedData = createBillSchema.parse(data);
+// Server Action: lib/data/actions.ts
+export const addConsolidatedBill = async (
+	userId: string,
+	bill: ConsolidatedBill,
+) => {
+	const result = await safeExecuteAsync(async () => {
+		// Validate input data
+		const billData = {
+			user_id: userId,
+			year: bill.year,
+			month: bill.month,
+			tenant_id: bill.tenantId,
+			categories: bill.categories,
+			total_amount: roundToCurrency(bill.totalAmount),
+			paid: bill.paid,
+			date_sent: bill.dateSent,
+			date_paid: bill.datePaid,
+		};
 
-		// Check authentication
-		const session = await getServerSession(authOptions);
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
+		const validation = validateWithSchema(
+			ConsolidatedBillInsertSchema,
+			billData,
+		);
+		if (!validation.success) {
+			throw createValidationError(
+				`Invalid bill data: ${validation.error}`,
+				"bill",
+				billData,
+				"ConsolidatedBillInsertSchema",
+			);
 		}
 
-		// Create bill in database
-		const bill = await db.bills.create({
-			data: {
-				...validatedData,
-				userId: session.user.id,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			},
-		});
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const existingBill = await db
+			.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+			.findOne({
+				user_id: userId,
+				year: bill.year,
+				month: bill.month,
+			});
 
-		return { success: true, data: bill };
-	} catch (error) {
-		console.error("Error creating bill:", error);
-		return { success: false, error: error.message };
+		if (existingBill) {
+			throw createDatabaseError(
+				`Consolidated bill for ${bill.month}/${bill.year} already exists.`,
+				"CREATE",
+				"consolidated_bills",
+			);
+		}
+
+		const result = await db
+			.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+			.insertOne(validation.data);
+
+		revalidatePath("/dashboard/bills");
+		return {
+			acknowledged: result.acknowledged,
+			insertedId: result.insertedId.toString(),
+		};
+	});
+
+	if (!result.success) {
+		throw result.error;
 	}
-}
+
+	return result.data;
+};
 ```
 
 **Usage:**
 
 ```typescript
 // Client component
-import { createBill } from "@/features/bills/actions";
+import { addConsolidatedBill } from "@/lib/data/actions";
 
 const handleSubmit = async (formData: FormData) => {
-	const result = await createBill({
-		title: formData.get("title") as string,
-		amount: parseFloat(formData.get("amount") as string),
-		dueDate: new Date(formData.get("dueDate") as string),
-		tenantId: formData.get("tenantId") as string,
-		providerId: formData.get("providerId") as string,
-	});
+	try {
+		const result = await addConsolidatedBill(userId, {
+			year: parseInt(formData.get("year") as string),
+			month: parseInt(formData.get("month") as string),
+			tenantId: formData.get("tenantId") as string,
+			categories: JSON.parse(formData.get("categories") as string),
+			totalAmount: parseFloat(formData.get("totalAmount") as string),
+			paid: formData.get("paid") === "true",
+			dateSent: new Date(formData.get("dateSent") as string),
+			datePaid: formData.get("datePaid")
+				? new Date(formData.get("datePaid") as string)
+				: null,
+		});
 
-	if (result.success) {
 		// Handle success
-	} else {
-		// Handle error
+		toast.success("Bill created successfully");
+	} catch (error) {
+		// Handle error with structured error handling
+		if (isValidationError(error)) {
+			toast.error(`Validation error: ${error.message}`);
+		} else if (isDatabaseError(error)) {
+			toast.error(`Database error: ${error.message}`);
+		} else {
+			toast.error("An unexpected error occurred");
+		}
 	}
 };
 ```
 
-#### Get Bills
+#### Get Consolidated Bills
 
 ```typescript
-// Server Action: features/bills/actions/getBills.ts
-export async function getBills(
-	filters?: BillFilters,
-): Promise<ApiResponse<Bill[]>> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
+// Server Action: lib/data/actions.ts
+export const getConsolidatedBills = async (userId: string) => {
+	const result = await safeExecuteAsync(async () => {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const bills = await db
+			.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+			.find({ user_id: userId })
+			.sort({ year: -1, month: -1 })
+			.toArray();
+
+		// Validate response data
+		const validation = validateWithSchema(ConsolidatedBillsArraySchema, bills);
+		if (!validation.success) {
+			throw createValidationError(
+				`Invalid bills data: ${validation.error}`,
+				"bills",
+				bills,
+				"ConsolidatedBillsArraySchema",
+			);
 		}
 
-		const bills = await db.bills.findMany({
-			where: {
-				userId: session.user.id,
-				...filters,
-			},
-			include: {
-				tenant: true,
-				provider: true,
-			},
-			orderBy: { createdAt: "desc" },
-		});
+		return validation.data;
+	});
 
-		return { success: true, data: bills };
-	} catch (error) {
-		console.error("Error fetching bills:", error);
-		return { success: false, error: error.message };
+	if (!result.success) {
+		throw result.error;
 	}
-}
-```
 
-#### Update Bill
-
-```typescript
-// Server Action: features/bills/actions/updateBill.ts
-export async function updateBill(
-	id: string,
-	data: UpdateBillData,
-): Promise<ApiResponse<Bill>> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const bill = await db.bills.update({
-			where: { id, userId: session.user.id },
-			data: { ...data, updatedAt: new Date() },
-		});
-
-		return { success: true, data: bill };
-	} catch (error) {
-		console.error("Error updating bill:", error);
-		return { success: false, error: error.message };
-	}
-}
-```
-
-#### Delete Bill
-
-```typescript
-// Server Action: features/bills/actions/deleteBill.ts
-export async function deleteBill(id: string): Promise<ApiResponse<void>> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		await db.bills.delete({
-			where: { id, userId: session.user.id },
-		});
-
-		return { success: true };
-	} catch (error) {
-		console.error("Error deleting bill:", error);
-		return { success: false, error: error.message };
-	}
-}
+	return result.data;
+};
 ```
 
 ### Tenants API
@@ -209,57 +217,84 @@ export async function deleteBill(id: string): Promise<ApiResponse<void>> {
 #### Create Tenant
 
 ```typescript
-// Server Action: features/tenants/actions/createTenant.ts
-export async function createTenant(
-	data: CreateTenantData,
-): Promise<ApiResponse<Tenant>> {
-	try {
-		const validatedData = createTenantSchema.parse(data);
-		const session = await getServerSession(authOptions);
+// Server Action: lib/data/actions.ts
+export const addTenant = async (
+	userId: string,
+	tenant: TenantFormData,
+): Promise<{ acknowledged: boolean; insertedId: string }> => {
+	const result = await safeExecuteAsync(async () => {
+		// Validate input data
+		const tenantData = {
+			user_id: userId,
+			name: tenant.name,
+			email: tenant.email,
+			secondary_name: tenant.secondaryName ?? null,
+			shares: tenant.shares,
+			outstanding_balance: 0,
+		};
 
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
+		const validation = validateWithSchema(TenantInsertSchema, tenantData);
+		if (!validation.success) {
+			throw createValidationError(
+				`Invalid tenant data: ${validation.error}`,
+				"tenant",
+				tenantData,
+				"TenantInsertSchema",
+			);
 		}
 
-		const tenant = await db.tenants.create({
-			data: {
-				...validatedData,
-				userId: session.user.id,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			},
-		});
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const result = await db
+			.collection(process.env.MONGODB_TENANTS!)
+			.insertOne(validation.data);
 
-		return { success: true, data: tenant };
-	} catch (error) {
-		console.error("Error creating tenant:", error);
-		return { success: false, error: error.message };
+		return {
+			acknowledged: result.acknowledged,
+			insertedId: result.insertedId.toString(),
+		};
+	});
+
+	if (!result.success) {
+		throw result.error;
 	}
-}
+
+	return result.data;
+};
 ```
 
 #### Get Tenants
 
 ```typescript
-// Server Action: features/tenants/actions/getTenants.ts
-export async function getTenants(): Promise<ApiResponse<Tenant[]>> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
+// Server Action: lib/data/actions.ts
+export const getTenants = async (userId: string) => {
+	const result = await safeExecuteAsync(async () => {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const tenants = await db
+			.collection(process.env.MONGODB_TENANTS!)
+			.find({ user_id: userId })
+			.sort({ name: 1 })
+			.toArray();
+
+		// Validate response data
+		const validation = validateWithSchema(TenantsArraySchema, tenants);
+		if (!validation.success) {
+			throw createValidationError(
+				`Invalid tenants data: ${validation.error}`,
+				"tenants",
+				tenants,
+				"TenantsArraySchema",
+			);
 		}
 
-		const tenants = await db.tenants.findMany({
-			where: { userId: session.user.id },
-			orderBy: { name: "asc" },
-		});
+		return validation.data;
+	});
 
-		return { success: true, data: tenants };
-	} catch (error) {
-		console.error("Error fetching tenants:", error);
-		return { success: false, error: error.message };
+	if (!result.success) {
+		throw result.error;
 	}
-}
+
+	return result.data;
+};
 ```
 
 ### Providers API
@@ -267,60 +302,261 @@ export async function getTenants(): Promise<ApiResponse<Tenant[]>> {
 #### Create Provider
 
 ```typescript
-// Server Action: features/providers/actions/createProvider.ts
-export async function createProvider(
-	data: CreateProviderData,
-): Promise<ApiResponse<Provider>> {
-	try {
-		const validatedData = createProviderSchema.parse(data);
-		const session = await getServerSession(authOptions);
+// Server Action: lib/data/actions.ts
+export const addUtilityProvider = async (
+	userId: string,
+	provider: UtilityProvider,
+) => {
+	const result = await safeExecuteAsync(async () => {
+		// Validate input data
+		const providerData = {
+			user_id: userId,
+			name: provider.name,
+			category: provider.category,
+		};
 
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
+		const validation = validateWithSchema(
+			UtilityProviderInsertSchema,
+			providerData,
+		);
+		if (!validation.success) {
+			throw createValidationError(
+				`Invalid provider data: ${validation.error}`,
+				"provider",
+				providerData,
+				"UtilityProviderInsertSchema",
+			);
 		}
 
-		const provider = await db.providers.create({
-			data: {
-				...validatedData,
-				userId: session.user.id,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			},
-		});
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const existingProvider = await db
+			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+			.findOne({ user_id: userId, name: provider.name });
 
-		return { success: true, data: provider };
-	} catch (error) {
-		console.error("Error creating provider:", error);
-		return { success: false, error: error.message };
+		if (existingProvider) {
+			throw createDatabaseError(
+				`Utility provider "${provider.name}" already exists.`,
+				"CREATE",
+				"utility_providers",
+			);
+		}
+
+		const result = await db
+			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+			.insertOne(validation.data);
+
+		revalidatePath("/dashboard/providers");
+		return {
+			acknowledged: result.acknowledged,
+			insertedId: result.insertedId.toString(),
+			insertedName: provider.name,
+		};
+	});
+
+	if (!result.success) {
+		throw result.error;
 	}
-}
+
+	return result.data;
+};
 ```
 
 #### Get Providers
 
 ```typescript
-// Server Action: features/providers/actions/getProviders.ts
-export async function getProviders(): Promise<ApiResponse<Provider[]>> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session) {
-			return { success: false, error: "Unauthorized" };
+// Server Action: lib/data/actions.ts
+export const getUtilityProviders = async (userId: string) => {
+	const result = await safeExecuteAsync(async () => {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const providers = await db
+			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
+			.find({ user_id: userId })
+			.sort({ name: 1 })
+			.toArray();
+
+		// Validate response data
+		const validation = validateWithSchema(
+			UtilityProvidersArraySchema,
+			providers,
+		);
+		if (!validation.success) {
+			throw createValidationError(
+				`Invalid providers data: ${validation.error}`,
+				"providers",
+				providers,
+				"UtilityProvidersArraySchema",
+			);
 		}
 
-		const providers = await db.providers.findMany({
-			where: { userId: session.user.id },
-			orderBy: { name: "asc" },
-		});
+		return validation.data;
+	});
 
-		return { success: true, data: providers };
-	} catch (error) {
-		console.error("Error fetching providers:", error);
-		return { success: false, error: error.message };
+	if (!result.success) {
+		throw result.error;
+	}
+
+	return result.data;
+};
+```
+
+## Type-Safe Database Operations
+
+The application provides type-safe database operations through specialized classes:
+
+```typescript
+// Type-safe collection wrapper
+export class TypeSafeCollection<T> {
+	constructor(private collection: Collection) {}
+
+	async findOne(filter: object): Promise<T | null> {
+		try {
+			const result = await this.collection.findOne(filter);
+			return result as T | null;
+		} catch (error) {
+			console.error("Database findOne error:", error);
+			throw new Error("Failed to find document");
+		}
+	}
+
+	async find(filter: object): Promise<T[]> {
+		try {
+			const result = await this.collection.find(filter).toArray();
+			return result as T[];
+		} catch (error) {
+			console.error("Database find error:", error);
+			throw new Error("Failed to find documents");
+		}
+	}
+
+	async insertOne(document: unknown): Promise<DbInsertResult> {
+		try {
+			const result = await this.collection.insertOne(
+				document as Record<string, unknown>,
+			);
+			return {
+				success: result.acknowledged,
+				insertedId: result.insertedId.toString(),
+			};
+		} catch (error) {
+			console.error("Database insertOne error:", error);
+			return {
+				success: false,
+				error: "Failed to insert document",
+			};
+		}
+	}
+}
+
+// Specialized operations for each entity
+export class TypeSafeTenantOperations {
+	constructor(private collection: TypeSafeCollection<TenantDocument>) {}
+
+	async getTenants(userId: string): Promise<TenantDocument[]> {
+		const tenants = await this.collection.find({ user_id: userId });
+		return tenants.map((tenant) => validateTenantDocument(tenant));
+	}
+
+	async createTenant(tenantData: TenantInsert): Promise<DbInsertResult> {
+		const validatedData = validateTenantInsert(tenantData);
+		return await this.collection.insertOne({
+			...validatedData,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		});
 	}
 }
 ```
 
 ## Data Models
+
+### Consolidated Bill Model
+
+```typescript
+interface ConsolidatedBill {
+	id: string;
+	year: number;
+	month: number;
+	tenantId: string;
+	categories: Record<string, number>;
+	totalAmount: number;
+	paid: boolean;
+	dateSent: Date;
+	datePaid?: Date;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+interface ConsolidatedBillDocument {
+	_id: string;
+	user_id: string;
+	year: number;
+	month: number;
+	tenant_id: string;
+	categories: Record<string, number>;
+	total_amount: number;
+	paid: boolean;
+	date_sent: string;
+	date_paid?: string;
+	created_at: string;
+	updated_at: string;
+}
+```
+
+### Tenant Model
+
+```typescript
+interface Tenant {
+	id: string;
+	name: string;
+	email: string;
+	secondaryName?: string;
+	shares: number;
+	outstandingBalance: number;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+interface TenantDocument {
+	_id: string;
+	user_id: string;
+	name: string;
+	email: string;
+	secondary_name?: string;
+	shares: number;
+	outstanding_balance: number;
+	created_at: string;
+	updated_at: string;
+}
+```
+
+### Utility Provider Model
+
+```typescript
+interface UtilityProvider {
+	id: string;
+	name: string;
+	category: UtilityProviderCategory;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+interface UtilityProviderDocument {
+	_id: string;
+	user_id: string;
+	name: string;
+	category: string;
+	created_at: string;
+	updated_at: string;
+}
+
+type UtilityProviderCategory =
+	| "electricity"
+	| "water"
+	| "gas"
+	| "internet"
+	| "trash"
+	| "other";
+```
 
 ### Bill Model
 
@@ -369,75 +605,6 @@ interface BillFilters {
 }
 ```
 
-### Tenant Model
-
-```typescript
-interface Tenant {
-	id: string;
-	name: string;
-	email: string;
-	phone?: string;
-	address?: string;
-	userId: string;
-	createdAt: Date;
-	updatedAt: Date;
-
-	// Relations
-	bills?: Bill[];
-	user?: User;
-}
-
-interface CreateTenantData {
-	name: string;
-	email: string;
-	phone?: string;
-	address?: string;
-}
-
-interface UpdateTenantData {
-	name?: string;
-	email?: string;
-	phone?: string;
-	address?: string;
-}
-```
-
-### Provider Model
-
-```typescript
-interface Provider {
-	id: string;
-	name: string;
-	serviceType: "electricity" | "water" | "gas" | "internet" | "other";
-	accountNumber?: string;
-	contactEmail?: string;
-	contactPhone?: string;
-	userId: string;
-	createdAt: Date;
-	updatedAt: Date;
-
-	// Relations
-	bills?: Bill[];
-	user?: User;
-}
-
-interface CreateProviderData {
-	name: string;
-	serviceType: "electricity" | "water" | "gas" | "internet" | "other";
-	accountNumber?: string;
-	contactEmail?: string;
-	contactPhone?: string;
-}
-
-interface UpdateProviderData {
-	name?: string;
-	serviceType?: "electricity" | "water" | "gas" | "internet" | "other";
-	accountNumber?: string;
-	contactEmail?: string;
-	contactPhone?: string;
-}
-```
-
 ### User Model
 
 ```typescript
@@ -458,105 +625,86 @@ interface User {
 
 ## Error Handling
 
-### Error Types
+The API implements comprehensive error handling with structured error types:
 
 ```typescript
-interface ApiError {
-	code: string;
+// Error types with discriminated unions
+export type ValidationError = {
+	type: "validation";
+	field: string;
+	value: unknown;
+	schema: string;
 	message: string;
-	details?: any;
+};
+
+export type DatabaseError = {
+	type: "database";
+	operation: string;
+	table: string;
+	message: string;
+};
+
+export type ApiError = {
+	type: "api";
+	endpoint: string;
+	status: number;
+	message: string;
+};
+
+export type AppError = ValidationError | DatabaseError | ApiError;
+
+// Error factories
+export function createValidationError(
+	message: string,
+	field: string,
+	value: unknown,
+	schema: string,
+): ValidationError {
+	return {
+		type: "validation",
+		field,
+		value,
+		schema,
+		message,
+	};
 }
 
-// Common error codes
-const ERROR_CODES = {
-	UNAUTHORIZED: "UNAUTHORIZED",
-	VALIDATION_ERROR: "VALIDATION_ERROR",
-	NOT_FOUND: "NOT_FOUND",
-	CONFLICT: "CONFLICT",
-	INTERNAL_ERROR: "INTERNAL_ERROR",
-} as const;
-```
-
-### Error Handling Patterns
-
-```typescript
-// Validation errors
-try {
-  const validatedData = schema.parse(data);
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    return {
-      success: false,
-      error: "Validation failed",
-      details: error.errors
-    };
-  }
+export function createDatabaseError(
+	message: string,
+	operation: string,
+	table: string,
+): DatabaseError {
+	return {
+		type: "database",
+		operation,
+		table,
+		message,
+	};
 }
 
-// Database errors
-try {
-  const result = await db.operation();
-} catch (error) {
-  if (error.code === "P2002") {
-    return {
-      success: false,
-      error: "Resource already exists"
-    };
-  }
-
-  if (error.code === "P2025") {
-    return {
-      success: false,
-      error: "Resource not found"
-    };
-  }
-
-  return {
-    success: false,
-    error: "Database operation failed"
-  };
+// Safe execution utilities
+export async function safeExecuteAsync<T>(
+	fn: () => Promise<T>,
+): Promise<{ success: true; data: T } | { success: false; error: AppError }> {
+	try {
+		const result = await fn();
+		return { success: true, data: result };
+	} catch (error) {
+		return { success: false, error: error as AppError };
+	}
 }
-```
 
-### Client-Side Error Handling
+// Error type guards
+export function isValidationError(error: unknown): error is ValidationError {
+	return isObjectType(error) && error.type === "validation";
+}
 
-```typescript
-// Custom hook for API calls
-export function useApiCall<T, D>(
-	apiFunction: (data: D) => Promise<ApiResponse<T>>,
-) {
-	const [data, setData] = useState<T | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+export function isDatabaseError(error: unknown): error is DatabaseError {
+	return isObjectType(error) && error.type === "database";
+}
 
-	const execute = useCallback(
-		async (apiData: D) => {
-			setIsLoading(true);
-			setError(null);
-
-			try {
-				const result = await apiFunction(apiData);
-
-				if (result.success) {
-					setData(result.data);
-					return result;
-				} else {
-					setError(result.error);
-					return result;
-				}
-			} catch (err) {
-				const errorMessage =
-					err instanceof Error ? err.message : "Unknown error";
-				setError(errorMessage);
-				return { success: false, error: errorMessage };
-			} finally {
-				setIsLoading(false);
-			}
-		},
-		[apiFunction],
-	);
-
-	return { data, isLoading, error, execute };
+export function isApiError(error: unknown): error is ApiError {
+	return isObjectType(error) && error.type === "api";
 }
 ```
 

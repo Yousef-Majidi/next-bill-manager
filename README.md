@@ -11,19 +11,35 @@ A modern, feature-rich bill management application built with Next.js 15, TypeSc
 - **Email Integration**: Automated email notifications and bill distribution
 - **Authentication**: Secure user authentication with NextAuth.js
 - **Responsive Design**: Modern UI that works on all devices
+- **Type Safety**: Comprehensive TypeScript configuration with runtime validation
+- **Performance Optimized**: Caching, lazy evaluation, and performance monitoring
 
 ## 🛠️ Technology Stack
 
 - **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
+- **Language**: TypeScript (strict configuration)
 - **Styling**: Tailwind CSS 4
 - **UI Components**: Radix UI + shadcn/ui
 - **State Management**: Jotai
 - **Authentication**: NextAuth.js
 - **Database**: MongoDB
 - **Email**: Gmail API integration
-- **Validation**: Zod
+- **Validation**: Zod with runtime type checking
 - **Package Manager**: pnpm
+
+## 🔒 Type Safety & Validation
+
+This application implements a comprehensive type safety system:
+
+- **Strict TypeScript Configuration**: Zero compilation errors with strict mode
+- **Runtime Validation**: Zod schemas ensure data integrity at runtime
+- **Type-Safe Utilities**: Safe operations for arrays, objects, and common patterns
+- **Performance Optimizations**: Caching and lazy evaluation for better performance
+- **Structured Error Handling**: Discriminated unions for error types
+- **Form Integration**: Seamless integration with React Hook Form
+- **Database Safety**: Type-safe database operations with schema validation
+
+See the [Type Safety Guide](docs/TYPE_SAFETY_GUIDE.md) for detailed information and examples.
 
 ## 📋 Prerequisites
 
@@ -111,6 +127,8 @@ next-bill-manager/
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Comprehensive technical architecture and code organization
 - **[Contributing Guidelines](docs/CONTRIBUTING.md)** - Development standards and contribution process
 - **[API Documentation](docs/API.md)** - Server actions and API reference
+- **[Type Safety Guide](docs/TYPE_SAFETY_GUIDE.md)** - Comprehensive type safety system and validation
+- **[Type Safety Examples](docs/TYPE_SAFETY_EXAMPLES.md)** - Practical examples of type safety implementation
 
 ## 🔧 Development
 
@@ -120,8 +138,20 @@ This project follows a feature-based architecture with strict dependency rules a
 
 - **Feature Isolation**: Each feature is self-contained with minimal cross-dependencies
 - **Barrel Exports**: Clean import/export patterns using index files
-- **Type Safety**: Strict TypeScript configuration with comprehensive type definitions
-- **Validation**: Automated scripts ensure code organization compliance
+- **Type Safety**: Strict TypeScript configuration with comprehensive type definitions and runtime validation
+- **Validation**: Automated scripts ensure code organization compliance and type safety
+
+### Type Safety System
+
+The application implements a comprehensive type safety system:
+
+- **Strict TypeScript Configuration**: Zero compilation errors with strict mode enabled
+- **Runtime Validation**: Zod schemas ensure data integrity at runtime
+- **Type-Safe Utilities**: Safe operations for arrays, objects, and common patterns
+- **Performance Optimizations**: Caching and lazy evaluation for better performance
+- **Structured Error Handling**: Discriminated unions for error types
+- **Form Integration**: Seamless integration with React Hook Form
+- **Database Safety**: Type-safe database operations with schema validation
 
 ### Validation Scripts
 
@@ -131,6 +161,7 @@ The project includes several validation scripts to maintain code quality:
 - **Structure Validation**: Validates feature directory structure
 - **Export Validation**: Ensures proper barrel export patterns
 - **Code Organization Testing**: Comprehensive code organization validation
+- **Type Safety Validation**: Ensures strict TypeScript compliance
 
 ## 🤝 Contributing
 
