@@ -17,7 +17,7 @@
 		"test:coverage": "vitest run --coverage",
 		"test:coverage:check": "vitest run --coverage",
 		"test:coverage:html": "vitest run --coverage --reporter=html",
-		"test:coverage:lcov": "vitest run --coverage --reporter=lcov",
+		"test:coverage:lcov": "vitest run --coverage",
 		"check-dependencies": "node scripts/check-dependencies.mjs",
 		"validate-structure": "node scripts/validate-feature-structure.mjs",
 		"validate-exports": "node scripts/validate-barrel-exports.mjs",
