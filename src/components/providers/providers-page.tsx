@@ -15,6 +15,8 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
+import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { isObjectType } from "@/lib/common/type-utils";
 import { addUtilityProvider, deleteUtilityProvider } from "@/lib/data";
 import { userAtom, utilityProvidersAtom } from "@/states";
 import { UtilityProviderCategory, UtilityProviderFormData } from "@/types";
@@ -44,8 +46,9 @@ export const ProvidersPage = () => {
 	const [providersList, setProvidersList] = useAtom(utilityProvidersAtom);
 
 	const handleAddProvider = async (data: UtilityProviderFormData) => {
-		if (!user) return;
-		try {
+		if (!isObjectType(user)) return;
+
+		const result = await safeExecuteAsync(async () => {
 			const result = await addUtilityProvider(user.id, {
 				id: "",
 				userId: user.id,
@@ -64,20 +67,24 @@ export const ProvidersPage = () => {
 					},
 				]);
 				toggleDialog(DialogType.MAIN);
+				return result;
 			}
-		} catch (error) {
-			if (error instanceof Error) {
-				toast.error(error.message);
-				return;
-			}
-			toast.error("An unexpected error occurred while adding provider.");
-			console.error(error);
+			throw new Error("Failed to add provider");
+		});
+
+		if (!result.success) {
+			toast.error(
+				result.error.message ||
+					"An unexpected error occurred while adding provider.",
+			);
+			console.error(result.error);
 		}
 	};
 
 	const handleDeleteProvider = async (providerId: string) => {
-		if (!user) return;
-		try {
+		if (!isObjectType(user)) return;
+
+		const result = await safeExecuteAsync(async () => {
 			const result = await deleteUtilityProvider(user.id, providerId);
 			if (result.acknowledged) {
 				toast.success(
@@ -86,15 +93,17 @@ export const ProvidersPage = () => {
 				toggleDialog(DialogType.DELETE);
 				setProvidersList(providersList.filter((p) => p.id !== providerId));
 				setItemIdToDelete(null);
-				return;
+				return result;
 			}
-		} catch (error) {
-			if (error instanceof Error) {
-				toast.error(error.message);
-				return;
-			}
-			toast.error("An unexpected error occurred while deleting provider.");
-			console.error(error);
+			throw new Error("Failed to delete provider");
+		});
+
+		if (!result.success) {
+			toast.error(
+				result.error.message ||
+					"An unexpected error occurred while deleting provider.",
+			);
+			console.error(result.error);
 		}
 	};
 

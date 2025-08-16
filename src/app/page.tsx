@@ -10,14 +10,18 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui";
+import { safeExecuteAsync } from "@/lib/common/error-handling";
 
 export default function LandingPage() {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		try {
+
+		const result = await safeExecuteAsync(async () => {
 			await signIn("google", { callbackUrl: "/dashboard" });
-		} catch (error) {
-			console.error("Error signing in with Google:", error);
+		});
+
+		if (!result.success) {
+			console.error("Error signing in with Google:", result.error);
 		}
 	};
 
@@ -33,42 +37,46 @@ export default function LandingPage() {
 					</p>
 
 					<form onSubmit={handleSubmit}>
-						{/* <Link href="/dashboard"> */}
 						<Button size="lg" className="bg-blue-600 hover:bg-blue-700">
 							<Mail className="mr-2 h-5 w-5" />
 							Continue with Gmail
 						</Button>
-						{/* </Link> */}
 					</form>
 				</div>
 
 				<div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
 					<Card>
 						<CardHeader>
-							<DollarSign className="mb-2 h-8 w-8 text-blue-600" />
-							<CardTitle>Manage Bills</CardTitle>
+							<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+								<DollarSign className="h-6 w-6 text-blue-600" />
+							</div>
+							<CardTitle>Bill Management</CardTitle>
 							<CardDescription>
-								Track utility bills and automatically split costs among tenants
+								Efficiently manage and track all your utility bills in one place
 							</CardDescription>
 						</CardHeader>
 					</Card>
 
 					<Card>
 						<CardHeader>
-							<Users className="mb-2 h-8 w-8 text-green-600" />
+							<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+								<Users className="h-6 w-6 text-green-600" />
+							</div>
 							<CardTitle>Tenant Management</CardTitle>
 							<CardDescription>
-								Add tenants and configure their utility share percentages
+								Organize tenant information and manage billing relationships
 							</CardDescription>
 						</CardHeader>
 					</Card>
 
 					<Card>
 						<CardHeader>
-							<FileText className="mb-2 h-8 w-8 text-purple-600" />
-							<CardTitle>Email Bills</CardTitle>
+							<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
+								<FileText className="h-6 w-6 text-purple-600" />
+							</div>
+							<CardTitle>Automated Billing</CardTitle>
 							<CardDescription>
-								Send personalized bills to tenants with their share breakdown
+								Automatically generate and send bills to tenants via email
 							</CardDescription>
 						</CardHeader>
 					</Card>
@@ -77,4 +85,3 @@ export default function LandingPage() {
 		</div>
 	);
 }
-// test comment

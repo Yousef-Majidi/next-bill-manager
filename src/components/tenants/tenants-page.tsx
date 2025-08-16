@@ -17,6 +17,8 @@ import {
 	CardTitle,
 } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
+import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { isObjectType } from "@/lib/common/type-utils";
 import { addTenant, deleteTenant, updateTenant } from "@/lib/data";
 import { tenantsAtom, userAtom } from "@/states";
 import {
@@ -40,8 +42,9 @@ export const TenantsPage = () => {
 	} = useDialogState();
 
 	const handleAddTenant = async (newTenant: TenantFormData) => {
-		if (!user) return;
-		try {
+		if (!isObjectType(user)) return;
+
+		const result = await safeExecuteAsync(async () => {
 			const result = await addTenant(user.id, newTenant);
 			if (result.acknowledged) {
 				toast.success(`Tenant "${newTenant.name}" added successfully`);
@@ -66,22 +69,24 @@ export const TenantsPage = () => {
 					},
 				]);
 				toggleDialog(DialogType.MAIN);
-				return;
+				return result;
 			}
-		} catch (error) {
-			if (error instanceof Error) {
-				toast.error(error.message);
-				return;
-			}
+			throw new Error("Failed to add tenant");
+		});
 
-			toast.error("An unexpected error occurred while adding the tenant");
-			console.error(error);
+		if (!result.success) {
+			toast.error(
+				result.error.message ||
+					"An unexpected error occurred while adding the tenant",
+			);
+			console.error(result.error);
 		}
 	};
 
 	const handleEditTenant = async (updatedTenant: TenantFormData) => {
-		if (!user || !editingTenant) return;
-		try {
+		if (!isObjectType(user) || !isObjectType(editingTenant)) return;
+
+		const result = await safeExecuteAsync(async () => {
 			const result = await updateTenant(
 				user.id,
 				editingTenant.id,
@@ -113,36 +118,39 @@ export const TenantsPage = () => {
 				);
 				setEditDialogOpen(false);
 				setEditingTenant(null);
-				return;
+				return result;
 			}
-		} catch (error) {
-			if (error instanceof Error) {
-				toast.error(error.message);
-				return;
-			}
+			throw new Error("Failed to update tenant");
+		});
 
-			toast.error("An unexpected error occurred while updating the tenant");
-			console.error(error);
+		if (!result.success) {
+			toast.error(
+				result.error.message ||
+					"An unexpected error occurred while updating the tenant",
+			);
+			console.error(result.error);
 		}
 	};
 
 	const handleDeleteTenant = async (tenantId: string) => {
-		if (!user) return;
-		try {
+		if (!isObjectType(user)) return;
+
+		const result = await safeExecuteAsync(async () => {
 			const result = await deleteTenant(user.id, tenantId);
 			if (result.acknowledged) {
 				toast.success("Tenant deleted successfully");
 				setTenants((prev) => prev.filter((t) => t.id !== tenantId));
-				return;
+				return result;
 			}
-		} catch (error) {
-			if (error instanceof Error) {
-				toast.error(error.message);
-				return;
-			}
+			throw new Error("Failed to delete tenant");
+		});
 
-			toast.error("An unexpected error occurred while deleting the tenant");
-			console.error(error);
+		if (!result.success) {
+			toast.error(
+				result.error.message ||
+					"An unexpected error occurred while deleting the tenant",
+			);
+			console.error(result.error);
 		}
 	};
 

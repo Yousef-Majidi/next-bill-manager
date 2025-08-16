@@ -38,6 +38,7 @@ import {
 	SelectValue,
 	Separator,
 } from "@/components/ui";
+import { isObjectType } from "@/lib/common/type-utils";
 import { getTenantShares } from "@/lib/common/utils";
 import { findById } from "@/lib/data";
 import { billsHistoryAtom, tenantsAtom } from "@/states";
@@ -84,7 +85,7 @@ export const BillsHistoryPage = () => {
 	// Filter bills based on all criteria
 	const filteredBills = billsHistory.filter((bill) => {
 		const tenant = findById(tenantsList, bill.tenantId!);
-		if (!tenant) return false;
+		if (!isObjectType(tenant)) return false;
 
 		// Tenant filter
 		if (
@@ -135,9 +136,12 @@ export const BillsHistoryPage = () => {
 		// Provider filter
 		if (filters.providers.length > 0) {
 			const hasMatchingProvider = filters.providers.some((provider) =>
-				Object.values(bill.categories).some(
-					(cat) => cat.providerName === provider,
-				),
+				Object.values(bill.categories).some((cat) => {
+					if (isObjectType(cat) && typeof cat.providerName === "string") {
+						return cat.providerName === provider;
+					}
+					return false;
+				}),
 			);
 			if (!hasMatchingProvider) return false;
 		}
@@ -162,7 +166,11 @@ export const BillsHistoryPage = () => {
 	const uniqueProviders = [
 		...new Set(
 			billsHistory.flatMap((bill) =>
-				Object.values(bill.categories).map((cat) => cat.providerName),
+				Object.values(bill.categories)
+					.filter(
+						(cat) => isObjectType(cat) && typeof cat.providerName === "string",
+					)
+					.map((cat) => (cat as { providerName: string }).providerName),
 			),
 		),
 	].sort();
@@ -236,7 +244,7 @@ export const BillsHistoryPage = () => {
 									{billsHistory
 										.reduce((sum, bill) => {
 											const tenant = findById(tenantsList, bill.tenantId!);
-											if (!tenant) return sum;
+											if (!isObjectType(tenant)) return sum;
 											const tenantShares = getTenantShares(bill, tenant);
 											return sum + (tenantShares?.tenantTotal || 0);
 										}, 0)
@@ -584,7 +592,7 @@ export const BillsHistoryPage = () => {
 			<div className="space-y-4">
 				{filteredBills.map((bill) => {
 					const tenant = findById(tenantsList, bill.tenantId!);
-					if (!tenant) return null;
+					if (!isObjectType(tenant)) return null;
 					const { tenantTotal, shares } = getTenantShares(bill, tenant);
 					return (
 						<Card key={bill.id}>

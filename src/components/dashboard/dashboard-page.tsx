@@ -11,6 +11,8 @@ import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog"
 import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
 import { Badge } from "@/components/ui";
 import { DialogType, useDialogState } from "@/hooks";
+import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { isObjectType, safeGetProperty } from "@/lib/common/type-utils";
 import { getTenantShares } from "@/lib/common/utils";
 import { addConsolidatedBill, findById } from "@/lib/data";
 import { constructEmail, processTenantPayments, sendEmail } from "@/lib/gmail";
@@ -34,35 +36,45 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	const { mainDialogOpen, toggleDialog } = useDialogState();
 	const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 	const [emailContent, setEmailContent] = useState<EmailContent | null>(null);
-	// const [isLastMonthPaid, setIsLastMonthPaid] = useState<boolean>(false);
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(null);
 
 	const handleWaterAmountChange = (amount: number) => {
-		if (consolidatedBill) {
-			const updatedBill = {
-				...consolidatedBill,
-				categories: {
-					...consolidatedBill.categories,
-					Water: {
-						...consolidatedBill.categories.Water,
-						amount: amount,
+		if (isObjectType(consolidatedBill) && consolidatedBill.categories) {
+			const waterCategory = safeGetProperty(
+				consolidatedBill.categories,
+				"Water",
+			);
+			if (isObjectType(waterCategory)) {
+				const updatedBill = {
+					...consolidatedBill,
+					categories: {
+						...consolidatedBill.categories,
+						Water: {
+							...waterCategory,
+							amount: amount,
+						},
 					},
-				},
-				totalAmount: Object.values({
-					...consolidatedBill.categories,
-					Water: {
-						...consolidatedBill.categories.Water,
-						amount: amount,
-					},
-				}).reduce((sum, category) => sum + category.amount, 0),
-			};
-			setConsolidatedBill(updatedBill);
+					totalAmount: Object.values({
+						...consolidatedBill.categories,
+						Water: {
+							...waterCategory,
+							amount: amount,
+						},
+					}).reduce((sum, category) => {
+						if (isObjectType(category) && typeof category.amount === "number") {
+							return sum + category.amount;
+						}
+						return sum;
+					}, 0),
+				};
+				setConsolidatedBill(updatedBill);
 
-			if (amount === 0) {
-				toast.success("Water bill amount reset to $0.00");
-			} else {
-				toast.success(`Water bill amount updated to $${amount.toFixed(2)}`);
+				if (amount === 0) {
+					toast.success("Water bill amount reset to $0.00");
+				} else {
+					toast.success(`Water bill amount updated to $${amount.toFixed(2)}`);
+				}
 			}
 		}
 	};
@@ -72,7 +84,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 		return billsHistory.reduce((sum, bill) => {
 			if (!bill.paid && bill.tenantId) {
 				const tenant = findById(tenantsList, bill.tenantId);
-				if (tenant) {
+				if (isObjectType(tenant)) {
 					const { tenantTotal } = getTenantShares(bill, tenant);
 					return sum + tenantTotal;
 				}
@@ -95,23 +107,28 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 		});
 	}, [billsHistory, now]);
 
-	const lastMonthTenant = useMemo(
-		() => findById(tenantsList, lastMonthConsolidatedBill[0]?.tenantId ?? ""),
-		[lastMonthConsolidatedBill, tenantsList],
-	);
+	const lastMonthTenant = useMemo(() => {
+		const firstBill = lastMonthConsolidatedBill[0];
+		if (isObjectType(firstBill) && firstBill.tenantId) {
+			return findById(tenantsList, firstBill.tenantId);
+		}
+		return null;
+	}, [lastMonthConsolidatedBill, tenantsList]);
 
 	const lastMonthTenantTotal = useMemo(() => {
-		return lastMonthConsolidatedBill[0] && lastMonthTenant
-			? getTenantShares(lastMonthConsolidatedBill[0], lastMonthTenant)
-					.tenantTotal
-			: 0;
+		const firstBill = lastMonthConsolidatedBill[0];
+		if (isObjectType(firstBill) && isObjectType(lastMonthTenant)) {
+			const shares = getTenantShares(firstBill, lastMonthTenant);
+			return shares.tenantTotal;
+		}
+		return 0;
 	}, [lastMonthConsolidatedBill, lastMonthTenant]);
 
 	const paidAmount = useMemo(() => {
 		return lastMonthConsolidatedBill.reduce((sum, bill) => {
 			if (bill.paid && bill.tenantId) {
 				const tenant = findById(tenantsList, bill.tenantId);
-				if (tenant) {
+				if (isObjectType(tenant)) {
 					const { tenantTotal } = getTenantShares(bill, tenant);
 					return sum + tenantTotal;
 				}
@@ -123,7 +140,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	useEffect(() => {
 		if (tenantsList?.length > 0) {
 			const firstTenant = tenantsList[0];
-			if (firstTenant) {
+			if (isObjectType(firstTenant)) {
 				setSelectedTenant(firstTenant);
 				setConsolidatedBill(currentMonthBill);
 			}
@@ -134,7 +151,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	}, [setSelectedTenant, currentMonthBill, tenantsList]);
 
 	useEffect(() => {
-		if (!user) return;
+		if (!isObjectType(user)) return;
 
 		const checkPayments = async () => {
 			const tenantsWithOutstanding = tenantsList.filter((tenant) => {
@@ -158,20 +175,21 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			};
 
 			for (const tenant of tenantsWithOutstanding) {
-				try {
-					const result = await processTenantPayments(
-						tenant,
-						billsHistory,
-						dateRange,
-					);
+				const result = await safeExecuteAsync(async () => {
+					return await processTenantPayments(tenant, billsHistory, dateRange);
+				});
 
-					if (result.processed) {
-						toast.success(result.message);
+				if (result.success) {
+					if (result.data.processed) {
+						toast.success(result.data.message);
 					} else {
-						toast.info(result.message);
+						toast.info(result.data.message);
 					}
-				} catch (error) {
-					console.error(`Error processing payments for ${tenant.name}:`, error);
+				} else {
+					console.error(
+						`Error processing payments for ${tenant.name}:`,
+						result.error,
+					);
 					toast.error(`Failed to process payments for ${tenant.name}.`);
 				}
 			}
@@ -181,12 +199,12 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	}, [billsHistory, tenantsList, user]);
 
 	const handleSendBill = () => {
-		if (!selectedTenant) {
+		if (!isObjectType(selectedTenant)) {
 			toast.warning("Please select a tenant to send the bill.");
 			return;
 		}
 
-		if (!consolidatedBill) {
+		if (!isObjectType(consolidatedBill)) {
 			toast.error("No bills available for the current month.");
 			return;
 		}
@@ -196,26 +214,26 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	};
 
 	const confirmSendEmail = async () => {
-		if (!emailContent) {
+		if (!isObjectType(emailContent)) {
 			toast.error("No email content to send.");
 			return;
 		}
-		if (!selectedTenant) {
+		if (!isObjectType(selectedTenant)) {
 			toast.error("No tenant selected to send the bill.");
 			return;
 		}
-		if (!consolidatedBill || consolidatedBill.totalAmount <= 0) {
+		if (!isObjectType(consolidatedBill) || consolidatedBill.totalAmount <= 0) {
 			toast.error("No consolidated bill available to add.");
 			return;
 		}
-		if (!user?.id) {
+		if (!isObjectType(user) || !user.id) {
 			toast.error("User ID is missing. Please log in again.");
 			return;
 		}
 
-		try {
-			const result = await sendEmail(emailContent, selectedTenant);
-			if (result.success) {
+		const result = await safeExecuteAsync(async () => {
+			const emailResult = await sendEmail(emailContent, selectedTenant);
+			if (emailResult.success) {
 				// Update the consolidated bill with tenant ID and sent date before saving
 				const billToSave = {
 					...consolidatedBill,
@@ -232,8 +250,11 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			} else {
 				toast.error(`Failed to send email to ${selectedTenant.name}.`);
 			}
-		} catch (error) {
-			console.error("Error sending email:", error);
+			return emailResult;
+		});
+
+		if (!result.success) {
+			console.error("Error sending email:", result.error);
 			toast.error("Failed to send email. Please try again.");
 		}
 
@@ -244,7 +265,10 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	return (
 		<div className="flex flex-col gap-6">
 			{(() => {
-				if (consolidatedBill?.month !== now.getMonth() + 1) {
+				if (
+					isObjectType(consolidatedBill) &&
+					consolidatedBill.month !== now.getMonth() + 1
+				) {
 					return (
 						<div className="mb-2 rounded bg-red-100 px-4 py-2 font-mono font-bold text-red-700">
 							DEBUG MODE: Displaying bills for{" "}
@@ -264,7 +288,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 				return null;
 			})()}
 			<PageHeader
-				title={`Welcome ${user?.name || "User"}!`}
+				title={`Welcome ${isObjectType(user) ? user.name || "User" : "User"}!`}
 				subtitle={
 					<Badge variant="outline" className="hidden sm:flex">
 						{currentDateString}
@@ -273,7 +297,9 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			/>
 
 			<StatsSummary
-				currentMonthTotal={consolidatedBill?.totalAmount || 0}
+				currentMonthTotal={
+					isObjectType(consolidatedBill) ? consolidatedBill.totalAmount || 0 : 0
+				}
 				lastMonthTotal={lastMonthTenantTotal}
 				outstandingBalance={outstandingBalance}
 				paidAmount={paidAmount}
@@ -295,7 +321,7 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			/>
 
 			{/* Email Confirmation Dialog */}
-			{emailContent && selectedTenant && (
+			{isObjectType(emailContent) && isObjectType(selectedTenant) && (
 				<EmailPreviewDialog
 					isOpen={mainDialogOpen}
 					tenant={selectedTenant}
