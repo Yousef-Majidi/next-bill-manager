@@ -1,1 +1,1 @@
-npx lint-staged && npm run validate-all
+npx lint-staged && pnpm run validate-all

@@ -96,6 +96,9 @@ next-bill-manager/
 ├── src/
 │   ├── app/                    # Next.js app router pages
 │   ├── components/             # Shared UI components
+│   │   ├── ui/                # Base UI components (shadcn/ui)
+│   │   ├── settings/          # Settings page components
+│   │   └── ...                # Other component categories
 │   ├── features/               # Feature-based modules
 │   │   ├── bills/             # Bill management feature
 │   │   ├── tenants/           # Tenant management feature
@@ -107,20 +110,55 @@ next-bill-manager/
 │   ├── hooks/                 # Shared React hooks
 │   ├── states/                # Global state management
 │   └── types/                 # Global TypeScript types
-├── scripts/                   # Build and validation scripts
-└── docs/                      # Documentation
+├── scripts/                   # Build, validation, and versioning scripts
+├── docs/                      # Documentation
+├── .github/                   # GitHub Actions workflows
+└── .husky/                    # Git hooks
 ```
 
 ## 🧪 Available Scripts
 
+### Development
+
 - `pnpm dev` - Start development server with Turbopack
 - `pnpm build` - Build the application for production
 - `pnpm start` - Start production server
+
+### Testing & Quality
+
+- `pnpm test` - Run tests with Vitest
+- `pnpm test:run` - Run tests in CI mode
+- `pnpm test:coverage` - Generate coverage report
+- `pnpm test:coverage:html` - Generate HTML coverage report
+- `pnpm test:coverage:lcov` - Generate LCOV coverage report
+
+### Code Quality
+
 - `pnpm lint` - Run ESLint
 - `pnpm validate-all` - Run all validation scripts
+- `pnpm quality-check` - Run linting, tests, and validation
+- `pnpm quality-gate` - Run quality gate checks
+- `pnpm quality-gate:full` - Full quality gate with build
+
+### Validation Scripts
+
 - `pnpm check-dependencies` - Validate feature dependencies
 - `pnpm validate-structure` - Validate feature structure
 - `pnpm validate-exports` - Validate barrel exports
+
+### Version Management
+
+- `pnpm release:prepare` - Quality-checked patch release
+- `pnpm release:minor` - Quality-checked minor release
+- `pnpm release:major` - Quality-checked major release
+- `node scripts/version-manager.mjs` - Manual version management
+
+### Database
+
+- `pnpm db:migrate` - Run database migrations
+- `pnpm db:backup` - Backup database collections
+- `pnpm db:restore` - Restore database collections
+- `pnpm db:diagnose` - Diagnose database issues
 
 ## 📚 Documentation
 
@@ -129,6 +167,7 @@ next-bill-manager/
 - **[API Documentation](docs/API.md)** - Server actions and API reference
 - **[Type Safety Guide](docs/TYPE_SAFETY_GUIDE.md)** - Comprehensive type safety system and validation
 - **[Type Safety Examples](docs/TYPE_SAFETY_EXAMPLES.md)** - Practical examples of type safety implementation
+- **[Versioning Strategy](docs/VERSIONING.md)** - Version management and release process
 
 ## 🔧 Development
 
@@ -153,6 +192,16 @@ The application implements a comprehensive type safety system:
 - **Form Integration**: Seamless integration with React Hook Form
 - **Database Safety**: Type-safe database operations with schema validation
 
+### Quality Gates & Testing
+
+The project implements comprehensive quality gates and testing infrastructure:
+
+- **Test Coverage**: 70% minimum coverage with Vitest and V8 coverage provider
+- **Quality Gates**: Automated checks for linting, testing, validation, and build
+- **CI/CD Integration**: GitHub Actions with automated testing and deployment
+- **Version Management**: Automated versioning with semantic versioning
+- **Release Process**: Quality-checked releases with automated changelog generation
+
 ### Validation Scripts
 
 The project includes several validation scripts to maintain code quality:
@@ -168,10 +217,18 @@ The project includes several validation scripts to maintain code quality:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Follow the [Contributing Guidelines](docs/CONTRIBUTING.md)
-4. Run validation scripts (`pnpm validate-all`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+4. Run quality gates (`pnpm run quality-gate:full`)
+5. Ensure tests pass (`pnpm run test:run`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+### Quality Requirements
+
+- All tests must pass with 70% minimum coverage
+- Code must pass linting and validation checks
+- Build must complete successfully
+- Follow semantic versioning for releases
 
 ## 📄 License
 

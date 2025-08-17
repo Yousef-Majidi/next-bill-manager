@@ -45,3 +45,8 @@ next-env.d.ts
 .vscode/settings.json
 .cursor/
 .cursorrules
+
+# test-results
+test-results/
+playwright-report/
+visual.spec.ts-snapshots/
