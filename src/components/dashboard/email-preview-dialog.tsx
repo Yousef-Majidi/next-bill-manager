@@ -1,5 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { Mail } from "lucide-react";
-import sanitizeHtml from "sanitize-html";
 
 import {
 	Button,
@@ -28,18 +31,31 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 	onClose,
 	onConfirm,
 }) => {
-	const sanitizedBody = sanitizeHtml(emailContent.body, {
-		allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-			"style",
-			"table",
-			"tr",
-			"td",
-			"th",
-		]),
-		allowedAttributes: {
-			"*": ["style", "class", "src", "alt"],
-		},
-	});
+	const [sanitizedBody, setSanitizedBody] = useState<string>("");
+
+	useEffect(() => {
+		const sanitizeContent = async () => {
+			const sanitizeHtml = (await import("sanitize-html")).default;
+			const sanitized = sanitizeHtml(emailContent.body, {
+				allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+					"style",
+					"table",
+					"tr",
+					"td",
+					"th",
+				]),
+				allowedAttributes: {
+					"*": ["style", "class", "src", "alt"],
+				},
+			});
+			setSanitizedBody(sanitized);
+		};
+
+		if (isOpen) {
+			sanitizeContent();
+		}
+	}, [emailContent.body, isOpen]);
+
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent className="min-w-4xl">
