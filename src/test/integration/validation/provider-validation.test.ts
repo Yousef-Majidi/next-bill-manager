@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { UtilityProviderCategory } from "@/features/providers/types";
 import {
 	CreateProviderRequestSchema,
 	UpdateProviderRequestSchema,
@@ -8,7 +9,6 @@ import {
 	EditProviderFormSchema,
 	UtilityProviderFormSchema,
 } from "@/lib/common/form-validation";
-import { UtilityProviderCategory } from "@/types";
 
 describe("Provider Form Validation", () => {
 	describe("UtilityProviderFormSchema", () => {

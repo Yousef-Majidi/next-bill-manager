@@ -4,6 +4,7 @@ import {
 	getDashboardData,
 	getDashboardLayoutData,
 } from "@/features/dashboard/actions";
+import { UtilityProviderCategory } from "@/features/providers/types";
 import { initializeConsolidatedBill } from "@/lib/common/utils";
 import {
 	getConsolidatedBills,
@@ -13,7 +14,6 @@ import {
 } from "@/lib/data";
 import { fetchUserBills } from "@/lib/gmail";
 import type { ConsolidatedBill, UtilityBill } from "@/types";
-import { UtilityProviderCategory } from "@/types/utility-provider";
 
 // Mock the dependencies
 vi.mock("@/lib/data", () => ({
