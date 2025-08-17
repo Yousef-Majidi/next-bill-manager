@@ -22,23 +22,14 @@ import {
 } from "@/components/ui";
 import { CreateProviderRequestSchema } from "@/lib/common/api-contracts";
 import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { UtilityProviderFormSchema } from "@/lib/common/form-validation";
 import { validateWithSchema } from "@/lib/common/type-utils";
 import {
 	UtilityProviderCategory as Category,
 	UtilityProviderFormData,
 } from "@/types";
 
-// Form schema for provider creation
-const ProviderFormSchema = z.object({
-	name: z.string().min(1, "Provider name is required"),
-	category: z.enum(["Water", "Gas", "Electricity", "Internet", "OTHER"], {
-		required_error: "Category is required",
-	}),
-	email: z.string().email("Invalid email format").optional().or(z.literal("")),
-	website: z.string().url("Invalid URL format").optional().or(z.literal("")),
-});
-
-type ProviderFormSchema = z.infer<typeof ProviderFormSchema>;
+type ProviderFormSchema = z.infer<typeof UtilityProviderFormSchema>;
 
 interface AddDialogProps {
 	readonly isOpen: boolean;
@@ -59,7 +50,7 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 		setValue,
 		watch,
 	} = useForm<ProviderFormSchema>({
-		resolver: zodResolver(ProviderFormSchema),
+		resolver: zodResolver(UtilityProviderFormSchema),
 		defaultValues: {
 			name: "",
 			category: "Water" as const,
