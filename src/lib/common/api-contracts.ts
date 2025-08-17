@@ -18,8 +18,12 @@ export const UpdateTenantRequestSchema = z.object({
 export const CreateProviderRequestSchema = z.object({
 	name: z.string().min(1, "Name is required"),
 	category: z.enum(["Water", "Gas", "Electricity", "Internet", "OTHER"]),
-	email: z.string().email("Invalid email format").optional(),
-	website: z.string().url("Invalid URL format").optional(),
+	email: z
+		.union([z.string().email("Invalid email format"), z.literal("")])
+		.optional(),
+	website: z
+		.union([z.string().url("Invalid URL format"), z.literal("")])
+		.optional(),
 });
 
 export const UpdateProviderRequestSchema = z.object({
@@ -27,8 +31,12 @@ export const UpdateProviderRequestSchema = z.object({
 	category: z
 		.enum(["Water", "Gas", "Electricity", "Internet", "OTHER"])
 		.optional(),
-	email: z.string().email("Invalid email format").optional(),
-	website: z.string().url("Invalid URL format").optional(),
+	email: z
+		.union([z.string().email("Invalid email format"), z.literal("")])
+		.optional(),
+	website: z
+		.union([z.string().url("Invalid URL format"), z.literal("")])
+		.optional(),
 });
 
 // Response schemas

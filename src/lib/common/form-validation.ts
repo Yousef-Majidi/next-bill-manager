@@ -26,8 +26,18 @@ export const UtilityProviderFormSchema = z.object({
 	category: z.enum(["Water", "Gas", "Electricity", "Internet", "OTHER"], {
 		required_error: "Please select a category",
 	}),
-	email: FormEmailSchema,
-	website: FormUrlSchema,
+	email: z.union([FormEmailSchema, z.literal("")]).optional(),
+	website: z.union([FormUrlSchema, z.literal("")]).optional(),
+});
+
+// edit provider form schema (allows empty strings for clearing fields)
+export const EditProviderFormSchema = z.object({
+	name: NameSchema,
+	category: z.enum(["Water", "Gas", "Electricity", "Internet", "OTHER"], {
+		required_error: "Please select a category",
+	}),
+	email: z.union([FormEmailSchema, z.literal("")]).optional(),
+	website: z.union([FormUrlSchema, z.literal("")]).optional(),
 });
 
 // tenant form schemas
