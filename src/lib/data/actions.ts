@@ -111,6 +111,8 @@ export const getUtilityProviders = async (userId: string) => {
 			userId: provider.user_id,
 			name: provider.name,
 			category: provider.category as UtilityProviderCategory,
+			...(provider.email && { email: provider.email }),
+			...(provider.website && { website: provider.website }),
 		})) as UtilityProvider[];
 	});
 
@@ -131,6 +133,8 @@ export const addUtilityProvider = async (
 			user_id: userId,
 			name: provider.name,
 			category: provider.category,
+			...(provider.email && { email: provider.email }),
+			...(provider.website && { website: provider.website }),
 		};
 
 		const validation = validateWithSchema(
@@ -221,11 +225,57 @@ export const updateUtilityProvider = async (
 ) => {
 	const result = await safeExecuteAsync(async () => {
 		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+
+		// Prepare update operations
+		const updateOperations: Record<string, unknown> = {};
+		const unsetOperations: Record<string, unknown> = {};
+
+		// Always update name and category
+		updateOperations.name = provider.name;
+		updateOperations.category = provider.category;
+
+		// Handle email field
+		if (provider.email !== undefined) {
+			if (provider.email === null || provider.email === "") {
+				// Remove email field
+				unsetOperations.email = "";
+			} else {
+				// Set email field
+				updateOperations.email = provider.email;
+			}
+		} else {
+			// Field not provided, remove it
+			unsetOperations.email = "";
+		}
+
+		// Handle website field
+		if (provider.website !== undefined) {
+			if (provider.website === null || provider.website === "") {
+				// Remove website field
+				unsetOperations.website = "";
+			} else {
+				// Set website field
+				updateOperations.website = provider.website;
+			}
+		} else {
+			// Field not provided, remove it
+			unsetOperations.website = "";
+		}
+
+		// Build the update operation
+		const updateOperation: Record<string, unknown> = {};
+		if (Object.keys(updateOperations).length > 0) {
+			updateOperation.$set = updateOperations;
+		}
+		if (Object.keys(unsetOperations).length > 0) {
+			updateOperation.$unset = unsetOperations;
+		}
+
 		const result = await db
 			.collection(process.env.MONGODB_UTILITY_PROVIDERS!)
 			.updateOne(
 				{ _id: new ObjectId(providerId), user_id: userId },
-				{ $set: { name: provider.name, category: provider.category } },
+				updateOperation,
 			);
 
 		if (result.matchedCount === 0) {
