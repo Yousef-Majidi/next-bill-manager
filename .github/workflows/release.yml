@@ -62,27 +62,25 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: actions/create-release@v1
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }} - Stable MVP" \
+            --notes "## What's Changed
+
+          ${{ steps.changelog.outputs.changelog }}
+
+          ## Installation
+
+          \`\`\`bash
+          pnpm install
+          \`\`\`
+
+          ## Development
+
+          \`\`\`bash
+          pnpm run dev
+          \`\`\`
+
+          This release represents the stable MVP with all core features working reliably."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ## What's Changed
-
-            ${{ steps.changelog.outputs.changelog }}
-
-            ## Installation
-
-            ```bash
-            pnpm install
-            ```
-
-            ## Development
-
-            ```bash
-            pnpm run dev
-            ```
-          draft: false
-          prerelease: false
