@@ -72,8 +72,19 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 
 	const handleFormSubmit = async (data: ProviderFormSchema) => {
 		const result = await safeExecuteAsync(async () => {
+			// Convert empty strings to undefined for validation
+			const validationData = {
+				name: data.name,
+				category: data.category,
+				email: data.email && data.email.trim() ? data.email : undefined,
+				website: data.website && data.website.trim() ? data.website : undefined,
+			};
+
 			// Additional runtime validation
-			const validation = validateWithSchema(CreateProviderRequestSchema, data);
+			const validation = validateWithSchema(
+				CreateProviderRequestSchema,
+				validationData,
+			);
 			if (!validation.success) {
 				throw new Error(`Form validation failed: ${validation.error}`);
 			}
@@ -82,10 +93,8 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 			const providerData: UtilityProviderFormData = {
 				name: data.name,
 				category: data.category,
-				...(data.email && data.email.trim() ? { email: data.email } : {}),
-				...(data.website && data.website.trim()
-					? { website: data.website }
-					: {}),
+				...(validationData.email ? { email: validationData.email } : {}),
+				...(validationData.website ? { website: validationData.website } : {}),
 			};
 
 			onSubmit(providerData);
