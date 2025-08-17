@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,27 +22,35 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui";
-import { CreateProviderRequestSchema } from "@/lib/common/api-contracts";
+import { UpdateProviderRequestSchema } from "@/lib/common/api-contracts";
 import { safeExecuteAsync } from "@/lib/common/error-handling";
-import { UtilityProviderFormSchema } from "@/lib/common/form-validation";
+import { EditProviderFormSchema } from "@/lib/common/form-validation";
 import { validateWithSchema } from "@/lib/common/type-utils";
 import {
 	UtilityProviderCategory as Category,
 	UtilityProviderFormData,
 } from "@/types";
 
-type ProviderFormSchema = z.infer<typeof UtilityProviderFormSchema>;
+type EditProviderFormData = z.infer<typeof EditProviderFormSchema>;
 
-interface AddDialogProps {
+interface EditDialogProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onSubmit: (data: UtilityProviderFormData) => void;
+	readonly provider: {
+		readonly id: string;
+		readonly name: string;
+		readonly category: string;
+		readonly email?: string;
+		readonly website?: string;
+	};
 }
 
-export const AddProviderDialog: React.FC<AddDialogProps> = ({
+export const EditProviderDialog: React.FC<EditDialogProps> = ({
 	isOpen,
 	onClose,
 	onSubmit,
+	provider,
 }) => {
 	const {
 		register,
@@ -49,19 +59,39 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 		reset,
 		setValue,
 		watch,
-	} = useForm<ProviderFormSchema>({
-		resolver: zodResolver(UtilityProviderFormSchema),
+	} = useForm<EditProviderFormData>({
+		resolver: zodResolver(EditProviderFormSchema),
 		defaultValues: {
-			name: "",
-			category: "Water" as const,
-			email: "",
-			website: "",
+			name: provider.name,
+			category: provider.category as
+				| "Water"
+				| "Gas"
+				| "Electricity"
+				| "Internet"
+				| "OTHER",
+			email: provider.email || "",
+			website: provider.website || "",
 		},
 	});
 
 	const watchedCategory = watch("category");
 
-	const handleFormSubmit = async (data: ProviderFormSchema) => {
+	// Reset form when provider changes
+	React.useEffect(() => {
+		reset({
+			name: provider.name,
+			category: provider.category as
+				| "Water"
+				| "Gas"
+				| "Electricity"
+				| "Internet"
+				| "OTHER",
+			email: provider.email || "",
+			website: provider.website || "",
+		});
+	}, [provider, reset]);
+
+	const handleFormSubmit = async (data: EditProviderFormData) => {
 		const result = await safeExecuteAsync(async () => {
 			// Convert empty strings to undefined for validation
 			const validationData = {
@@ -73,7 +103,7 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 
 			// Additional runtime validation
 			const validation = validateWithSchema(
-				CreateProviderRequestSchema,
+				UpdateProviderRequestSchema,
 				validationData,
 			);
 			if (!validation.success) {
@@ -104,9 +134,9 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Add New Provider</DialogTitle>
+					<DialogTitle>Edit Provider</DialogTitle>
 					<DialogDescription>
-						Add a new utility provider to your account
+						Update the information for {provider.name}
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -188,7 +218,7 @@ export const AddProviderDialog: React.FC<AddDialogProps> = ({
 						<Button type="button" variant="secondary" onClick={onClose}>
 							Cancel
 						</Button>
-						<Button type="submit">Add Provider</Button>
+						<Button type="submit">Save Changes</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

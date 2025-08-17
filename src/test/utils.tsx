@@ -35,11 +35,11 @@ export const createMockTenant = (overrides = {}) => ({
 
 export const createMockProvider = (overrides = {}) => ({
 	id: "test-provider-id",
+	userId: "test-user-id",
 	name: "Test Provider",
-	type: "electricity",
-	accountNumber: "123456789",
-	createdAt: new Date("2024-01-01"),
-	updatedAt: new Date("2024-01-01"),
+	category: "Electricity" as const,
+	email: "test@example.com",
+	website: "https://example.com",
 	...overrides,
 });
 
