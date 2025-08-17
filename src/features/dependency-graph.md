@@ -2,29 +2,29 @@
 
 ```
 ┌─────────────┐    ┌─────────────┐
-│   Auth      │    │ Providers   │
-│  (User)     │    │(Utility)    │
+│    Auth     │    │  Providers  │
+│   (User)    │    │  (Utility)  │
 └─────────────┘    └─────────────┘
        │                   │
        │                   │
        │                   ▼
-       │            ┌─────────────┐
-       │            │   Bills     │
-       │            │(UtilityBill)│
-       │            └─────────────┘
+       │           ┌─────────────┐
+       │           │    Bills    │
+       │           │(UtilityBill)│
+       │           └─────────────┘
        │                   │
        │                   │
        │                   ▼
-       │            ┌─────────────┐
-       │            │   Email     │
-       │            │(EmailContent)│
-       │            └─────────────┘
+       │          ┌────────────────┐
+       │          │      Email     │
+       │          │ (EmailContent) │
+       │          └────────────────┘
        │                   │
        │                   │
        ▼                   ▼
 ┌─────────────┐    ┌─────────────┐
-│  Tenants    │    │ Dashboard   │
-│  (Tenant)   │    │(Analytics)  │
+│   Tenants   │    │  Dashboard  │
+│   (Tenant)  │    │ (Analytics) │
 └─────────────┘    └─────────────┘
        │                   ▲
        │                   │
