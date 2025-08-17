@@ -45,7 +45,7 @@ export const parseMessages = async (
 	messages: gmail_v1.Schema$Message[],
 	providerName: string,
 ) => {
-	const billDetails: { messageId: string; dollarAmount: number }[] = []; // TODO: Refactor this to use UtilityBill type
+	const billDetails: { messageId: string; dollarAmount: number }[] = [];
 	for (const message of messages) {
 		const messageId = message.id;
 		const messageDetails = await gmailClient.users.messages.get({

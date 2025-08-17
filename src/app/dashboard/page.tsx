@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 import { DashboardPage } from "@/components/dashboard";
-import { initializeConsolidatedBill } from "@/lib/common/utils";
-import { getUser, getUtilityProviders } from "@/lib/data";
-import { fetchUserBills } from "@/lib/gmail";
+import { getDashboardData } from "@/features/dashboard/actions";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "Dashboard | Next Bill Manager",
@@ -11,25 +11,17 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-	const loggedInUser = await getUser();
-	const availableProviders = await getUtilityProviders(loggedInUser.id);
-	const currentDate = new Date();
-	// currentDate.setMonth(currentDate.getMonth() - 1); // Set to prev month for testing
-	const fetchedBills = await fetchUserBills(
-		availableProviders,
-		currentDate.getMonth() + 1, // getMonth() is zero-based
-		currentDate.getFullYear(),
-	);
+	const result = await getDashboardData();
 
-	const consolidatedBillForCurrentMonth = initializeConsolidatedBill({
-		userId: loggedInUser.id,
-		bills: fetchedBills,
-		currentDate,
-	});
+	if (!result.success || !result.data) {
+		throw new Error(result.error || "Failed to fetch dashboard data");
+	}
+
+	const { currentMonthBill } = result.data;
 
 	return (
 		<main>
-			<DashboardPage currentMonthBill={consolidatedBillForCurrentMonth} />
+			<DashboardPage currentMonthBill={currentMonthBill} />
 		</main>
 	);
 }

@@ -91,8 +91,9 @@ This document defines the clear boundaries between different features in the app
 ### 5. Type Sharing
 
 - Types are exported through feature index files
-- Legacy types are re-exported through `@/types` for backward compatibility
+- All types have been moved to their respective features
 - New code should import from feature directories
+- Legacy `@/types` only re-exports from features for backward compatibility
 
 ## Example Usage
 
@@ -115,9 +116,9 @@ import { UtilityBill } from "@/types";
 1. **Phase 1:** ✅ Feature structure created
 2. **Phase 2:** ✅ Types moved to features
 3. **Phase 3:** ✅ Naming conventions implemented
-4. **Phase 4:** Update imports throughout codebase
-5. **Phase 5:** Move components to features
-6. **Phase 6:** Move actions and utilities to features
+4. **Phase 4:** ✅ Imports updated throughout codebase
+5. **Phase 5:** ✅ Business logic extracted to features (Issue 16)
+6. **Phase 6:** Move components to features
 7. **Phase 7:** Remove legacy files
 
 ## File Structure

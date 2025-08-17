@@ -10,28 +10,32 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui";
-import {
-	getConsolidatedBills,
-	getTenants,
-	getUser,
-	getUtilityProviders,
-} from "@/lib/data";
+import { getDashboardLayoutData } from "@/features/dashboard/actions";
 
 export default async function DashboardLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
-	const loggedInUser = await getUser();
-	const fetchedProviders = await getUtilityProviders(loggedInUser.id);
-	const fetchedTenants = await getTenants(loggedInUser.id);
-	const fetchedBills = await getConsolidatedBills(loggedInUser.id);
+	const result = await getDashboardLayoutData();
+
+	if (!result.success || !result.data) {
+		throw new Error(result.error || "Failed to fetch layout data");
+	}
+
+	const {
+		user: loggedInUser,
+		providers: utilityProviders,
+		tenants,
+		billsHistory,
+	} = result.data;
+
 	return (
 		<DashboardWrapper
 			loggedInUser={loggedInUser}
-			utilityProviders={fetchedProviders}
-			tenants={fetchedTenants}
-			billsHistory={fetchedBills}>
+			utilityProviders={utilityProviders}
+			tenants={tenants}
+			billsHistory={billsHistory}>
 			<SidebarProvider>
 				<AppSidebar />
 				<SidebarInset>

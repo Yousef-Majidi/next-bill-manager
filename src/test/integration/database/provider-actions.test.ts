@@ -10,7 +10,7 @@ import {
 	it,
 } from "vitest";
 
-import { UtilityProviderCategory } from "@/types";
+import { UtilityProviderCategory } from "@/features/providers/types";
 
 describe("Real Database Testing - Provider Operations", () => {
 	let mongod: MongoMemoryServer;

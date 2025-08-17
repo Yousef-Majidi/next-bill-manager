@@ -1,3 +1,3 @@
 // providers types exports
-export * from "./provider";
-export * from "./provider-form-data";
+export * from "./utility-provider";
+export * from "./utility-provider-form-data";

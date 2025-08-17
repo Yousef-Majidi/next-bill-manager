@@ -262,25 +262,26 @@ function testNamingConventions() {
 		const extension = path.extname(fileName);
 		const nameWithoutExt = path.basename(fileName, extension);
 
-		// Component files should be PascalCase
+		// Component files should be kebab-case
 		if (extension === ".tsx" && !fileName.includes(".test.")) {
-			const isPascalCase = /^[A-Z][a-zA-Z0-9]*$/.test(nameWithoutExt);
+			const isKebabCase = /^[a-z][a-z0-9-]*$/.test(nameWithoutExt);
 			assert(
-				isPascalCase,
-				`${context} component file should be PascalCase: ${fileName}`,
+				isKebabCase,
+				`${context} component file should be kebab-case: ${fileName}`,
 			);
 		}
 
-		// Utility files should be camelCase (optional for existing files)
+		// Type files should be kebab-case
 		if (
 			extension === ".ts" &&
 			!fileName.includes(".test.") &&
-			!fileName.includes(".d.")
+			!fileName.includes(".d.") &&
+			!fileName.includes("index.")
 		) {
-			const isCamelCase = /^[a-z][a-zA-Z0-9]*$/.test(nameWithoutExt);
-			if (!isCamelCase) {
+			const isKebabCase = /^[a-z][a-z0-9-]*$/.test(nameWithoutExt);
+			if (!isKebabCase) {
 				log(
-					`${context} utility file should be camelCase: ${fileName} (optional)`,
+					`${context} type file should be kebab-case: ${fileName} (optional)`,
 					"info",
 				);
 			}
