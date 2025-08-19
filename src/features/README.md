@@ -117,7 +117,7 @@ import { UtilityBill } from "@/types";
 2. **Phase 2:** ✅ Types moved to features
 3. **Phase 3:** ✅ Naming conventions implemented
 4. **Phase 4:** ✅ Imports updated throughout codebase
-5. **Phase 5:** ✅ Business logic extracted to features (Issue 16)
+5. **Phase 5:** ✅ Business logic extracted to features
 6. **Phase 6:** Move components to features
 7. **Phase 7:** Remove legacy files
 
