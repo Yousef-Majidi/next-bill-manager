@@ -86,7 +86,7 @@ The codebase migration progress:
 - ✅ **Phase 2**: Types moved to features
 - ✅ **Phase 3**: Naming conventions implemented
 - ✅ **Phase 4**: Imports updated throughout codebase
-- ✅ **Phase 5**: Business logic extracted to features (Issue 16)
+- ✅ **Phase 5**: Business logic extracted to features
 - 🔄 **Phase 6**: Moving components to features
 - ⏳ **Phase 7**: Removing legacy files
 
