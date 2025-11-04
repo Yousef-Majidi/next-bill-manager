@@ -46,7 +46,7 @@ export const TenantDocumentSchema = z.object({
 	email: EmailSchema,
 	secondary_name: z.string().nullable().optional(),
 	shares: z.record(z.string(), z.number().min(0).max(100)),
-	outstanding_balance: NonNegativeNumberSchema.optional().default(0),
+	outstanding_balance: z.number().optional().default(0), // Allow negative values for credit balances
 	created_at: DateStringSchema.optional(),
 	updated_at: DateStringSchema.optional(),
 });
@@ -124,7 +124,7 @@ export const TenantInsertSchema = z.object({
 	email: EmailSchema,
 	secondary_name: z.string().nullable(),
 	shares: z.record(z.string(), z.number().min(0).max(100)),
-	outstanding_balance: NonNegativeNumberSchema.default(0),
+	outstanding_balance: z.number().default(0), // Allow negative values for credit balances
 	created_at: DateStringSchema.optional(),
 	updated_at: DateStringSchema.optional(),
 });
@@ -168,7 +168,7 @@ export const TenantDbUpdateSchema = z.object({
 	shares: z
 		.record(UtilityProviderCategorySchema, z.number().min(0).max(100))
 		.optional(),
-	outstanding_balance: NonNegativeNumberSchema.optional(),
+	outstanding_balance: z.number().optional(), // Allow negative values for credit balances
 	updated_at: DateStringSchema.optional(),
 });
 

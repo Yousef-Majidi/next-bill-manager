@@ -7,9 +7,8 @@ export const authOptions = {
 	...authConfig,
 	providers: [
 		GoogleProvider({
-			clientId: process.env.GOOGLE_CLIENT_ID || "fallback-client-id",
-			clientSecret:
-				process.env.GOOGLE_CLIENT_SECRET || "fallback-client-secret",
+			clientId: process.env.GOOGLE_CLIENT_ID!,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
 			authorization: {
 				params: {
 					scope:
