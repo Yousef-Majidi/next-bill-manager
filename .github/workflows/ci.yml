@@ -43,8 +43,14 @@ jobs:
             exit 0
           fi
 
+          # Check if we're on a commit after a tag with the same version (maintenance commits after release)
           if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-            echo "❌ Version $CURRENT_VERSION already exists as tag $LATEST_TAG but this commit is not tagged"
+            # Check if the latest tag is an ancestor of current commit (we're ahead of the release)
+            if git merge-base --is-ancestor "$LATEST_TAG" HEAD 2>/dev/null; then
+              echo "✅ Version $CURRENT_VERSION is already released as $LATEST_TAG, allowing maintenance commits"
+              exit 0
+            fi
+            echo "❌ Version $CURRENT_VERSION already exists as tag $LATEST_TAG but this commit is not related"
             exit 1
           fi
 
