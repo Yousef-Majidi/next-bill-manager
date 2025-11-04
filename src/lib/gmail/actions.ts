@@ -31,7 +31,12 @@ export const fetchUserBills = async (
 		for (const provider of providers) {
 			// Calculate the first day of the next month
 			const nextMonthDate = new Date(year, month, 1);
-			const query = `${provider.name} after:${year}-${month}-01 before:${nextMonthDate.getFullYear()}-${nextMonthDate.getMonth() + 1}-01`;
+			const nextMonth = nextMonthDate.getMonth() + 1;
+			const nextYear = nextMonthDate.getFullYear();
+			// Format dates with proper zero-padding for Gmail query
+			const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+			const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+			const query = `${provider.name} after:${startDate} before:${endDate}`;
 
 			const response = await gmailClient.users.messages.list({
 				userId: "me",
@@ -40,6 +45,7 @@ export const fetchUserBills = async (
 
 			const messages = response.data.messages || [];
 			if (messages.length === 0) {
+				// No messages found for this provider in this month
 				bills.push({
 					id: null,
 					gmailMessageId: "",
@@ -57,14 +63,18 @@ export const fetchUserBills = async (
 				provider.name,
 			);
 
+			// Only add bill if we found actual bill details
+			// If parseMessages filtered out all messages (no matching subject), amount will be 0
+			const totalAmount = billDetails.reduce(
+				(total, detail) => total + detail.dollarAmount,
+				0,
+			);
+
 			bills.push({
 				id: null, // Assuming id is generated later or not needed immediately
 				utilityProvider: provider,
 				gmailMessageId: billDetails.map((detail) => detail.messageId).join(","),
-				amount: billDetails.reduce(
-					(total, detail) => total + detail.dollarAmount,
-					0,
-				),
+				amount: totalAmount,
 				month,
 				year,
 			});
@@ -217,7 +227,13 @@ export const processTenantPayments = async (
 				if (isObjectType(payment)) {
 					const paymentAmount = roundToCurrency(Number(payment.amount));
 
-					// Check each unpaid bill to see if the payment matches
+					// Find the best matching unpaid bill for this payment
+					let bestMatch: {
+						bill: ConsolidatedBill;
+						expectedAmount: number;
+						difference: number;
+					} | null = null;
+
 					for (const bill of sortedUnpaidBills) {
 						// Calculate tenant's share for this bill
 						const { tenantTotal } = getTenantShares(bill, tenant);
@@ -230,18 +246,28 @@ export const processTenantPayments = async (
 							? tenantTotal + tenant.outstandingBalance
 							: tenantTotal;
 
-						const tolerance = 0.01; // $0.01 tolerance for rounding differences
+						const difference = Math.abs(paymentAmount - expectedAmount);
 
-						if (Math.abs(paymentAmount - expectedAmount) <= tolerance) {
-							// Payment matches this bill! Process it
-							return await processPaymentMatch(
-								loggedInUser.id,
-								tenant,
+						// Find the bill with the smallest difference (closest match)
+						if (!bestMatch || difference < bestMatch.difference) {
+							bestMatch = {
 								bill,
-								payment,
-								paymentAmount,
-							);
+								expectedAmount,
+								difference,
+							};
 						}
+					}
+
+					// Process the payment for the best matching bill
+					if (bestMatch) {
+						return await processPaymentMatch(
+							loggedInUser.id,
+							tenant,
+							bestMatch.bill,
+							payment,
+							paymentAmount,
+							bestMatch.expectedAmount,
+						);
 					}
 
 					// Payment found but doesn't match any unpaid bill
@@ -278,6 +304,7 @@ const processPaymentMatch = async (
 	bill: ConsolidatedBill,
 	payment: Payment,
 	paymentAmount: number,
+	expectedAmount: number,
 ) => {
 	const result = await safeExecuteAsync(async () => {
 		// Mark bill as paid
@@ -285,16 +312,50 @@ const processPaymentMatch = async (
 			await markBillAsPaid(userId, bill.id, payment.gmailMessageId);
 		}
 
-		// Update tenant balance
-		const newBalance = roundToCurrency(
-			Math.max(0, tenant.outstandingBalance - paymentAmount),
-		);
+		// Calculate payment difference and new balance
+		const paymentDifference = paymentAmount - expectedAmount;
+		let newBalance: number;
+		let paymentStatus: string;
+
+		if (Math.abs(paymentDifference) <= 0.01) {
+			// Exact payment (within $0.01 tolerance)
+			newBalance = 0;
+			paymentStatus = "exact";
+		} else if (paymentDifference > 0) {
+			// Overpayment - create credit (negative balance)
+			newBalance = roundToCurrency(-paymentDifference);
+			paymentStatus = "overpaid";
+		} else {
+			// Underpayment - remaining balance
+			newBalance = roundToCurrency(Math.abs(paymentDifference));
+			paymentStatus = "underpaid";
+		}
+
 		await updateTenantBalance(userId, tenant.id, newBalance);
+
+		// Create appropriate message based on payment status
+		let message: string;
+		switch (paymentStatus) {
+			case "exact":
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}. Bill paid in full.`;
+				break;
+			case "overpaid":
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}. Overpaid by $${Math.abs(paymentDifference).toFixed(2)}. Credit balance: $${Math.abs(newBalance).toFixed(2)}.`;
+				break;
+			case "underpaid":
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}. Underpaid by $${Math.abs(paymentDifference).toFixed(2)}. Remaining balance: $${newBalance.toFixed(2)}.`;
+				break;
+			default:
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}`;
+		}
 
 		return {
 			processed: true,
-			message: `Payment of $${paymentAmount} processed for ${tenant.name}`,
+			message,
 			paymentAmount,
+			expectedAmount,
+			paymentDifference,
+			paymentStatus,
 			billId: bill.id,
 			newBalance,
 		};

@@ -1,7 +1,6 @@
 "use client";
 
 import { DollarSign, FileText, Mail, Users } from "lucide-react";
-import { signIn } from "next-auth/react";
 
 import {
 	Button,
@@ -10,15 +9,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui";
-import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { signInWithGoogle } from "@/features/auth/actions";
 
 export default function LandingPage() {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		const result = await safeExecuteAsync(async () => {
-			await signIn("google", { callbackUrl: "/dashboard" });
-		});
+		const result = await signInWithGoogle();
 
 		if (!result.success) {
 			console.error("Error signing in with Google:", result.error);

@@ -28,12 +28,14 @@ const validateBarrelExports = (dirPath) => {
 
 		// handle relative imports
 		if (exportPath.startsWith("./") || exportPath.startsWith("../")) {
-			// check for both .ts and .js extensions, or just the directory
+			// check for both .ts, .tsx, and .js extensions, or just the directory
 			const possiblePaths = [
 				fullPath,
 				`${fullPath}.ts`,
+				`${fullPath}.tsx`,
 				`${fullPath}.js`,
 				`${fullPath}/index.ts`,
+				`${fullPath}/index.tsx`,
 				`${fullPath}/index.js`,
 			];
 

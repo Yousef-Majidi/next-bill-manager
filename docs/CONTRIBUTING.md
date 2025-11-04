@@ -1,23 +1,8 @@
 # Contributing Guidelines
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Development Setup](#development-setup)
-3. [Code Organization Standards](#code-organization-standards)
-4. [Naming Conventions](#naming-conventions)
-5. [Coding Standards](#coding-standards)
-6. [Testing Guidelines](#testing-guidelines)
-7. [Code Review Process](#code-review-process)
-8. [Common Patterns](#common-patterns)
-9. [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
-10. [Migration Guidelines](#migration-guidelines)
-11. [Validation and Automation](#validation-and-automation)
-12. [Commit Guidelines](#commit-guidelines)
-
 ## Overview
 
-This document outlines the development standards and contribution process for the Next Bill Manager application. Following these guidelines ensures code quality, maintainability, and consistency across the codebase.
+This document outlines the development standards and contribution process for the Next Bill Manager application.
 
 ## Development Setup
 
@@ -75,33 +60,33 @@ next-bill-manager/
 
 ### Feature Structure
 
-Each feature must follow this consistent structure:
+Each feature must follow this structure:
 
 ```
 features/[feature-name]/
-├── actions/                    # Server actions and API calls
-│   ├── index.ts               # Barrel exports
-│   ├── create.ts              # Create operations
-│   ├── read.ts                # Read operations
-│   ├── update.ts              # Update operations
-│   └── delete.ts              # Delete operations
-├── components/                 # Feature-specific components
-│   ├── index.ts               # Barrel exports
-│   ├── [ComponentName].tsx    # React components
+├── actions/                     # Server actions and API calls
+│   ├── index.ts                 # Barrel exports
+│   ├── create.ts                # Create operations
+│   ├── read.ts                  # Read operations
+│   ├── update.ts                # Update operations
+│   └── delete.ts                # Delete operations
+├── components/                  # Feature-specific components
+│   ├── index.ts                 # Barrel exports
+│   ├── [ComponentName].tsx      # React components
 │   └── [ComponentName].test.tsx # Component tests
-├── hooks/                      # Feature-specific hooks
-│   ├── index.ts               # Barrel exports
-│   ├── use[HookName].ts       # Custom hooks
-│   └── use[HookName].test.ts  # Hook tests
-├── types/                      # Feature-specific types
-│   ├── index.ts               # Barrel exports
-│   ├── [TypeName].ts          # Type definitions
-│   └── [TypeName].test.ts     # Type validation tests
-├── utils/                      # Feature-specific utilities
-│   ├── index.ts               # Barrel exports
-│   ├── [utilityName].ts       # Utility functions
-│   └── [utilityName].test.ts  # Utility tests
-└── index.ts                    # Feature barrel exports
+├── hooks/                       # Feature-specific hooks
+│   ├── index.ts                 # Barrel exports
+│   ├── use[HookName].ts         # Custom hooks
+│   └── use[HookName].test.ts    # Hook tests
+├── types/                       # Feature-specific types
+│   ├── index.ts                 # Barrel exports
+│   ├── [TypeName].ts            # Type definitions
+│   └── [TypeName].test.ts       # Type validation tests
+├── utils/                       # Feature-specific utilities
+│   ├── index.ts                 # Barrel exports
+│   ├── [utilityName].ts         # Utility functions
+│   └── [utilityName].test.ts    # Utility tests
+└── index.ts                     # Feature barrel exports
 ```
 
 ### Module Boundaries
@@ -132,7 +117,6 @@ features/[feature-name]/
 ### Types and Interfaces
 
 - Use PascalCase for type and interface names
-- Prefix interfaces with `I` when needed for clarity
 - Use descriptive names that indicate the data structure
 
 ### Functions and Variables
@@ -230,7 +214,7 @@ describe('useHookName', () => {
 - [ ] No linting errors
 - [ ] Proper error handling implemented
 - [ ] Performance considerations addressed
-- [ ] Security best practices followed
+- [ ] Security considerations addressed
 - [ ] Documentation updated if needed
 - [ ] Version management considered (if applicable)
 
@@ -320,81 +304,6 @@ export function Component({ data, onAction, isLoading, error }: ComponentProps) 
 }
 ```
 
-## Anti-Patterns to Avoid
-
-### ❌ Don'ts
-
-```typescript
-// ❌ Bad: Deep imports
-import { createResource } from "@/features/resource/actions/createResource";
-
-// ❌ Bad: Mixed concerns in single file
-export function createResource() {
-	/* ... */
-}
-export function ResourceList() {
-	/* ... */
-}
-export interface Resource {
-	/* ... */
-}
-
-// ❌ Bad: Generic names
-const data = [];
-const helper = () => {};
-
-// ❌ Bad: No error handling
-export async function riskyOperation() {
-	const result = await apiCall();
-	return result;
-}
-
-// ❌ Bad: Inconsistent naming
-const userData = {};
-const bill_list = [];
-```
-
-### ✅ Do's
-
-```typescript
-// ✅ Good: Barrel exports
-import { createResource } from "@/features/resource";
-
-// ✅ Good: Separated concerns
-// actions/createResource.ts
-export async function createResource() {
-	/* ... */
-}
-
-// components/ResourceList.tsx
-export function ResourceList() {
-	/* ... */
-}
-
-// types/resource.ts
-export interface Resource {
-	/* ... */
-}
-
-// ✅ Good: Descriptive names
-const userProfiles = [];
-const formatCurrency = () => {};
-
-// ✅ Good: Proper error handling
-export async function safeOperation() {
-	try {
-		const result = await apiCall();
-		return { success: true, data: result };
-	} catch (error) {
-		return { success: false, error: error.message };
-	}
-}
-
-// ✅ Good: Consistent naming
-const userData = {};
-const billList = [];
-```
-
 ## Migration Guidelines
 
 ### When Adding New Features
@@ -429,7 +338,7 @@ const billList = [];
 
 ### Quality Gate System
 
-The project implements comprehensive quality gates to ensure code quality:
+The project implements comprehensive quality gates:
 
 - **Quality Check**: `pnpm run quality-check` - Linting, tests, and validation
 - **Quality Gate**: `pnpm run quality-gate` - Quality gate checks

@@ -45,7 +45,7 @@ export const parseMessages = async (
 	messages: gmail_v1.Schema$Message[],
 	providerName: string,
 ) => {
-	const billDetails: { messageId: string; dollarAmount: number }[] = []; // TODO: Refactor this to use UtilityBill type
+	const billDetails: { messageId: string; dollarAmount: number }[] = [];
 	for (const message of messages) {
 		const messageId = message.id;
 		const messageDetails = await gmailClient.users.messages.get({
@@ -113,6 +113,15 @@ export const constructEmail = (
 		.join("");
 
 	// Summary rows for the bottom of the table
+	const isCreditBalance = outstandingBalance < 0;
+	const balanceLabel = isCreditBalance
+		? "Credit balance:"
+		: "Outstanding balance:";
+	const balanceColor = isCreditBalance ? "color: green;" : "color: red;";
+	const balanceAmount = isCreditBalance
+		? `-$${Math.abs(outstandingBalance).toFixed(2)}`
+		: `$${outstandingBalance.toFixed(2)}`;
+
 	const summaryRows = `
 		<tr class="summary-row">
 			<td><strong>Your share for this month:</strong></td>
@@ -120,17 +129,17 @@ export const constructEmail = (
 			<td></td>
 			<td><strong>$${tenantTotal.toFixed(2)}</strong></td>
 		</tr>
-		<tr class="summary-row" style="color: red;">
-			<td><strong>Outstanding balance:</strong></td>
+		<tr class="summary-row" style="${balanceColor}">
+			<td><strong>${balanceLabel}</strong></td>
 			<td></td>
 			<td></td>
-			<td><strong>$${outstandingBalance.toFixed(2)}</strong></td>
+			<td><strong>${balanceAmount}</strong></td>
 		</tr>
 		<tr class="summary-row">
 			<td><strong>Total Amount Due:</strong></td>
 			<td></td>
 			<td></td>
-			<td><strong>$${finalAmountDue.toFixed(2)}</strong></td>
+			<td><strong>$${Math.max(0, finalAmountDue).toFixed(2)}</strong></td>
 		</tr>
 	`;
 

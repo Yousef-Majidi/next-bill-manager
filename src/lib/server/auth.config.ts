@@ -24,7 +24,7 @@ export const authConfig = {
 	pages: {
 		signIn: "/",
 	},
-	secret: process.env.GOOGLE_CLIENT_SECRET!,
+	secret: process.env.GOOGLE_CLIENT_SECRET || "fallback-secret-for-build",
 	callbacks: {
 		jwt: ({
 			token,

@@ -9,4 +9,6 @@ export interface UtilityProvider {
 	readonly userId: string;
 	readonly name: string;
 	readonly category: UtilityProviderCategory;
+	readonly email?: string;
+	readonly website?: string;
 }

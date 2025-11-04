@@ -34,7 +34,7 @@ src/
 ├── lib/                   # Shared libraries and utilities
 ├── pages/                 # Legacy pages (to be migrated)
 ├── states/                # Global state management
-├── types/                 # Legacy types (to be migrated)
+├── types/                 # Re-exports from features (backward compatibility)
 └── README.md              # This file
 ```
 
@@ -80,14 +80,14 @@ import { Tenant, TenantFormData } from "@/features/tenants";
 
 ### Migration Strategy
 
-The codebase is currently in a migration state:
+The codebase migration progress:
 
 - ✅ **Phase 1**: Feature structure created
 - ✅ **Phase 2**: Types moved to features
 - ✅ **Phase 3**: Naming conventions implemented
-- 🔄 **Phase 4**: Updating imports throughout codebase
-- ⏳ **Phase 5**: Moving components to features
-- ⏳ **Phase 6**: Moving actions and utilities to features
+- ✅ **Phase 4**: Imports updated throughout codebase
+- ✅ **Phase 5**: Business logic extracted to features
+- 🔄 **Phase 6**: Moving components to features
 - ⏳ **Phase 7**: Removing legacy files
 
 ### Import Guidelines
