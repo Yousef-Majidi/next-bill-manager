@@ -35,8 +35,16 @@ jobs:
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           LATEST_VERSION=${LATEST_TAG#v}
 
+          # Check if current commit is tagged with this version (already released)
+          CURRENT_COMMIT_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "")
+
+          if [ -n "$CURRENT_COMMIT_TAG" ] && [ "$CURRENT_COMMIT_TAG" = "v$CURRENT_VERSION" ]; then
+            echo "✅ Version $CURRENT_VERSION is already released as tag $CURRENT_COMMIT_TAG"
+            exit 0
+          fi
+
           if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-            echo "❌ Version $CURRENT_VERSION already exists as tag $LATEST_TAG"
+            echo "❌ Version $CURRENT_VERSION already exists as tag $LATEST_TAG but this commit is not tagged"
             exit 1
           fi
 
