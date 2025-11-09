@@ -7,8 +7,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // currency formatting utilities
+// Rounds to 2 decimal places, rounding half up (away from zero for negatives)
 export const roundToCurrency = (amount: number): number => {
-	return Math.round(amount * 100) / 100;
+	// Use string conversion to avoid floating point precision issues
+	const amountStr = amount.toFixed(3);
+	const multiplied = parseFloat(amountStr) * 100;
+
+	// For negative numbers ending in .5, round away from zero (up, more negative)
+	if (amount < 0) {
+		const lastDigit = Math.abs(Math.floor(multiplied * 10) % 10);
+		if (lastDigit === 5) {
+			// For negatives, Math.ceil rounds towards zero, so we need to subtract 1
+			return (Math.ceil(multiplied) - 1) / 100;
+		}
+	}
+	return Math.round(multiplied) / 100;
 };
 
 export const formatCurrency = (amount: number, currency = "USD"): string => {

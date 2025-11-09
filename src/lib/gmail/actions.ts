@@ -22,7 +22,19 @@ export const fetchUserBills = async (
 ): Promise<Bill[]> => {
 	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser)) {
+			throw new Error("User is not logged in");
+		}
+
+		const demoUserId = process.env.DEMO_USER_ID;
+		const isDemoUser = demoUserId && loggedInUser.id === demoUserId;
+
+		if (isDemoUser) {
+			// Demo mode: return empty array (bills are pre-populated in database)
+			return [];
+		}
+
+		if (!loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 		const gmailClient = getGmailClient(loggedInUser.accessToken);
@@ -93,7 +105,23 @@ export const fetchUserBills = async (
 export const sendEmail = async (emailContent: EmailContent, tenant: Tenant) => {
 	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser)) {
+			throw new Error("User is not logged in");
+		}
+
+		const demoUserId = process.env.DEMO_USER_ID;
+		const isDemoUser = demoUserId && loggedInUser.id === demoUserId;
+
+		if (isDemoUser) {
+			// Demo mode: return mock success response
+			return {
+				success: true,
+				messageId: "demo-message-id",
+				demoMode: true,
+			};
+		}
+
+		if (!loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 		const gmailClient = getGmailClient(loggedInUser.accessToken);
@@ -139,7 +167,19 @@ export const queryForBillPayment = async (
 ) => {
 	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser)) {
+			throw new Error("User is not logged in");
+		}
+
+		const demoUserId = process.env.DEMO_USER_ID;
+		const isDemoUser = demoUserId && loggedInUser.id === demoUserId;
+
+		if (isDemoUser) {
+			// Demo mode: return null (payment detection disabled)
+			return null;
+		}
+
+		if (!loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 		const gmailClient = getGmailClient(loggedInUser.accessToken);
@@ -185,7 +225,24 @@ export const processTenantPayments = async (
 ) => {
 	const result = await safeExecuteAsync(async () => {
 		const loggedInUser = await getUser();
-		if (!isObjectType(loggedInUser) || !loggedInUser.accessToken) {
+		if (!isObjectType(loggedInUser)) {
+			throw new Error("User is not logged in");
+		}
+
+		const demoUserId = process.env.DEMO_USER_ID;
+		const isDemoUser = demoUserId && loggedInUser.id === demoUserId;
+
+		if (isDemoUser) {
+			// Demo mode: return message indicating payment detection is disabled
+			return {
+				processed: false,
+				message:
+					"Demo mode: Payment detection is disabled. You can manually mark bills as paid.",
+				demoMode: true,
+			};
+		}
+
+		if (!loggedInUser.accessToken) {
 			throw new Error("User is not logged in");
 		}
 
