@@ -34,9 +34,9 @@
 		"version:minor": "npm version minor",
 		"version:major": "npm version major",
 		"version:preview": "npm version prerelease --preid=beta",
-		"release:prepare": "pnpm run quality-gate:full && pnpm run version:patch",
-		"release:minor": "pnpm run quality-gate:full && pnpm run version:minor",
-		"release:major": "pnpm run quality-gate:full && pnpm run version:major"
+		"release:prepare": "pnpm run quality-check && pnpm run build && pnpm run version:patch",
+		"release:minor": "pnpm run quality-check && pnpm run build && pnpm run version:minor",
+		"release:major": "pnpm run quality-check && pnpm run build && pnpm run version:major"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": [
