@@ -38,6 +38,12 @@ describe("Shared Utilities", () => {
 			expect(roundToCurrency(10.564)).toBe(10.56);
 			expect(roundToCurrency(10)).toBe(10);
 		});
+
+		it("should handle negative values correctly", () => {
+			expect(roundToCurrency(-9.07)).toBe(-9.07);
+			expect(roundToCurrency(-9.075)).toBe(-9.08);
+			expect(roundToCurrency(-9.074)).toBe(-9.07);
+		});
 	});
 
 	describe("formatCurrency", () => {

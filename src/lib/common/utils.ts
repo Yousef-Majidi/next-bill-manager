@@ -26,8 +26,24 @@ export const tenantFormSchema = z.object({
 export type TenantFormSchema = z.infer<typeof tenantFormSchema>;
 
 // Utility function to round to 2 decimal places for currency
+// Uses proper rounding for currency (round half up, away from zero)
 export const roundToCurrency = (amount: number): number => {
-	return Math.round(amount * 100) / 100;
+	// Use string conversion to avoid floating point precision issues
+	const amountStr = amount.toFixed(3);
+	const multiplied = parseFloat(amountStr) * 100;
+
+	// For negative numbers, round away from zero (up)
+	if (amount < 0) {
+		const rounded = Math.round(multiplied);
+		// If Math.round rounded towards zero (less negative), we need to round away from zero
+		// Check if the last digit before rounding was 5
+		const lastDigit = Math.abs(Math.floor(multiplied * 10) % 10);
+		if (rounded > multiplied && lastDigit === 5) {
+			return (rounded - 1) / 100;
+		}
+		return rounded / 100;
+	}
+	return Math.round(multiplied) / 100;
 };
 
 export const getTenantShares = (

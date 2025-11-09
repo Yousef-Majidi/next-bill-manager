@@ -13,19 +13,21 @@ import { findById } from "@/lib/data";
 import { ConsolidatedBill, Tenant } from "@/types";
 
 interface LastMonthSummaryProps {
-	readonly currentDate: Date;
+	readonly selectedMonth: number;
+	readonly selectedYear: number;
 	readonly lastMonthBills: ConsolidatedBill[];
 	readonly tenantsList: Tenant[];
 }
 
 export const LastMonthSummary = ({
-	currentDate,
+	selectedMonth,
+	selectedYear,
 	lastMonthBills,
 	tenantsList,
 }: LastMonthSummaryProps) => {
 	const lastMonth = new Date(
-		currentDate.getFullYear(),
-		currentDate.getMonth() - 1,
+		selectedYear,
+		selectedMonth - 2,
 		1,
 	).toLocaleDateString("default", {
 		month: "long",

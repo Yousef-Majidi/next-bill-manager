@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Edit, Mail, Percent, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -16,6 +17,7 @@ import {
 	DialogTitle,
 	Input,
 	Label,
+	Slider,
 } from "@/components/ui";
 import { UpdateTenantRequestSchema } from "@/lib/common/api-contracts";
 import { safeExecuteAsync } from "@/lib/common/error-handling";
@@ -133,96 +135,146 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>Edit Tenant</DialogTitle>
-					<DialogDescription>
-						Update tenant information and utility share percentages
-					</DialogDescription>
+			<DialogContent className="max-w-lg">
+				<DialogHeader className="space-y-3">
+					<div className="flex items-center gap-3">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+							<Edit className="h-5 w-5 text-white" />
+						</div>
+						<div>
+							<DialogTitle className="text-xl font-semibold">
+								Edit Tenant
+							</DialogTitle>
+							<DialogDescription className="text-gray-600">
+								Update tenant information and utility share percentages
+							</DialogDescription>
+						</div>
+					</div>
 				</DialogHeader>
-				<form onSubmit={handleSubmit(handleFormSubmit)}>
+				<form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+					{/* Basic Information Section */}
 					<div className="space-y-4">
-						<div>
-							<Label htmlFor="name">Full Name</Label>
-							<Input
-								id="name"
-								{...register("name")}
-								placeholder="e.g., John Doe"
-							/>
-							{errors.name && (
-								<p className="text-sm text-red-500">{errors.name.message}</p>
-							)}
+						<div className="mb-3 flex items-center gap-2">
+							<Users className="h-4 w-4 text-blue-600" />
+							<h3 className="font-semibold text-gray-900">Basic Information</h3>
 						</div>
 
-						<div>
-							<Label htmlFor="email">Email Address</Label>
-							<Input
-								id="email"
-								type="email"
-								{...register("email")}
-								placeholder="e.g., john@example.com"
-							/>
-							{errors.email && (
-								<p className="text-sm text-red-500">{errors.email.message}</p>
-							)}
-						</div>
-
-						<div>
-							<Label htmlFor="secondaryName">Secondary Name (Optional)</Label>
-							<Input
-								id="secondaryName"
-								{...register("secondaryName")}
-								placeholder="e.g., Jane Doe"
-							/>
-							{errors.secondaryName && (
-								<p className="text-sm text-red-500">
-									{errors.secondaryName.message}
-								</p>
-							)}
-						</div>
-
-						<div className="space-y-3">
-							<Label>Utility Shares (%)</Label>
-
-							<div className="space-y-2">
-								{(["Electricity", "Water", "Gas"] as const).map((category) => (
-									<div
-										key={category}
-										className="flex items-center justify-between">
-										<Label htmlFor={category.toLowerCase()} className="text-sm">
-											{category}
-										</Label>
-										<div className="flex items-center gap-2">
-											<Input
-												id={category.toLowerCase()}
-												type="number"
-												min="0"
-												max="100"
-												value={watchedShares?.[category] || 0}
-												onChange={(e) =>
-													updateShare(
-														category,
-														Number.parseInt(e.target.value) || 0,
-													)
-												}
-												className="w-20"
-											/>
-											<span className="text-muted-foreground text-sm">%</span>
-										</div>
-									</div>
-								))}
+						<div className="grid gap-4">
+							<div>
+								<Label
+									htmlFor="name"
+									className="text-sm font-medium text-gray-700">
+									Full Name
+								</Label>
+								<Input
+									id="name"
+									{...register("name")}
+									placeholder="e.g., John Doe"
+									className="mt-1"
+								/>
+								{errors.name && (
+									<p className="mt-1 text-sm text-red-500">
+										{errors.name.message}
+									</p>
+								)}
 							</div>
-							{errors.shares && (
-								<p className="text-sm text-red-500">{errors.shares.message}</p>
-							)}
+
+							<div>
+								<Label
+									htmlFor="email"
+									className="flex items-center gap-1 text-sm font-medium text-gray-700">
+									<Mail className="h-3 w-3" />
+									Email Address
+								</Label>
+								<Input
+									id="email"
+									type="email"
+									{...register("email")}
+									placeholder="e.g., john@example.com"
+									className="mt-1"
+								/>
+								{errors.email && (
+									<p className="mt-1 text-sm text-red-500">
+										{errors.email.message}
+									</p>
+								)}
+							</div>
+
+							<div>
+								<Label
+									htmlFor="secondaryName"
+									className="text-sm font-medium text-gray-700">
+									Secondary Name (Optional)
+								</Label>
+								<Input
+									id="secondaryName"
+									{...register("secondaryName")}
+									placeholder="e.g., Jane Doe"
+									className="mt-1"
+								/>
+								{errors.secondaryName && (
+									<p className="mt-1 text-sm text-red-500">
+										{errors.secondaryName.message}
+									</p>
+								)}
+							</div>
 						</div>
 					</div>
 
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onClose}>
+					{/* Utility Shares Section */}
+					<div className="space-y-4">
+						<div className="mb-3 flex items-center gap-2">
+							<Percent className="h-4 w-4 text-purple-600" />
+							<h3 className="font-semibold text-gray-900">Utility Shares</h3>
+						</div>
+
+						<div className="space-y-4 rounded-lg bg-gray-50 p-4">
+							{(["Electricity", "Water", "Gas"] as const).map((category) => (
+								<div key={category} className="space-y-2">
+									<div className="flex items-center justify-between">
+										<Label
+											htmlFor={category.toLowerCase()}
+											className="text-sm font-medium text-gray-700">
+											{category}
+										</Label>
+										<div className="flex items-center gap-1">
+											<span className="text-lg font-semibold text-gray-900">
+												{watchedShares?.[category] || 0}
+											</span>
+											<span className="text-sm text-gray-500">%</span>
+										</div>
+									</div>
+									<Slider
+										value={[watchedShares?.[category] || 0]}
+										onValueChange={(value: number[]) =>
+											updateShare(category, value[0] || 0)
+										}
+										max={100}
+										min={0}
+										step={1}
+										className="w-full"
+									/>
+								</div>
+							))}
+						</div>
+						{errors.shares && (
+							<p className="text-sm text-red-500">{errors.shares.message}</p>
+						)}
+					</div>
+
+					<DialogFooter className="gap-3">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onClose}
+							className="flex-1">
 							Cancel
 						</Button>
-						<Button type="submit">Update</Button>
+						<Button
+							type="submit"
+							className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
+							Update Tenant
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

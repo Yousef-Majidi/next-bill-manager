@@ -49,12 +49,20 @@ export const getUser = async () => {
 	if (!session.user) {
 		redirect("/");
 	}
-	if (
-		session.accessTokenExp &&
-		(await isTokenExpired(session.accessTokenExp))
-	) {
-		redirect("/");
+
+	const demoUserId = process.env.DEMO_USER_ID;
+	const isDemoUser = demoUserId && session.providerAccountId === demoUserId;
+
+	// Skip token expiration check for demo user
+	if (!isDemoUser) {
+		if (
+			session.accessTokenExp &&
+			(await isTokenExpired(session.accessTokenExp))
+		) {
+			redirect("/");
+		}
 	}
+
 	return {
 		id: session.providerAccountId ?? "",
 		name: session.user.name ?? "",
@@ -697,7 +705,19 @@ export const addConsolidatedBill = async (
 			year: bill.year,
 			month: bill.month,
 			tenant_id: bill.tenantId,
-			categories: bill.categories,
+			categories: bill.categories
+				? Object.fromEntries(
+						Object.entries(bill.categories).map(([key, category]) => [
+							key,
+							{
+								gmail_message_id: category.gmailMessageId || "no-id",
+								provider_id: category.providerId,
+								provider_name: category.providerName,
+								amount: category.amount,
+							},
+						]),
+					)
+				: {},
 			total_amount: roundToCurrency(bill.totalAmount),
 			paid: bill.paid,
 			date_sent: bill.dateSent,
@@ -709,6 +729,11 @@ export const addConsolidatedBill = async (
 			billData,
 		);
 		if (!validation.success) {
+			console.error("Bill validation failed:", {
+				validationError: validation.error,
+				billData,
+				userId,
+			});
 			throw createValidationError(
 				`Invalid bill data: ${validation.error}`,
 				"bill",
@@ -727,11 +752,36 @@ export const addConsolidatedBill = async (
 			});
 
 		if (existingBill) {
-			throw createDatabaseError(
-				`Consolidated bill for ${bill.month}/${bill.year} already exists.`,
-				"CREATE",
-				"consolidated_bills",
-			);
+			console.log("Bill already exists, updating instead of creating new:", {
+				userId,
+				year: bill.year,
+				month: bill.month,
+				existingBillId: existingBill._id,
+			});
+
+			// Update the existing bill with new data
+			const updateResult = await db
+				.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+				.updateOne(
+					{ _id: existingBill._id, user_id: userId },
+					{
+						$set: {
+							tenant_id: bill.tenantId,
+							categories: validation.data.categories,
+							total_amount: validation.data.total_amount,
+							paid: bill.paid,
+							date_sent: bill.dateSent,
+							date_paid: bill.datePaid,
+							updated_at: new Date().toISOString(),
+						},
+					},
+				);
+
+			revalidatePath("/dashboard/bills");
+			return {
+				acknowledged: updateResult.acknowledged,
+				insertedId: existingBill._id.toString(),
+			};
 		}
 
 		const result = await db

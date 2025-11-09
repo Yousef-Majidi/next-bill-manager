@@ -3,6 +3,15 @@
 import React from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+	Building2,
+	Droplets,
+	Edit,
+	Flame,
+	Globe,
+	Mail,
+	Zap,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -132,93 +141,187 @@ export const EditProviderDialog: React.FC<EditDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit Provider</DialogTitle>
-					<DialogDescription>
-						Update the information for {provider.name}
-					</DialogDescription>
-				</DialogHeader>
-				<form onSubmit={handleSubmit(handleFormSubmit)}>
-					<div className="space-y-4">
-						<div>
-							<Label htmlFor="name">Provider Name</Label>
-							<Input
-								id="name"
-								{...register("name")}
-								placeholder="e.g., City Electric Company"
-							/>
-							{errors.name && (
-								<p className="text-sm text-red-500">{errors.name.message}</p>
-							)}
+			<DialogContent className="max-w-2xl">
+				<DialogHeader className="space-y-3">
+					<div className="flex items-center gap-3">
+						<div className="rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 p-3">
+							<Edit className="h-6 w-6 text-blue-600" />
 						</div>
 						<div>
-							<Label htmlFor="category">Category</Label>
-							<Select
-								value={watchedCategory}
-								onValueChange={(value) =>
-									setValue(
-										"category",
-										value as
-											| "Water"
-											| "Gas"
-											| "Electricity"
-											| "Internet"
-											| "OTHER",
-									)
-								}
-								required>
-								<SelectTrigger>
-									<SelectValue placeholder="Select category" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={Category.Electricity}>
-										{Category.Electricity}
-									</SelectItem>
-									<SelectItem value={Category.Water}>
-										{Category.Water}
-									</SelectItem>
-									<SelectItem value={Category.Gas}>{Category.Gas}</SelectItem>
-									<SelectItem value="Internet">Internet</SelectItem>
-									<SelectItem value="OTHER">Other</SelectItem>
-								</SelectContent>
-							</Select>
-							{errors.category && (
-								<p className="text-sm text-red-500">
-									{errors.category.message}
-								</p>
-							)}
-						</div>
-						<div>
-							<Label htmlFor="email">Email (Optional)</Label>
-							<Input
-								id="email"
-								type="email"
-								{...register("email")}
-								placeholder="e.g., billing@provider.com"
-							/>
-							{errors.email && (
-								<p className="text-sm text-red-500">{errors.email.message}</p>
-							)}
-						</div>
-						<div>
-							<Label htmlFor="website">Website (Optional)</Label>
-							<Input
-								id="website"
-								type="url"
-								{...register("website")}
-								placeholder="e.g., https://provider.com"
-							/>
-							{errors.website && (
-								<p className="text-sm text-red-500">{errors.website.message}</p>
-							)}
+							<DialogTitle className="text-xl font-semibold text-gray-900">
+								Edit Provider
+							</DialogTitle>
+							<DialogDescription className="text-gray-600">
+								Update the information for {provider.name}
+							</DialogDescription>
 						</div>
 					</div>
-					<DialogFooter>
-						<Button type="button" variant="secondary" onClick={onClose}>
+				</DialogHeader>
+				<form onSubmit={handleSubmit(handleFormSubmit)}>
+					<div className="space-y-6">
+						{/* Basic Information Section */}
+						<div className="space-y-4">
+							<div className="mb-4 flex items-center gap-2">
+								<div className="rounded-lg bg-blue-100 p-2">
+									<Building2 className="h-4 w-4 text-blue-600" />
+								</div>
+								<h3 className="text-lg font-semibold text-gray-900">
+									Basic Information
+								</h3>
+							</div>
+
+							<div className="space-y-4">
+								<div>
+									<Label
+										htmlFor="name"
+										className="text-sm font-medium text-gray-700">
+										Provider Name
+									</Label>
+									<Input
+										id="name"
+										{...register("name")}
+										placeholder="e.g., City Electric Company"
+										className="mt-1 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+									/>
+									{errors.name && (
+										<p className="mt-1 text-sm text-red-500">
+											{errors.name.message}
+										</p>
+									)}
+								</div>
+
+								<div>
+									<Label
+										htmlFor="category"
+										className="text-sm font-medium text-gray-700">
+										Category
+									</Label>
+									<Select
+										value={watchedCategory}
+										onValueChange={(value) =>
+											setValue(
+												"category",
+												value as
+													| "Water"
+													| "Gas"
+													| "Electricity"
+													| "Internet"
+													| "OTHER",
+											)
+										}
+										required>
+										<SelectTrigger className="mt-1 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+											<SelectValue placeholder="Select category" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={Category.Electricity}>
+												<div className="flex items-center gap-2">
+													<Zap className="h-4 w-4 text-yellow-600" />
+													{Category.Electricity}
+												</div>
+											</SelectItem>
+											<SelectItem value={Category.Water}>
+												<div className="flex items-center gap-2">
+													<Droplets className="h-4 w-4 text-blue-600" />
+													{Category.Water}
+												</div>
+											</SelectItem>
+											<SelectItem value={Category.Gas}>
+												<div className="flex items-center gap-2">
+													<Flame className="h-4 w-4 text-orange-600" />
+													{Category.Gas}
+												</div>
+											</SelectItem>
+											<SelectItem value="Internet">
+												<div className="flex items-center gap-2">
+													<Globe className="h-4 w-4 text-green-600" />
+													Internet
+												</div>
+											</SelectItem>
+											<SelectItem value="OTHER">
+												<div className="flex items-center gap-2">
+													<Building2 className="h-4 w-4 text-gray-600" />
+													Other
+												</div>
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									{errors.category && (
+										<p className="mt-1 text-sm text-red-500">
+											{errors.category.message}
+										</p>
+									)}
+								</div>
+							</div>
+						</div>
+						{/* Contact Information Section */}
+						<div className="space-y-4">
+							<div className="mb-4 flex items-center gap-2">
+								<div className="rounded-lg bg-green-100 p-2">
+									<Mail className="h-4 w-4 text-green-600" />
+								</div>
+								<h3 className="text-lg font-semibold text-gray-900">
+									Contact Information
+								</h3>
+							</div>
+
+							<div className="space-y-4">
+								<div>
+									<Label
+										htmlFor="email"
+										className="text-sm font-medium text-gray-700">
+										Email (Optional)
+									</Label>
+									<Input
+										id="email"
+										type="email"
+										{...register("email")}
+										placeholder="e.g., billing@provider.com"
+										className="mt-1 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+									/>
+									{errors.email && (
+										<p className="mt-1 text-sm text-red-500">
+											{errors.email.message}
+										</p>
+									)}
+								</div>
+
+								<div>
+									<Label
+										htmlFor="website"
+										className="text-sm font-medium text-gray-700">
+										Website (Optional)
+									</Label>
+									<Input
+										id="website"
+										type="url"
+										{...register("website")}
+										placeholder="e.g., https://provider.com"
+										className="mt-1 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+									/>
+									{errors.website && (
+										<p className="mt-1 text-sm text-red-500">
+											{errors.website.message}
+										</p>
+									)}
+								</div>
+							</div>
+						</div>
+					</div>
+					<DialogFooter className="gap-3 pt-6">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onClose}
+							className="border-gray-200 hover:bg-gray-50">
 							Cancel
 						</Button>
-						<Button type="submit">Save Changes</Button>
+						<Button
+							type="submit"
+							className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl">
+							<Edit className="mr-2 h-4 w-4" />
+							Update Provider
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

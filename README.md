@@ -55,15 +55,23 @@ A modern bill management application for property managers and landlords, built 
    ```env
    # Database
    MONGODB_URI=your_mongodb_connection_string
+   MONGODB_DATABASE_NAME=your_database_name
+   MONGODB_UTILITY_PROVIDERS=utility_providers
+   MONGODB_TENANTS=tenants
+   MONGODB_CONSOLIDATED_BILLS=consolidated_bills
 
    # Authentication
-   NEXTAUTH_SECRET=your_nextauth_secret
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
    NEXTAUTH_URL=http://localhost:3000
 
-   # Gmail API (for email features)
-   GMAIL_CLIENT_ID=your_gmail_client_id
-   GMAIL_CLIENT_SECRET=your_gmail_client_secret
+   # Demo User (optional - for demo mode)
+   DEMO_USER_ID=demo-user-123
+   DEMO_USER_EMAIL=demo@example.com
+   DEMO_USER_NAME=Demo User
    ```
+
+   **Note**: After setting up environment variables, run `pnpm db:demo:setup` to populate demo user data.
 
 4. **Run the development server**
    ```bash
@@ -126,6 +134,7 @@ next-bill-manager/
 - `pnpm db:migrate` - Run database migrations
 - `pnpm db:backup` - Backup database
 - `pnpm db:restore` - Restore database
+- `pnpm db:demo:setup` - Create demo user data (requires DEMO_USER_ID, DEMO_USER_EMAIL, DEMO_USER_NAME)
 
 ## Documentation
 

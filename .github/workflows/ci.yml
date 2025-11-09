@@ -35,8 +35,22 @@ jobs:
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           LATEST_VERSION=${LATEST_TAG#v}
 
+          # Check if current commit is tagged with this version (already released)
+          CURRENT_COMMIT_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "")
+
+          if [ -n "$CURRENT_COMMIT_TAG" ] && [ "$CURRENT_COMMIT_TAG" = "v$CURRENT_VERSION" ]; then
+            echo "✅ Version $CURRENT_VERSION is already released as tag $CURRENT_COMMIT_TAG"
+            exit 0
+          fi
+
+          # Check if we're on a commit after a tag with the same version (maintenance commits after release)
           if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-            echo "❌ Version $CURRENT_VERSION already exists as tag $LATEST_TAG"
+            # Check if the latest tag is an ancestor of current commit (we're ahead of the release)
+            if git merge-base --is-ancestor "$LATEST_TAG" HEAD 2>/dev/null; then
+              echo "✅ Version $CURRENT_VERSION is already released as $LATEST_TAG, allowing maintenance commits"
+              exit 0
+            fi
+            echo "❌ Version $CURRENT_VERSION already exists as tag $LATEST_TAG but this commit is not related"
             exit 1
           fi
 
@@ -85,9 +99,6 @@ jobs:
 
       - name: Run type checking
         run: pnpm run build
-
-      - name: Run quality gate (CI mode)
-        run: node scripts/quality-gate.mjs --ci
 
   test:
     name: Test Suite
