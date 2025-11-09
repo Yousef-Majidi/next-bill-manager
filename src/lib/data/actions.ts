@@ -49,12 +49,20 @@ export const getUser = async () => {
 	if (!session.user) {
 		redirect("/");
 	}
-	if (
-		session.accessTokenExp &&
-		(await isTokenExpired(session.accessTokenExp))
-	) {
-		redirect("/");
+
+	const demoUserId = process.env.DEMO_USER_ID;
+	const isDemoUser = demoUserId && session.providerAccountId === demoUserId;
+
+	// Skip token expiration check for demo user
+	if (!isDemoUser) {
+		if (
+			session.accessTokenExp &&
+			(await isTokenExpired(session.accessTokenExp))
+		) {
+			redirect("/");
+		}
 	}
+
 	return {
 		id: session.providerAccountId ?? "",
 		name: session.user.name ?? "",

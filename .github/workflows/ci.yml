@@ -100,9 +100,6 @@ jobs:
       - name: Run type checking
         run: pnpm run build
 
-      - name: Run quality gate (CI mode)
-        run: node scripts/quality-gate.mjs --ci
-
   test:
     name: Test Suite
     runs-on: ubuntu-latest

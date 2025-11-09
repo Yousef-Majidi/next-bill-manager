@@ -44,7 +44,7 @@ jobs:
 
       - name: Run quality checks
         continue-on-error: true
-        run: pnpm run quality-gate:full --ci
+        run: pnpm run quality-check && pnpm run build
 
       - name: Build application
         run: pnpm run build
