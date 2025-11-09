@@ -96,6 +96,7 @@ const featureRules =
 			};
 
 // Base config with parser and plugins - always include when Next.js config fails
+// Use parser WITHOUT project option to avoid tsconfig.json file inclusion issues
 const baseConfig = {
 	languageOptions: {
 		parser: tseslintParser,
@@ -105,7 +106,8 @@ const baseConfig = {
 			ecmaFeatures: {
 				jsx: true,
 			},
-			project: "./tsconfig.json",
+			// Don't use project option - it requires all files to be in tsconfig.json
+			// This causes issues with .d.ts files and test files
 		},
 	},
 	plugins: {
@@ -119,6 +121,10 @@ const eslintConfig = [
 	...nextConfigs,
 	// Include base config with plugins if Next.js config failed
 	...(nextConfigs.length === 0 ? [baseConfig] : []),
+	// Exclude .d.ts files from linting to avoid parser project issues
+	{
+		ignores: ["**/*.d.ts"],
+	},
 	{
 		files: ["src/features/**/*.{ts,tsx}"],
 		// Include parser and plugins if Next.js config failed
