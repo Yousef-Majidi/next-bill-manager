@@ -1,4 +1,5 @@
 import { FlatCompat } from "@eslint/eslintrc";
+import importPlugin from "eslint-plugin-import";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -86,58 +87,53 @@ const featureRules =
 				],
 			}
 		: {
-				// Minimal rules when Next.js config fails to load
-				"import/order": [
-					"error",
-					{
-						groups: [
-							"builtin",
-							"external",
-							"internal",
-							"parent",
-							"sibling",
-							"index",
-						],
-						"newlines-between": "always",
-						alphabetize: {
-							order: "asc",
-							caseInsensitive: true,
-						},
-					},
-				],
-				"import/no-useless-path-segments": "error",
-				"no-restricted-imports": [
-					"error",
-					{
-						patterns: [
-							{
-								group: [
-									"@/features/*/types/*",
-									"@/features/*/components/*",
-									"@/features/*/actions/*",
-									"@/features/*/hooks/*",
-									"@/features/*/utils/*",
-								],
-								message:
-									"Deep imports not allowed. Import from feature index instead.",
-							},
-						],
-					},
-				],
+				// When Next.js config fails, skip rules that require plugins
+				// The CI will use 'next lint' which has its own config
+				// This fallback is just to prevent config errors
 			};
+
+// Base config with plugins - always include when Next.js config fails
+// Note: Parser and TypeScript plugins come from Next.js config when it loads
+const baseConfig = {
+	plugins: {
+		import: importPlugin,
+	},
+};
 
 const eslintConfig = [
 	...nextConfigs,
+	// Include base config with plugins if Next.js config failed
+	...(nextConfigs.length === 0 ? [baseConfig] : []),
 	{
 		files: ["src/features/**/*.{ts,tsx}"],
+		// Include plugins if Next.js config failed
+		...(nextConfigs.length === 0
+			? {
+					plugins: {
+						import: importPlugin,
+					},
+				}
+			: {}),
 		rules: featureRules,
 	},
 	{
 		files: ["src/**/*.{ts,tsx}"],
+		// Include plugins if Next.js config failed
+		...(nextConfigs.length === 0
+			? {
+					plugins: {
+						import: importPlugin,
+					},
+				}
+			: {}),
 		rules: {
-			// enforce consistent exports
-			"import/prefer-default-export": "off",
-			"import/no-default-export": "off",
+			// enforce consistent exports (only if import plugin is available)
+			...(nextConfigs.length > 0 || baseConfig.plugins.import
+				? {
+						"import/prefer-default-export": "off",
+						"import/no-default-export": "off",
+					}
+				: {}),
 		},
 	},
 ];
