@@ -1,5 +1,8 @@
 import { FlatCompat } from "@eslint/eslintrc";
+import tseslintPlugin from "@typescript-eslint/eslint-plugin";
+import tseslintParser from "@typescript-eslint/parser";
 import importPlugin from "eslint-plugin-import";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -92,11 +95,23 @@ const featureRules =
 				// This fallback is just to prevent config errors
 			};
 
-// Base config with plugins - always include when Next.js config fails
-// Note: Parser and TypeScript plugins come from Next.js config when it loads
+// Base config with parser and plugins - always include when Next.js config fails
 const baseConfig = {
+	languageOptions: {
+		parser: tseslintParser,
+		parserOptions: {
+			ecmaVersion: "latest",
+			sourceType: "module",
+			ecmaFeatures: {
+				jsx: true,
+			},
+			project: "./tsconfig.json",
+		},
+	},
 	plugins: {
 		import: importPlugin,
+		"@typescript-eslint": tseslintPlugin,
+		"react-hooks": reactHooksPlugin,
 	},
 };
 
@@ -106,24 +121,22 @@ const eslintConfig = [
 	...(nextConfigs.length === 0 ? [baseConfig] : []),
 	{
 		files: ["src/features/**/*.{ts,tsx}"],
-		// Include plugins if Next.js config failed
+		// Include parser and plugins if Next.js config failed
 		...(nextConfigs.length === 0
 			? {
-					plugins: {
-						import: importPlugin,
-					},
+					languageOptions: baseConfig.languageOptions,
+					plugins: baseConfig.plugins,
 				}
 			: {}),
 		rules: featureRules,
 	},
 	{
 		files: ["src/**/*.{ts,tsx}"],
-		// Include plugins if Next.js config failed
+		// Include parser and plugins if Next.js config failed
 		...(nextConfigs.length === 0
 			? {
-					plugins: {
-						import: importPlugin,
-					},
+					languageOptions: baseConfig.languageOptions,
+					plugins: baseConfig.plugins,
 				}
 			: {}),
 		rules: {
