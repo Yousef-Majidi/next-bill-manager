@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import { DollarSign, FileText, Mail, Play, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui";
 import { signInAsDemo, signInWithGoogle } from "@/features/auth/actions";
 
-export default function LandingPage() {
+function ErrorHandler() {
 	const searchParams = useSearchParams();
 
 	useEffect(() => {
@@ -27,6 +27,10 @@ export default function LandingPage() {
 		}
 	}, [searchParams]);
 
+	return null;
+}
+
+export default function LandingPage() {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
@@ -48,6 +52,9 @@ export default function LandingPage() {
 
 	return (
 		<div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+			<Suspense fallback={null}>
+				<ErrorHandler />
+			</Suspense>
 			<div className="container mx-auto px-4 py-16">
 				<div className="mb-16 text-center">
 					<h1 className="mb-4 text-4xl font-bold text-gray-900">

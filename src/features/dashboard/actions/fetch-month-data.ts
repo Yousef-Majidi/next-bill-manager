@@ -9,7 +9,7 @@ export async function fetchMonthData(month: number, year: number) {
 		const loggedInUser = await getUser();
 		const selectedDate = new Date(year, month - 1, 1);
 
-		// Always check database first for any month
+		// Always check database first for all months
 		// This ensures we get saved bills even if they exist
 		const savedBills = await getConsolidatedBills(loggedInUser.id, {
 			year,

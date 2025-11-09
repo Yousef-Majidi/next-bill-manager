@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import dotenv from "dotenv";
-import { ObjectId } from "mongodb";
 
 // Load environment variables
 dotenv.config();
