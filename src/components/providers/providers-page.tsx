@@ -9,6 +9,7 @@ import {
 	Globe,
 	Mail,
 	Plus,
+	Router,
 	Trash2,
 	Zap,
 } from "lucide-react";
@@ -36,12 +37,16 @@ const categoryIcons = {
 	Electricity: Zap,
 	Water: Droplets,
 	Gas: Flame,
+	Internet: Router,
+	OTHER: Building2,
 };
 
 const categoryColors = {
 	Electricity: "bg-yellow-100 text-yellow-800",
 	Water: "bg-blue-100 text-blue-800",
 	Gas: "bg-orange-100 text-orange-800",
+	Internet: "bg-purple-100 text-purple-800",
+	OTHER: "bg-gray-100 text-gray-800",
 };
 
 export const ProvidersPage = () => {
@@ -247,9 +252,12 @@ export const ProvidersPage = () => {
 				<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 					{providersList.map((provider) => {
 						const Icon =
-							categoryIcons[provider.category as keyof typeof categoryIcons];
+							categoryIcons[provider.category as keyof typeof categoryIcons] ||
+							Building2;
 						const colorClass =
-							categoryColors[provider.category as keyof typeof categoryColors];
+							categoryColors[
+								provider.category as keyof typeof categoryColors
+							] || "bg-gray-100 text-gray-800";
 
 						return (
 							<Card
@@ -261,7 +269,7 @@ export const ProvidersPage = () => {
 										<div className="flex min-w-0 flex-1 items-center gap-2.5">
 											<div
 												className={`rounded-md p-1.5 ${colorClass.replace("text-", "bg-").replace("-800", "-100")} flex-shrink-0`}>
-												{Icon && <Icon className="h-4 w-4" />}
+												<Icon className="h-4 w-4" />
 											</div>
 											<div className="min-w-0 flex-1">
 												<h3 className="truncate text-sm font-semibold text-gray-900">

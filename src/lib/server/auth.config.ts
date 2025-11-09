@@ -29,6 +29,7 @@ export const authConfig = {
 		jwt: ({
 			token,
 			account,
+			user,
 		}: {
 			token: JWT;
 			account?: Account | null;
@@ -38,6 +39,15 @@ export const authConfig = {
 			isNewUser?: boolean;
 			session?: Session;
 		}) => {
+			// Handle demo user (credentials provider)
+			if (account?.provider === "credentials" && user) {
+				token.providerAccountId = user.id;
+				token.accessToken = ""; // Empty token for demo user
+				token.accessTokenExp = undefined; // No expiration for demo user
+				return token;
+			}
+
+			// Handle Google OAuth provider
 			if (account) {
 				if (account.access_token) {
 					token.accessToken = account.access_token;
@@ -47,19 +57,24 @@ export const authConfig = {
 				return token;
 			}
 
-			const now = Math.floor(Date.now() / 1000);
-			if (token.accessTokenExp && (token.accessTokenExp as number) <= now) {
-				// Optionally, you can remove the accessToken or handle as needed
-				delete token.accessToken;
-				delete token.accessTokenExp;
+			// Check token expiration only for non-demo users
+			if (token.accessToken && token.accessTokenExp) {
+				const now = Math.floor(Date.now() / 1000);
+				if ((token.accessTokenExp as number) <= now) {
+					// Optionally, you can remove the accessToken or handle as needed
+					delete token.accessToken;
+					delete token.accessTokenExp;
+				}
 			}
 			return token;
 		},
 		session: ({ session, token }: { session: Session; token: JWT }) => {
+			if (token.providerAccountId) {
+				session.providerAccountId = token.providerAccountId;
+			}
 			if (token.accessToken) {
 				session.accessToken = token.accessToken;
 				session.accessTokenExp = token.accessTokenExp ?? undefined;
-				session.providerAccountId = token.providerAccountId ?? undefined;
 			}
 
 			return session;

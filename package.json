@@ -32,6 +32,7 @@
 		"db:backup": "node scripts/migrate.mjs scripts/migrations/backup-all-collections.mjs",
 		"db:restore": "node scripts/migrate.mjs scripts/migrations/restore-all-collections.mjs",
 		"db:diagnose": "node scripts/migrate.mjs scripts/migrations/diagnose-all-collections.mjs",
+		"db:demo:setup": "node scripts/migrate.mjs scripts/migrations/create-demo-user-data.mjs",
 		"version:patch": "npm version patch",
 		"version:minor": "npm version minor",
 		"version:major": "npm version major",

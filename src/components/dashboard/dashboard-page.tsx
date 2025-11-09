@@ -387,6 +387,17 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 		// Send email first
 		const emailResult = await sendEmail(emailContent, selectedTenant);
 
+		// Show demo mode toast if applicable
+		if (
+			emailResult.success &&
+			"demoMode" in emailResult &&
+			emailResult.demoMode
+		) {
+			toast.info(
+				"Demo mode: Email sending is disabled. In production, this would send an email to the tenant.",
+			);
+		}
+
 		if (emailResult.success) {
 			// Email sent successfully, now try to save the bill
 			try {
