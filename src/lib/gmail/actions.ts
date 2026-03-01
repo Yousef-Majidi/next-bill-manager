@@ -218,6 +218,16 @@ export const queryForBillPayment = async (
 	return result.data;
 };
 
+// Helper function to check if a payment message ID has already been used
+const isPaymentAlreadyUsed = (
+	paymentMessageId: string,
+	billsHistory: ConsolidatedBill[],
+): boolean => {
+	return billsHistory.some(
+		(bill) => bill.paymentMessageId === paymentMessageId,
+	);
+};
+
 export const processTenantPayments = async (
 	tenant: Tenant,
 	billsHistory: ConsolidatedBill[],
@@ -280,70 +290,35 @@ export const processTenantPayments = async (
 
 			const messages = response.data.messages || [];
 			if (messages.length > 0) {
-				const payment = await parsePaymentMessage(gmailClient, messages);
-				if (isObjectType(payment)) {
-					const paymentAmount = roundToCurrency(Number(payment.amount));
+				// Iterate through all messages to find unused payments
+				for (const message of messages) {
+					if (!message.id) continue;
 
-					// Find the best matching unpaid bill for this payment
-					let bestMatch: {
-						bill: ConsolidatedBill;
-						expectedAmount: number;
-						difference: number;
-					} | null = null;
-
-					for (const bill of sortedUnpaidBills) {
-						// Calculate tenant's share for this bill
-						const { tenantTotal } = getTenantShares(bill, tenant);
-
-						// Calculate expected amount for this specific bill
-						// For the first unpaid bill, include outstanding balance
-						// For subsequent bills, just the tenant's share
-						const isFirstUnpaidBill = bill === sortedUnpaidBills[0];
-						const expectedAmount = isFirstUnpaidBill
-							? tenantTotal + tenant.outstandingBalance
-							: tenantTotal;
-
-						const difference = Math.abs(paymentAmount - expectedAmount);
-
-						// Find the bill with the smallest difference (closest match)
-						if (!bestMatch || difference < bestMatch.difference) {
-							bestMatch = {
-								bill,
-								expectedAmount,
-								difference,
-							};
+					// Parse payment from this specific message
+					const payment = await parsePaymentMessage(gmailClient, [message]);
+					if (isObjectType(payment)) {
+						// Check if this payment has already been used
+						if (isPaymentAlreadyUsed(payment.gmailMessageId, billsHistory)) {
+							continue; // Skip this payment, try next message
 						}
-					}
 
-					// Process the payment for the best matching bill
-					if (bestMatch) {
-						return await processPaymentMatch(
-							loggedInUser.id,
-							tenant,
-							bestMatch.bill,
+						// Found an unused payment - return it for manual selection
+						return {
+							processed: false,
+							requiresSelection: true,
 							payment,
-							paymentAmount,
-							bestMatch.expectedAmount,
-						);
+							unpaidBills: sortedUnpaidBills,
+							message: `Payment found for ${tenant.name}. Please select which bills this payment applies to.`,
+						};
 					}
-
-					// Payment found but doesn't match any unpaid bill
-					const totalUnpaid =
-						sortedUnpaidBills.reduce((sum, bill) => {
-							const { tenantTotal } = getTenantShares(bill, tenant);
-							return sum + tenantTotal;
-						}, 0) + tenant.outstandingBalance;
-					return {
-						processed: false,
-						message: `Payment found for ${tenant.name} ($${paymentAmount}) but doesn't match any unpaid bill. Total tenant unpaid: $${totalUnpaid}`,
-					};
 				}
 			}
 		}
 
 		return {
 			processed: false,
-			message: `No payments found for ${tenant.name}`,
+			requiresSelection: false,
+			message: `No unused payments found for ${tenant.name}`,
 		};
 	});
 
@@ -355,22 +330,43 @@ export const processTenantPayments = async (
 	return result.data;
 };
 
-const processPaymentMatch = async (
+export const applyPaymentToBills = async (
 	userId: string,
 	tenant: Tenant,
-	bill: ConsolidatedBill,
 	payment: Payment,
-	paymentAmount: number,
-	expectedAmount: number,
+	billIds: string[],
 ) => {
 	const result = await safeExecuteAsync(async () => {
-		// Mark bill as paid
-		if (bill.id) {
-			await markBillAsPaid(userId, bill.id, payment.gmailMessageId);
+		if (billIds.length === 0) {
+			throw new Error("No bills selected for payment");
 		}
 
-		// Calculate payment difference and new balance
-		const paymentDifference = paymentAmount - expectedAmount;
+		// Get all bills to calculate amounts
+		const { getConsolidatedBills } = await import("@/lib/data");
+		const allBills = await getConsolidatedBills(userId);
+		const selectedBills = allBills.filter((bill) =>
+			billIds.includes(bill.id || ""),
+		);
+
+		if (selectedBills.length !== billIds.length) {
+			throw new Error("Some selected bills were not found");
+		}
+
+		// The tenant's outstandingBalance already includes the shares of all unpaid bills
+		// that were previously sent/added. Thus, the expected amount is simply the current balance.
+		const totalExpectedAmount = tenant.outstandingBalance;
+
+		const paymentAmount = roundToCurrency(Number(payment.amount));
+
+		// Mark all selected bills as paid with the same payment message ID
+		for (const bill of selectedBills) {
+			if (bill.id) {
+				await markBillAsPaid(userId, bill.id, payment.gmailMessageId);
+			}
+		}
+
+		// Calculate payment difference and update tenant balance
+		const paymentDifference = paymentAmount - totalExpectedAmount;
 		let newBalance: number;
 		let paymentStatus: string;
 
@@ -392,35 +388,40 @@ const processPaymentMatch = async (
 
 		// Create appropriate message based on payment status
 		let message: string;
+		const billsDescription =
+			selectedBills.length === 1
+				? `bill for ${selectedBills[0]!.month}/${selectedBills[0]!.year}`
+				: `${selectedBills.length} bills`;
+
 		switch (paymentStatus) {
 			case "exact":
-				message = `Payment of $${paymentAmount} processed for ${tenant.name}. Bill paid in full.`;
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}. ${billsDescription} paid in full.`;
 				break;
 			case "overpaid":
-				message = `Payment of $${paymentAmount} processed for ${tenant.name}. Overpaid by $${Math.abs(paymentDifference).toFixed(2)}. Credit balance: $${Math.abs(newBalance).toFixed(2)}.`;
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}. ${billsDescription} paid. Overpaid by $${Math.abs(paymentDifference).toFixed(2)}. Credit balance: $${Math.abs(newBalance).toFixed(2)}.`;
 				break;
 			case "underpaid":
-				message = `Payment of $${paymentAmount} processed for ${tenant.name}. Underpaid by $${Math.abs(paymentDifference).toFixed(2)}. Remaining balance: $${newBalance.toFixed(2)}.`;
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}. ${billsDescription} partially paid. Underpaid by $${Math.abs(paymentDifference).toFixed(2)}. Remaining balance: $${newBalance.toFixed(2)}.`;
 				break;
 			default:
-				message = `Payment of $${paymentAmount} processed for ${tenant.name}`;
+				message = `Payment of $${paymentAmount} processed for ${tenant.name}.`;
 		}
 
 		return {
-			processed: true,
+			success: true,
 			message,
 			paymentAmount,
-			expectedAmount,
+			expectedAmount: totalExpectedAmount,
 			paymentDifference,
 			paymentStatus,
-			billId: bill.id,
+			billIds,
 			newBalance,
 		};
 	});
 
 	if (!result.success) {
-		console.error("Error processing payment match:", result.error);
-		throw new Error("Failed to process payment match");
+		console.error("Error applying payment to bills:", result.error);
+		throw result.error;
 	}
 
 	return result.data;

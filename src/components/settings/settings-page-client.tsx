@@ -1,14 +1,9 @@
 "use client";
 
-import {
-	Bell,
-	Download,
-	Mail,
-	Palette,
-	Shield,
-	Trash2,
-	User,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useAtom } from "jotai";
+import { Bell, Download, Mail, Shield, Trash2, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +19,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { isObjectType } from "@/lib/common/type-utils";
+import { userAtom } from "@/states/store";
 
 export function SettingsPageClient() {
+	const [user] = useAtom(userAtom);
+	const [mounted, setMounted] = useState(false);
+
+	// Avoid hydration mismatch
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// Get user initials for avatar
+	const userInitials = useMemo(() => {
+		if (!isObjectType(user) || !user.name) return "U";
+		const names = user.name.split(" ");
+		if (names.length >= 2) {
+			return `${names[0][0]}${names[1][0]}`.toUpperCase();
+		}
+		return user.name[0].toUpperCase();
+	}, [user]);
+
+	// Get user name parts
+	const userNameParts = useMemo(() => {
+		if (!isObjectType(user) || !user.name)
+			return { firstName: "", lastName: "" };
+		const names = user.name.split(" ");
+		return {
+			firstName: names[0] || "",
+			lastName: names.slice(1).join(" ") || "",
+		};
+	}, [user]);
+
+	if (!mounted) {
+		return null;
+	}
 	return (
 		<div className="space-y-6">
 			<div>
@@ -54,7 +83,7 @@ export function SettingsPageClient() {
 									src="/placeholder.svg?height=80&width=80"
 									alt="Profile"
 								/>
-								<AvatarFallback>JD</AvatarFallback>
+								<AvatarFallback>{userInitials}</AvatarFallback>
 							</Avatar>
 							<div className="space-y-2">
 								<Button variant="outline" size="sm">
@@ -69,23 +98,32 @@ export function SettingsPageClient() {
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
 								<Label htmlFor="firstName">First Name</Label>
-								<Input id="firstName" defaultValue="John" />
+								<Input
+									id="firstName"
+									defaultValue={userNameParts.firstName}
+									disabled
+								/>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="lastName">Last Name</Label>
-								<Input id="lastName" defaultValue="Doe" />
+								<Input
+									id="lastName"
+									defaultValue={userNameParts.lastName}
+									disabled
+								/>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="email">Email</Label>
 								<Input
 									id="email"
 									type="email"
-									defaultValue="john@example.com"
+									defaultValue={isObjectType(user) ? user.email || "" : ""}
+									disabled
 								/>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="phone">Phone</Label>
-								<Input id="phone" defaultValue="+1 (555) 123-4567" />
+								<Input id="phone" placeholder="Not set" disabled />
 							</div>
 						</div>
 
@@ -167,13 +205,15 @@ export function SettingsPageClient() {
 					<CardContent className="space-y-4">
 						<div className="flex items-center justify-between rounded-lg border p-4">
 							<div className="flex items-center gap-3">
-								<div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
-									<Mail className="h-5 w-5 text-red-600" />
+								<div className="bg-primary/20 flex h-10 w-10 items-center justify-center rounded-full">
+									<Mail className="text-primary h-5 w-5" />
 								</div>
 								<div>
-									<p className="font-medium">Gmail Account</p>
+									<p className="text-foreground font-medium">Gmail Account</p>
 									<p className="text-muted-foreground text-sm">
-										john@example.com
+										{isObjectType(user)
+											? user.email || "Not connected"
+											: "Not connected"}
 									</p>
 								</div>
 							</div>
@@ -258,34 +298,14 @@ export function SettingsPageClient() {
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<Palette className="h-5 w-5" />
-							Appearance
+							<Shield className="h-5 w-5" />
+							Display Preferences
 						</CardTitle>
 						<CardDescription>
 							Customize the look and feel of your dashboard
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="space-y-2">
-							<Label>Theme</Label>
-							<div className="grid grid-cols-3 gap-2">
-								<Button variant="outline" className="justify-start">
-									<div className="mr-2 h-4 w-4 rounded-full border bg-white" />
-									Light
-								</Button>
-								<Button variant="outline" className="justify-start">
-									<div className="mr-2 h-4 w-4 rounded-full bg-gray-900" />
-									Dark
-								</Button>
-								<Button variant="outline" className="justify-start">
-									<div className="mr-2 h-4 w-4 rounded-full bg-gradient-to-r from-white to-gray-900" />
-									System
-								</Button>
-							</div>
-						</div>
-
-						<Separator />
-
 						<div className="flex items-center justify-between">
 							<div className="space-y-0.5">
 								<Label>Compact Mode</Label>
@@ -295,6 +315,9 @@ export function SettingsPageClient() {
 							</div>
 							<Switch />
 						</div>
+						<p className="text-muted-foreground text-sm">
+							Theme settings can be changed from the sidebar theme toggle.
+						</p>
 					</CardContent>
 				</Card>
 			</div>

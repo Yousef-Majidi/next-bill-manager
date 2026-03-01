@@ -46,13 +46,13 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 	const getCategoryIcon = (category: string) => {
 		switch (category.toLowerCase()) {
 			case "electricity":
-				return <Zap className="h-4 w-4 text-yellow-600" />;
+				return <Zap className="text-primary h-4 w-4" />;
 			case "water":
-				return <Droplets className="h-4 w-4 text-blue-600" />;
+				return <Droplets className="text-primary h-4 w-4" />;
 			case "gas":
-				return <Flame className="h-4 w-4 text-orange-600" />;
+				return <Flame className="text-primary h-4 w-4" />;
 			default:
-				return <Zap className="h-4 w-4 text-gray-600" />;
+				return <Zap className="text-muted-foreground h-4 w-4" />;
 		}
 	};
 
@@ -61,14 +61,14 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 			<DialogContent className="max-w-4xl">
 				<DialogHeader>
 					<div className="flex items-center gap-3">
-						<div className="rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 p-3">
-							<Mail className="h-6 w-6 text-blue-600" />
+						<div className="bg-primary/20 rounded-xl p-3">
+							<Mail className="text-primary h-6 w-6" />
 						</div>
 						<div>
-							<DialogTitle className="text-xl font-semibold text-gray-900">
+							<DialogTitle className="text-foreground text-xl font-semibold">
 								Email Preview
 							</DialogTitle>
-							<DialogDescription className="text-gray-600">
+							<DialogDescription className="text-muted-foreground">
 								Review the email details before sending to {tenant.name}
 							</DialogDescription>
 						</div>
@@ -77,19 +77,21 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 
 				<div className="space-y-6">
 					{/* Email Details */}
-					<div className="rounded-lg bg-gray-50 p-4">
+					<div className="bg-muted rounded-lg p-4">
 						<div className="grid gap-3">
 							<div className="flex items-center gap-2">
-								<span className="text-sm font-medium text-gray-600">
+								<span className="text-muted-foreground text-sm font-medium">
 									Subject:
 								</span>
-								<span className="font-semibold text-gray-900">
+								<span className="text-foreground font-semibold">
 									{emailContent.subject}
 								</span>
 							</div>
 							<div className="flex items-center gap-2">
-								<span className="text-sm font-medium text-gray-600">To:</span>
-								<span className="font-semibold text-gray-900">
+								<span className="text-muted-foreground text-sm font-medium">
+									To:
+								</span>
+								<span className="text-foreground font-semibold">
 									{tenant.email}
 								</span>
 							</div>
@@ -98,13 +100,13 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 
 					{/* Bill Breakdown Table */}
 					<div className="space-y-4">
-						<h3 className="text-lg font-semibold text-gray-900">
+						<h3 className="text-foreground text-lg font-semibold">
 							Bill Breakdown
 						</h3>
 						<div className="overflow-hidden rounded-lg border">
 							<Table>
 								<TableHeader>
-									<TableRow className="bg-gray-50">
+									<TableRow className="bg-muted">
 										<TableHead className="font-semibold">Provider</TableHead>
 										<TableHead className="text-right font-semibold">
 											Total Amount
@@ -142,11 +144,7 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 														${total.toFixed(2)}
 													</TableCell>
 													<TableCell className="text-right">
-														<Badge
-															variant="outline"
-															className="border-blue-200 bg-blue-50 text-blue-700">
-															{percent}%
-														</Badge>
+														<Badge variant="outline">{percent}%</Badge>
 													</TableCell>
 													<TableCell className="text-right font-semibold">
 														${tenantShare.toFixed(2)}
@@ -160,24 +158,24 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 						</div>
 
 						{/* Summary Section */}
-						<div className="rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 p-4">
+						<div className="bg-muted rounded-lg p-4">
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
-									<span className="font-medium text-gray-700">
+									<span className="text-muted-foreground font-medium">
 										Your share for this month:
 									</span>
-									<span className="text-lg font-bold text-gray-900">
+									<span className="text-foreground text-lg font-bold">
 										${tenantTotal.toFixed(2)}
 									</span>
 								</div>
 								<div className="flex items-center justify-between">
-									<span className="font-medium text-gray-700">
+									<span className="text-muted-foreground font-medium">
 										{outstandingBalance < 0
 											? "Credit balance:"
 											: "Outstanding balance:"}
 									</span>
 									<span
-										className={`text-lg font-bold ${outstandingBalance < 0 ? "text-green-600" : "text-red-600"}`}>
+										className={`text-lg font-bold ${outstandingBalance < 0 ? "text-primary" : "text-destructive"}`}>
 										{outstandingBalance < 0
 											? `-$${Math.abs(outstandingBalance).toFixed(2)}`
 											: `$${outstandingBalance.toFixed(2)}`}
@@ -185,10 +183,10 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 								</div>
 								<Separator />
 								<div className="flex items-center justify-between">
-									<span className="font-semibold text-gray-900">
+									<span className="text-foreground font-semibold">
 										Total Amount Due:
 									</span>
-									<span className="text-xl font-bold text-blue-600">
+									<span className="text-primary text-xl font-bold">
 										${Math.max(0, finalAmountDue).toFixed(2)}
 									</span>
 								</div>
@@ -198,15 +196,10 @@ export const EmailPreviewDialog: React.FC<EmailPreviewDialogProps> = ({
 				</div>
 
 				<DialogFooter className="gap-3">
-					<Button
-						variant="outline"
-						onClick={onClose}
-						className="border-gray-200 hover:bg-gray-50">
+					<Button variant="outline" onClick={onClose}>
 						Cancel
 					</Button>
-					<Button
-						onClick={onConfirm}
-						className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl">
+					<Button onClick={onConfirm}>
 						<Send className="mr-2 h-4 w-4" />
 						Send Email
 					</Button>

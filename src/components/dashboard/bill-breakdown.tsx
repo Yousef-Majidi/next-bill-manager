@@ -80,7 +80,7 @@ export const BillBreakdown = ({
 								<h4 className="font-medium">{bill.providerName}</h4>
 								<div className="flex items-center gap-1">
 									{categoryKey === BillCategory.Electricity && (
-										<Zap className="h-4 w-4 text-yellow-600" />
+										<Zap className="h-4 w-4 text-[oklch(0.70_0.18_60)]" />
 									)}
 									{categoryKey === BillCategory.Water && (
 										<>
@@ -100,11 +100,11 @@ export const BillBreakdown = ({
 												title="Manual input">
 												<Edit className="h-3 w-3" />
 											</Button>
-											<Droplet className="h-4 w-4 text-blue-600" />
+											<Droplet className="h-4 w-4 text-[oklch(0.70_0.18_200)]" />
 										</>
 									)}
 									{categoryKey === BillCategory.Gas && (
-										<Flame className="h-4 w-4 text-red-600" />
+										<Flame className="h-4 w-4 text-[oklch(0.70_0.18_25)]" />
 									)}
 								</div>
 							</div>

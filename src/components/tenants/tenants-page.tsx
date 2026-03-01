@@ -169,16 +169,14 @@ export const TenantsPage = () => {
 			{/* Page Header */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="space-y-1">
-					<h1 className="text-3xl font-bold tracking-tight text-gray-900">
+					<h1 className="text-foreground text-3xl font-bold tracking-tight">
 						Tenants
 					</h1>
-					<p className="text-gray-600">
+					<p className="text-muted-foreground">
 						Manage your tenants and their utility bill sharing percentages
 					</p>
 				</div>
-				<Button
-					onClick={() => toggleDialog(DialogType.MAIN)}
-					className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
+				<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Tenant
 				</Button>
@@ -187,66 +185,78 @@ export const TenantsPage = () => {
 			{/* Stats Section */}
 			{tenants.length > 0 && (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-						<div className="flex items-center gap-3">
-							<div className="rounded-lg bg-blue-100 p-2">
-								<Users className="h-5 w-5 text-blue-600" />
+					<Card>
+						<CardContent className="p-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/20 rounded-lg p-2">
+									<Users className="text-primary h-5 w-5" />
+								</div>
+								<div>
+									<p className="text-muted-foreground text-sm font-medium">
+										Total Tenants
+									</p>
+									<p className="text-foreground text-2xl font-bold">
+										{tenants.length}
+									</p>
+								</div>
 							</div>
-							<div>
-								<p className="text-sm font-medium text-gray-600">
-									Total Tenants
-								</p>
-								<p className="text-2xl font-bold text-gray-900">
-									{tenants.length}
-								</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/20 rounded-lg p-2">
+									<TrendingDown className="text-primary h-5 w-5" />
+								</div>
+								<div>
+									<p className="text-muted-foreground text-sm font-medium">
+										With Credit
+									</p>
+									<p className="text-foreground text-2xl font-bold">
+										{tenants.filter((t) => t.outstandingBalance < 0).length}
+									</p>
+								</div>
 							</div>
-						</div>
-					</div>
-					<div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-						<div className="flex items-center gap-3">
-							<div className="rounded-lg bg-green-100 p-2">
-								<TrendingDown className="h-5 w-5 text-green-600" />
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/20 rounded-lg p-2">
+									<TrendingUp className="text-primary h-5 w-5" />
+								</div>
+								<div>
+									<p className="text-muted-foreground text-sm font-medium">
+										Outstanding
+									</p>
+									<p className="text-foreground text-2xl font-bold">
+										{tenants.filter((t) => t.outstandingBalance > 0).length}
+									</p>
+								</div>
 							</div>
-							<div>
-								<p className="text-sm font-medium text-gray-600">With Credit</p>
-								<p className="text-2xl font-bold text-gray-900">
-									{tenants.filter((t) => t.outstandingBalance < 0).length}
-								</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-primary/20 rounded-lg p-2">
+									<DollarSign className="text-primary h-5 w-5" />
+								</div>
+								<div>
+									<p className="text-muted-foreground text-sm font-medium">
+										Total Outstanding
+									</p>
+									<p className="text-foreground text-2xl font-bold">
+										$
+										{tenants
+											.filter((t) => t.outstandingBalance > 0)
+											.reduce((sum, t) => sum + t.outstandingBalance, 0)
+											.toFixed(2)}
+									</p>
+								</div>
 							</div>
-						</div>
-					</div>
-					<div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-						<div className="flex items-center gap-3">
-							<div className="rounded-lg bg-orange-100 p-2">
-								<TrendingUp className="h-5 w-5 text-orange-600" />
-							</div>
-							<div>
-								<p className="text-sm font-medium text-gray-600">Outstanding</p>
-								<p className="text-2xl font-bold text-gray-900">
-									{tenants.filter((t) => t.outstandingBalance > 0).length}
-								</p>
-							</div>
-						</div>
-					</div>
-					<div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-						<div className="flex items-center gap-3">
-							<div className="rounded-lg bg-purple-100 p-2">
-								<DollarSign className="h-5 w-5 text-purple-600" />
-							</div>
-							<div>
-								<p className="text-sm font-medium text-gray-600">
-									Total Outstanding
-								</p>
-								<p className="text-2xl font-bold text-gray-900">
-									$
-									{tenants
-										.filter((t) => t.outstandingBalance > 0)
-										.reduce((sum, t) => sum + t.outstandingBalance, 0)
-										.toFixed(2)}
-								</p>
-							</div>
-						</div>
-					</div>
+						</CardContent>
+					</Card>
 				</div>
 			)}
 
@@ -259,19 +269,19 @@ export const TenantsPage = () => {
 						<CardHeader className="pb-3">
 							<div className="flex items-start justify-between">
 								<div className="flex items-center gap-3">
-									<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-sm">
-										<Users className="h-6 w-6 text-white" />
+									<div className="bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl shadow-sm">
+										<Users className="text-primary h-6 w-6" />
 									</div>
 									<div className="flex min-h-[4rem] flex-col justify-center space-y-1">
-										<CardTitle className="text-xl font-semibold text-gray-900">
+										<CardTitle className="text-foreground text-xl font-semibold">
 											{tenant.name}
 										</CardTitle>
-										<div className="flex items-center gap-1 text-sm text-gray-500">
+										<div className="text-muted-foreground flex items-center gap-1 text-sm">
 											<Mail className="h-3 w-3" />
 											{tenant.email}
 										</div>
 										{tenant.secondaryName ? (
-											<div className="flex items-center gap-1 text-xs text-gray-400">
+											<div className="text-muted-foreground flex items-center gap-1 text-xs">
 												<Users className="h-3 w-3" />
 												{tenant.secondaryName}
 											</div>
@@ -284,22 +294,22 @@ export const TenantsPage = () => {
 									<Button
 										variant="ghost"
 										size="sm"
-										className="h-8 w-8 p-0 hover:bg-blue-50"
+										className="h-8 w-8 p-0"
 										onClick={() => {
 											setEditingTenant(tenant);
 											setEditDialogOpen(true);
 										}}>
-										<Edit className="h-4 w-4 text-blue-600" />
+										<Edit className="text-primary h-4 w-4" />
 									</Button>
 									<Button
 										variant="ghost"
 										size="sm"
-										className="h-8 w-8 p-0 hover:bg-red-50"
+										className="hover:bg-destructive/20 h-8 w-8 p-0"
 										onClick={() => {
 											setItemIdToDelete(tenant.id || null);
 											toggleDialog(DialogType.DELETE);
 										}}>
-										<Trash2 className="h-4 w-4 text-red-600" />
+										<Trash2 className="text-destructive h-4 w-4" />
 									</Button>
 								</div>
 							</div>
@@ -310,28 +320,21 @@ export const TenantsPage = () => {
 							<div
 								className={`rounded-lg border-l-4 p-3 ${
 									tenant.outstandingBalance < 0
-										? "border-green-400 bg-green-50"
+										? "border-primary bg-primary/10"
 										: tenant.outstandingBalance > 0
-											? "border-orange-400 bg-orange-50"
-											: "border-gray-300 bg-gray-50"
+											? "border-destructive bg-destructive/10"
+											: "border-border bg-muted"
 								}`}>
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
 										{tenant.outstandingBalance < 0 ? (
-											<TrendingDown className="h-4 w-4 text-green-600" />
+											<TrendingDown className="text-primary h-4 w-4" />
 										) : tenant.outstandingBalance > 0 ? (
-											<TrendingUp className="h-4 w-4 text-orange-600" />
+											<TrendingUp className="text-destructive h-4 w-4" />
 										) : (
-											<CreditCard className="h-4 w-4 text-gray-500" />
+											<CreditCard className="text-muted-foreground h-4 w-4" />
 										)}
-										<span
-											className={`text-sm font-medium ${
-												tenant.outstandingBalance < 0
-													? "text-green-700"
-													: tenant.outstandingBalance > 0
-														? "text-orange-700"
-														: "text-gray-600"
-											}`}>
+										<span className="text-foreground text-sm font-medium">
 											{tenant.outstandingBalance < 0
 												? "Credit Balance"
 												: tenant.outstandingBalance > 0
@@ -342,10 +345,10 @@ export const TenantsPage = () => {
 									<span
 										className={`text-lg font-bold ${
 											tenant.outstandingBalance < 0
-												? "text-green-600"
+												? "text-primary"
 												: tenant.outstandingBalance > 0
-													? "text-orange-600"
-													: "text-gray-500"
+													? "text-destructive"
+													: "text-muted-foreground"
 										}`}>
 										{tenant.outstandingBalance < 0
 											? `$${Math.abs(tenant.outstandingBalance).toFixed(2)}`
@@ -358,7 +361,7 @@ export const TenantsPage = () => {
 
 							{/* Utility Shares Section */}
 							<div className="space-y-3">
-								<h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+								<h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
 									<Percent className="h-4 w-4" />
 									Utility Shares
 								</h4>
@@ -368,16 +371,16 @@ export const TenantsPage = () => {
 											<div
 												key={category}
 												className="flex items-center justify-between">
-												<span className="text-sm text-gray-600 capitalize">
+												<span className="text-muted-foreground text-sm capitalize">
 													{category.toLowerCase()}
 												</span>
 												<div className="flex items-center gap-2">
-													<div className="h-2 w-16 rounded-full bg-gray-200">
+													<div className="bg-muted h-2 w-16 rounded-full">
 														<div
-															className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300"
+															className="bg-primary h-2 rounded-full transition-all duration-300"
 															style={{ width: `${percentage}%` }}></div>
 													</div>
-													<span className="w-8 text-right text-sm font-medium text-gray-700">
+													<span className="text-foreground w-8 text-right text-sm font-medium">
 														{percentage}%
 													</span>
 												</div>
@@ -394,20 +397,18 @@ export const TenantsPage = () => {
 			{/* Empty State */}
 			{tenants.length === 0 && (
 				<div className="flex flex-col items-center justify-center px-4 py-16">
-					<div className="mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 p-6">
-						<Users className="h-16 w-16 text-blue-600" />
+					<div className="bg-primary/20 mb-6 rounded-full p-6">
+						<Users className="text-primary h-16 w-16" />
 					</div>
 					<div className="max-w-md space-y-4 text-center">
-						<h3 className="text-2xl font-semibold text-gray-900">
+						<h3 className="text-foreground text-2xl font-semibold">
 							No tenants yet
 						</h3>
-						<p className="leading-relaxed text-gray-600">
+						<p className="text-muted-foreground leading-relaxed">
 							Start by adding your first tenant to begin managing utility bill
 							sharing and tracking payments.
 						</p>
-						<Button
-							onClick={() => toggleDialog(DialogType.MAIN)}
-							className="mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
+						<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Your First Tenant
 						</Button>
