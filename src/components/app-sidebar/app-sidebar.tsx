@@ -42,7 +42,7 @@ import {
 	SidebarSeparator,
 } from "@/components/ui";
 import { isObjectType } from "@/lib/common/type-utils";
-import { billsHistoryAtom, tenantsAtom, userAtom } from "@/states/store";
+import { billsHistoryAtom, userAtom } from "@/states/store";
 
 // Navigation data with color coding
 const navigationItems = [
@@ -88,7 +88,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { theme, setTheme, resolvedTheme } = useTheme();
 	const [user] = useAtom(userAtom);
 	const [billsHistory] = useAtom(billsHistoryAtom);
-	const [tenants] = useAtom(tenantsAtom);
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {

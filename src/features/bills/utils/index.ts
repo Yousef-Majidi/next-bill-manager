@@ -1,2 +1,0 @@
-// bills utils exports
-export {};
