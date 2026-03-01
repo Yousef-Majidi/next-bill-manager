@@ -189,21 +189,11 @@ class QualityGate {
 		return result.success;
 	}
 
-	checkCodeStructure() {
-		this.log("Checking code structure...");
-		const result = this.runCommand(
-			"pnpm run validate-all",
-			"Code structure validation",
-		);
-		return result.success;
-	}
-
 	async run() {
 		this.log("🚀 Starting Quality Gate Checks...");
 		this.log("");
 
 		const checks = [
-			{ name: "Code Structure", fn: () => this.checkCodeStructure() },
 			{ name: "Linting", fn: () => this.checkLinting() },
 			{ name: "Type Checking", fn: () => this.checkTypes() },
 			{ name: "Security", fn: () => this.checkSecurity() },

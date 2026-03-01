@@ -22,18 +22,22 @@ export const StatCard = ({
 	iconClassName = "",
 }: StatCardProps) => {
 	return (
-		<Card className={twMerge("w-full border-0 shadow-sm", className)}>
+		<Card
+			className={twMerge(
+				"w-full border-0 shadow-lg transition-shadow duration-300 hover:shadow-xl",
+				className,
+			)}>
 			<CardContent className="p-6">
 				<div className="mb-4 flex items-center justify-between">
-					<div className="rounded-lg bg-white/50 p-2">
+					<div className="from-primary/20 to-primary/5 border-primary/10 rounded-lg border bg-gradient-to-br p-3">
 						<div className={twMerge("", iconClassName)}>{icon}</div>
 					</div>
 					<div className="text-right">
-						<p className="text-sm font-medium text-gray-600">{title}</p>
-						<p className="text-2xl font-bold text-gray-900">{value}</p>
+						<p className="text-muted-foreground text-sm font-medium">{title}</p>
+						<p className="text-foreground text-2xl font-bold">{value}</p>
 					</div>
 				</div>
-				<p className="text-xs text-gray-500">{description}</p>
+				<p className="text-muted-foreground text-xs">{description}</p>
 			</CardContent>
 		</Card>
 	);

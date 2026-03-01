@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { Analytics } from "@vercel/analytics/react";
+import { ThemeProvider } from "next-themes";
 import { Toaster as Sonner } from "sonner";
 
 import "./globals.css";
@@ -27,12 +28,18 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-				{children}
-				<Sonner />
-				<Analytics mode="auto" />
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="system"
+					enableSystem={true}
+					disableTransitionOnChange={false}>
+					{children}
+					<Sonner />
+					<Analytics mode="auto" />
+				</ThemeProvider>
 			</body>
 		</html>
 	);

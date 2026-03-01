@@ -3,18 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { useAtom } from "jotai";
 import {
+	Database,
 	DollarSign,
 	FileText,
 	Home,
 	LogOut,
 	Mail,
+	Moon,
 	Settings,
+	Sun,
 	Users,
 	Zap,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
 
 import {
 	Avatar,
@@ -35,56 +41,125 @@ import {
 	SidebarRail,
 	SidebarSeparator,
 } from "@/components/ui";
+import { isObjectType } from "@/lib/common/type-utils";
+import { billsHistoryAtom, userAtom } from "@/states/store";
 
-// Navigation data
+// Navigation data with color coding
 const navigationItems = [
 	{
 		title: "Dashboard",
 		url: "/dashboard",
 		icon: Home,
 		description: "Overview and current bills",
+		color: "text-[oklch(0.70_0.18_200)]",
 	},
 	{
 		title: "Utility Providers",
 		url: "/dashboard/providers",
 		icon: Zap,
 		description: "Manage utility companies",
+		color: "text-[oklch(0.70_0.18_60)]",
 	},
 	{
 		title: "Tenants",
 		url: "/dashboard/tenants",
 		icon: Users,
 		description: "Manage tenant information",
+		color: "text-[oklch(0.70_0.18_280)]",
 	},
 	{
 		title: "Bills History",
 		url: "/dashboard/bills",
 		icon: FileText,
 		description: "View past bills and payments",
-	},
-];
-
-const quickStats = [
-	{
-		label: "Current Month",
-		value: "$350",
-		icon: DollarSign,
-		color: "text-blue-600",
+		color: "text-[oklch(0.70_0.18_190)]",
 	},
 	{
-		label: "Pending Bills",
-		value: "2",
-		icon: Mail,
-		color: "text-orange-600",
+		title: "Data Management",
+		url: "/dashboard/admin",
+		icon: Database,
+		description: "View and edit all data",
+		color: "text-[oklch(0.70_0.18_140)]",
 	},
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname();
+	const { theme, setTheme, resolvedTheme } = useTheme();
+	const [user] = useAtom(userAtom);
+	const [billsHistory] = useAtom(billsHistoryAtom);
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// Calculate Quick Stats
+	const quickStats = useMemo(() => {
+		const now = new Date();
+		const currentMonth = now.getMonth() + 1;
+		const currentYear = now.getFullYear();
+
+		// Current month total
+		const currentMonthBills = billsHistory.filter(
+			(bill) => bill.month === currentMonth && bill.year === currentYear,
+		);
+		const currentMonthTotal = currentMonthBills.reduce(
+			(sum, bill) => sum + (bill.totalAmount || 0),
+			0,
+		);
+
+		// Pending bills (unpaid bills)
+		const pendingBillsCount = billsHistory.filter((bill) => !bill.paid).length;
+
+		return [
+			{
+				label: "Current Month",
+				value: `$${currentMonthTotal.toFixed(0)}`,
+				icon: DollarSign,
+				color: "text-[oklch(0.70_0.18_200)]",
+			},
+			{
+				label: "Pending Bills",
+				value: pendingBillsCount.toString(),
+				icon: Mail,
+				color: "text-[oklch(0.70_0.18_25)]",
+			},
+		];
+	}, [billsHistory]);
+
+	// Get user initials for avatar
+	const userInitials = useMemo(() => {
+		if (
+			!isObjectType(user) ||
+			typeof user.name !== "string" ||
+			!user.name.trim()
+		)
+			return "U";
+		const names = user.name.trim().split(/\s+/);
+
+		const firstInitial = names[0]?.[0] || "";
+		const secondInitial = names.length > 1 ? names[1]?.[0] || "" : "";
+
+		const initials = `${firstInitial}${secondInitial}`.toUpperCase();
+		return initials || "U";
+	}, [user]);
 
 	const handleLogOut = () => {
 		signOut();
 	};
+
+	const toggleTheme = () => {
+		// Only toggle between dark and light
+		if (theme === "light" || resolvedTheme === "light") {
+			setTheme("dark");
+		} else {
+			setTheme("light");
+		}
+	};
+
+	// Use resolvedTheme for icon display (accounts for system theme on first load)
+	const currentTheme = mounted ? resolvedTheme || theme || "dark" : "dark";
 	return (
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
@@ -120,7 +195,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										isActive={pathname === item.url}
 										tooltip={item.description}>
 										<Link href={item.url}>
-											<item.icon className="size-4" />
+											<item.icon className={`size-4 ${item.color}`} />
 											<span>{item.title}</span>
 										</Link>
 									</SidebarMenuButton>
@@ -174,7 +249,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton>
-									<div className="size-4 rounded-full bg-blue-500" />
+									<div className="bg-primary size-4 rounded-full" />
 									<div className="flex flex-col">
 										<span className="text-xs">Bill sent to Jane</span>
 										<span className="text-muted-foreground text-xs">
@@ -185,7 +260,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton>
-									<div className="size-4 rounded-full bg-orange-500" />
+									<div className="size-4 rounded-full bg-[oklch(0.70_0.18_60)]" />
 									<div className="flex flex-col">
 										<span className="text-xs">New provider added</span>
 										<span className="text-muted-foreground text-xs">
@@ -208,14 +283,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 									src="/placeholder.svg?height=24&width=24"
 									alt="User"
 								/>
-								<AvatarFallback>JD</AvatarFallback>
+								<AvatarFallback>{userInitials}</AvatarFallback>
 							</Avatar>
 							<div className="grid flex-1 text-left text-sm leading-tight">
-								<span className="truncate font-semibold">John Doe</span>
+								<span className="truncate font-semibold">
+									{isObjectType(user) ? user.name || "User" : "User"}
+								</span>
 								<span className="text-muted-foreground truncate text-xs">
-									john@example.com
+									{isObjectType(user) ? user.email || "" : ""}
 								</span>
 							</div>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							onClick={toggleTheme}
+							tooltip={`Switch to ${currentTheme === "light" ? "dark" : "light"} theme`}>
+							{currentTheme === "light" ? (
+								<Sun className="size-4" />
+							) : (
+								<Moon className="size-4" />
+							)}
+							<span>Theme</span>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>

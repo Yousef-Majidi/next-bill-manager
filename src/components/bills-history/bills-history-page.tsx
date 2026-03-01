@@ -213,42 +213,42 @@ export const BillsHistoryPage = () => {
 		<div className="space-y-8">
 			{/* Page Header */}
 			<div className="space-y-1">
-				<h1 className="text-3xl font-bold tracking-tight text-gray-900">
+				<h1 className="text-foreground text-3xl font-bold tracking-tight">
 					Bills History
 				</h1>
-				<p className="text-gray-600">
+				<p className="text-muted-foreground">
 					View and track all consolidated utility bills sent to tenants
 				</p>
 			</div>
 
 			{/* Summary Stats */}
 			<div className="grid gap-6 md:grid-cols-3">
-				<Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm">
+				<Card className="border-0 shadow-sm">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-blue-600">
+								<p className="text-primary text-sm font-medium">
 									Total Bills Sent
 								</p>
-								<p className="text-3xl font-bold text-gray-900">
+								<p className="text-foreground text-3xl font-bold">
 									{billsHistory.length}
 								</p>
 							</div>
-							<div className="rounded-full bg-blue-100 p-3">
-								<FileText className="h-6 w-6 text-blue-600" />
+							<div className="bg-primary/20 rounded-full p-3">
+								<FileText className="text-primary h-6 w-6" />
 							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm">
+				<Card className="border-0 shadow-sm">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-green-600">
+								<p className="text-primary text-sm font-medium">
 									Total Amount Billed
 								</p>
-								<p className="text-3xl font-bold text-gray-900">
+								<p className="text-foreground text-3xl font-bold">
 									$
 									{billsHistory
 										.reduce((sum, bill) => {
@@ -260,21 +260,21 @@ export const BillsHistoryPage = () => {
 										.toFixed(2)}
 								</p>
 							</div>
-							<div className="rounded-full bg-green-100 p-3">
-								<DollarSign className="h-6 w-6 text-green-600" />
+							<div className="bg-primary/20 rounded-full p-3">
+								<DollarSign className="text-primary h-6 w-6" />
 							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="border-0 bg-gradient-to-br from-purple-50 to-violet-50 shadow-sm">
+				<Card className="border-0 shadow-sm">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-purple-600">
+								<p className="text-primary text-sm font-medium">
 									Collection Rate
 								</p>
-								<p className="text-3xl font-bold text-gray-900">
+								<p className="text-foreground text-3xl font-bold">
 									{Math.round(
 										(billsHistory.filter((b) => b.paid).length /
 											billsHistory.length) *
@@ -283,8 +283,8 @@ export const BillsHistoryPage = () => {
 									%
 								</p>
 							</div>
-							<div className="rounded-full bg-purple-100 p-3">
-								<CheckCircle className="h-6 w-6 text-purple-600" />
+							<div className="bg-primary/20 rounded-full p-3">
+								<CheckCircle className="text-primary h-6 w-6" />
 							</div>
 						</div>
 					</CardContent>
@@ -294,7 +294,7 @@ export const BillsHistoryPage = () => {
 			{/* Results Summary with Compact Filters */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-4">
-					<p className="font-medium text-gray-600">
+					<p className="text-muted-foreground font-medium">
 						Showing {filteredBills.length} of {billsHistory.length} bills
 					</p>
 
@@ -304,13 +304,11 @@ export const BillsHistoryPage = () => {
 							variant="outline"
 							size="sm"
 							onClick={() => setFilterExpanded(!filterExpanded)}
-							className="flex items-center gap-2 border-gray-200 hover:bg-gray-50">
+							className="flex items-center gap-2">
 							<Filter className="h-4 w-4" />
 							Filters
 							{activeFilterCount > 0 && (
-								<Badge
-									variant="secondary"
-									className="ml-1 bg-blue-100 text-xs text-blue-700">
+								<Badge variant="secondary" className="ml-1 text-xs">
 									{activeFilterCount}
 								</Badge>
 							)}
@@ -618,13 +616,13 @@ export const BillsHistoryPage = () => {
 							<CardContent className="p-6">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-4">
-										<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100">
-											<FileText className="h-7 w-7 text-blue-600" />
+										<div className="bg-primary/20 flex h-14 w-14 items-center justify-center rounded-xl">
+											<FileText className="text-primary h-7 w-7" />
 										</div>
 
 										<div className="space-y-2">
 											<div className="flex items-center gap-3">
-												<h3 className="text-lg font-semibold text-gray-900">
+												<h3 className="text-foreground text-lg font-semibold">
 													{new Date(bill.year, bill.month, 0).toLocaleString(
 														"default",
 														{
@@ -633,27 +631,23 @@ export const BillsHistoryPage = () => {
 														},
 													)}
 												</h3>
-												<Badge
-													variant="outline"
-													className="border-gray-200 bg-gray-50 text-gray-700">
-													{tenant.name}
-												</Badge>
+												<Badge variant="outline">{tenant.name}</Badge>
 											</div>
-											<div className="flex items-center gap-6 text-sm text-gray-600">
+											<div className="text-muted-foreground flex items-center gap-6 text-sm">
 												<div className="flex items-center gap-2">
-													<DollarSign className="h-4 w-4 text-green-600" />
+													<DollarSign className="text-primary h-4 w-4" />
 													<span className="font-medium">
 														Total Bill: ${bill.totalAmount}
 													</span>
 												</div>
 												<div className="flex items-center gap-2">
-													<DollarSign className="h-4 w-4 text-blue-600" />
+													<DollarSign className="text-primary h-4 w-4" />
 													<span className="font-medium">
 														Tenant Share: ${tenantTotal}
 													</span>
 												</div>
 												<div className="flex items-center gap-2">
-													<Calendar className="h-4 w-4 text-gray-500" />
+													<Calendar className="text-muted-foreground h-4 w-4" />
 													<span>
 														Sent:{" "}
 														{bill.dateSent
@@ -663,8 +657,8 @@ export const BillsHistoryPage = () => {
 												</div>
 												{bill.datePaid && (
 													<div className="flex items-center gap-2">
-														<CheckCircle className="h-4 w-4 text-green-600" />
-														<span className="font-medium text-green-600">
+														<CheckCircle className="text-primary h-4 w-4" />
+														<span className="text-primary font-medium">
 															Paid:{" "}
 															{new Date(bill.datePaid).toLocaleDateString()}
 														</span>
@@ -676,10 +670,10 @@ export const BillsHistoryPage = () => {
 
 									<div className="flex items-center gap-4">
 										<div className="text-right">
-											<p className="text-2xl font-bold text-gray-900">
+											<p className="text-foreground text-2xl font-bold">
 												${tenantTotal}
 											</p>
-											<p className="text-sm text-gray-500">
+											<p className="text-muted-foreground text-sm">
 												{((tenantTotal / bill.totalAmount) * 100).toFixed(0)}%
 												of total
 											</p>
@@ -693,8 +687,7 @@ export const BillsHistoryPage = () => {
 														size="sm"
 														onClick={() => {
 															toast.warning("bill details ");
-														}}
-														className="border-gray-200 hover:bg-gray-50">
+														}}>
 														<Eye className="mr-2 h-4 w-4" />
 														View Details
 													</Button>
@@ -702,11 +695,11 @@ export const BillsHistoryPage = () => {
 												<DialogContent className="max-w-7xl">
 													<DialogHeader className="space-y-3">
 														<div className="flex items-center gap-3">
-															<div className="rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 p-3">
-																<FileText className="h-6 w-6 text-blue-600" />
+															<div className="bg-primary/20 rounded-xl p-3">
+																<FileText className="text-primary h-6 w-6" />
 															</div>
 															<div>
-																<DialogTitle className="text-xl font-semibold text-gray-900">
+																<DialogTitle className="text-foreground text-xl font-semibold">
 																	Bill Details -{" "}
 																	{new Date(
 																		bill.year,
@@ -717,7 +710,7 @@ export const BillsHistoryPage = () => {
 																		year: "numeric",
 																	})}
 																</DialogTitle>
-																<DialogDescription className="text-gray-600">
+																<DialogDescription className="text-muted-foreground">
 																	Consolidated bill sent to {tenant.email}
 																</DialogDescription>
 															</div>
@@ -726,23 +719,23 @@ export const BillsHistoryPage = () => {
 
 													<div className="space-y-6">
 														<div className="grid gap-6 md:grid-cols-3">
-															<Card className="border-0 bg-gradient-to-br from-yellow-50 to-orange-50 shadow-sm">
+															<Card className="border-0 shadow-sm">
 																<CardContent className="p-6">
 																	<div className="mb-4 flex items-center justify-center">
-																		<div className="rounded-xl bg-yellow-100 p-3">
-																			<Zap className="h-6 w-6 text-yellow-600" />
+																		<div className="bg-primary/20 rounded-xl p-3">
+																			<Zap className="text-primary h-6 w-6" />
 																		</div>
 																	</div>
 																	<div className="mb-4 flex min-h-[3rem] flex-col justify-center">
-																		<p className="text-2xl leading-tight font-bold text-gray-900">
+																		<p className="text-foreground text-2xl leading-tight font-bold">
 																			${bill.categories.Electricity.amount}
 																		</p>
-																		<p className="mt-1 text-sm font-medium text-gray-600">
+																		<p className="text-muted-foreground mt-1 text-sm font-medium">
 																			{bill.categories.Electricity.providerName}
 																		</p>
 																	</div>
 																	<div className="space-y-1">
-																		<p className="font-semibold text-gray-900">
+																		<p className="text-foreground font-semibold">
 																			Tenant Share: ${shares.Electricity} (
 																			{(
 																				(shares.Electricity /
@@ -755,23 +748,23 @@ export const BillsHistoryPage = () => {
 																</CardContent>
 															</Card>
 
-															<Card className="border-0 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-sm">
+															<Card className="border-0 shadow-sm">
 																<CardContent className="p-6">
 																	<div className="mb-4 flex items-center justify-center">
-																		<div className="rounded-xl bg-blue-100 p-3">
-																			<Droplets className="h-6 w-6 text-blue-600" />
+																		<div className="bg-primary/20 rounded-xl p-3">
+																			<Droplets className="text-primary h-6 w-6" />
 																		</div>
 																	</div>
 																	<div className="mb-4 flex min-h-[3rem] flex-col justify-center">
-																		<p className="text-2xl leading-tight font-bold text-gray-900">
+																		<p className="text-foreground text-2xl leading-tight font-bold">
 																			${bill.categories.Water.amount}
 																		</p>
-																		<p className="mt-1 text-sm font-medium text-gray-600">
+																		<p className="text-muted-foreground mt-1 text-sm font-medium">
 																			{bill.categories.Water.providerName}
 																		</p>
 																	</div>
 																	<div className="space-y-1">
-																		<p className="font-semibold text-gray-900">
+																		<p className="text-foreground font-semibold">
 																			Tenant Share: ${shares.Water} (
 																			{bill.categories.Water.amount > 0
 																				? (
@@ -786,23 +779,23 @@ export const BillsHistoryPage = () => {
 																</CardContent>
 															</Card>
 
-															<Card className="border-0 bg-gradient-to-br from-orange-50 to-red-50 shadow-sm">
+															<Card className="border-0 shadow-sm">
 																<CardContent className="p-6">
 																	<div className="mb-4 flex items-center justify-center">
-																		<div className="rounded-xl bg-orange-100 p-3">
-																			<Flame className="h-6 w-6 text-orange-600" />
+																		<div className="bg-primary/20 rounded-xl p-3">
+																			<Flame className="text-primary h-6 w-6" />
 																		</div>
 																	</div>
 																	<div className="mb-4 flex min-h-[3rem] flex-col justify-center">
-																		<p className="text-2xl leading-tight font-bold text-gray-900">
+																		<p className="text-foreground text-2xl leading-tight font-bold">
 																			${bill.categories.Gas.amount}
 																		</p>
-																		<p className="mt-1 text-sm font-medium text-gray-600">
+																		<p className="text-muted-foreground mt-1 text-sm font-medium">
 																			{bill.categories.Gas.providerName}
 																		</p>
 																	</div>
 																	<div className="space-y-1">
-																		<p className="font-semibold text-gray-900">
+																		<p className="text-foreground font-semibold">
 																			Tenant Share: ${shares.Gas} (
 																			{(
 																				(shares.Gas /
@@ -818,30 +811,26 @@ export const BillsHistoryPage = () => {
 
 														<Separator className="my-6" />
 
-														<Card className="border-0 bg-gradient-to-r from-gray-50 to-gray-100 shadow-sm">
+														<Card className="bg-muted border-0 shadow-sm">
 															<CardContent className="p-6">
 																<div className="flex items-center justify-between">
 																	<div>
-																		<p className="mb-1 text-sm font-medium text-gray-600">
+																		<p className="text-muted-foreground mb-1 text-sm font-medium">
 																			Total Amount Due
 																		</p>
-																		<p className="text-3xl font-bold text-gray-900">
+																		<p className="text-foreground text-3xl font-bold">
 																			${tenantTotal}
 																		</p>
 																	</div>
 																	<div className="text-right">
-																		<p className="mb-2 text-sm font-medium text-gray-600">
+																		<p className="text-muted-foreground mb-2 text-sm font-medium">
 																			Bill Status
 																		</p>
 																		<Badge
 																			variant={
 																				bill.paid ? "default" : "destructive"
 																			}
-																			className={`px-3 py-1 text-sm ${
-																				bill.paid
-																					? "border-green-200 bg-green-100 text-green-700"
-																					: "border-red-200 bg-red-100 text-red-700"
-																			}`}>
+																			className="px-3 py-1 text-sm">
 																			{bill.paid ? (
 																				<>
 																					<CheckCircle className="mr-1 h-3 w-3" />
@@ -862,13 +851,7 @@ export const BillsHistoryPage = () => {
 												</DialogContent>
 											</Dialog>
 
-											<Badge
-												variant={bill.paid ? "default" : "destructive"}
-												className={
-													bill.paid
-														? "border-green-200 bg-green-100 text-green-700"
-														: "border-red-200 bg-red-100 text-red-700"
-												}>
+											<Badge variant={bill.paid ? "default" : "destructive"}>
 												{bill.paid ? (
 													<>
 														<CheckCircle className="mr-1 h-3 w-3" />
@@ -893,13 +876,13 @@ export const BillsHistoryPage = () => {
 			{filteredBills.length === 0 && (
 				<Card className="border-0 shadow-sm">
 					<CardContent className="flex flex-col items-center justify-center py-16">
-						<div className="mb-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 p-6">
-							<FileText className="h-12 w-12 text-gray-500" />
+						<div className="bg-muted mb-6 rounded-full p-6">
+							<FileText className="text-muted-foreground h-12 w-12" />
 						</div>
-						<h3 className="mb-2 text-xl font-semibold text-gray-900">
+						<h3 className="text-foreground mb-2 text-xl font-semibold">
 							No bills found
 						</h3>
-						<p className="max-w-md text-center text-gray-600">
+						<p className="text-muted-foreground max-w-md text-center">
 							No bills match your current filter criteria. Try adjusting your
 							filters to see more results.
 						</p>

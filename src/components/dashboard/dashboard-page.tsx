@@ -10,10 +10,12 @@ import { toast } from "sonner";
 import {
 	ConsolidatedBillSection,
 	MonthSelector,
+	PaymentSelectionDialog,
 	StatsSummary,
 } from "@/components/dashboard";
 import { EmailPreviewDialog } from "@/components/dashboard/email-preview-dialog";
 import { LastMonthSummary } from "@/components/dashboard/last-month-summary";
+import { Skeleton } from "@/components/ui/skeleton";
 import { fetchMonthData } from "@/features/dashboard/actions";
 import { DialogType, useDialogState } from "@/hooks";
 import { safeExecuteAsync } from "@/lib/common/error-handling";
@@ -22,7 +24,7 @@ import { getTenantShares } from "@/lib/common/utils";
 import { addConsolidatedBill, findById, updateTenantBalance } from "@/lib/data";
 import { constructEmail, processTenantPayments, sendEmail } from "@/lib/gmail";
 import { billsHistoryAtom, tenantsAtom, userAtom } from "@/states/store";
-import { ConsolidatedBill, EmailContent, Tenant } from "@/types";
+import { ConsolidatedBill, EmailContent, Payment, Tenant } from "@/types";
 
 interface DashboardPageProps {
 	readonly currentMonthBill: ConsolidatedBill | null;
@@ -70,6 +72,11 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	const [consolidatedBill, setConsolidatedBill] =
 		useState<ConsolidatedBill | null>(currentMonthBill);
 	const [isLoading, setIsLoading] = useState(false);
+	const [pendingPayment, setPendingPayment] = useState<{
+		tenant: Tenant;
+		payment: Payment;
+		unpaidBills: ConsolidatedBill[];
+	} | null>(null);
 
 	const handleWaterAmountChange = (amount: number) => {
 		if (isObjectType(consolidatedBill) && consolidatedBill.categories) {
@@ -307,29 +314,49 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 				end: endDate.toISOString().split("T")[0] ?? "",
 			};
 
+			// Check for unused payments (only one at a time to avoid overwhelming the user)
 			for (const tenant of tenantsWithOutstanding) {
 				const result = await safeExecuteAsync(async () => {
 					return await processTenantPayments(tenant, billsHistory, dateRange);
 				});
 
 				if (result.success) {
-					if (result.data.processed) {
+					if (
+						result.data.requiresSelection &&
+						result.data.payment &&
+						result.data.unpaidBills
+					) {
+						// Show payment selection dialog
+						setPendingPayment({
+							tenant,
+							payment: result.data.payment as Payment,
+							unpaidBills: result.data.unpaidBills,
+						});
+						break; // Only show one payment at a time
+					} else if (result.data.processed) {
 						toast.success(result.data.message);
+						// Refresh data after payment is processed
+						router.refresh();
 					} else {
-						toast.info(result.data.message);
+						// No payment found or already used - silently continue
 					}
 				} else {
 					console.error(
 						`Error processing payments for ${tenant.name}:`,
 						result.error,
 					);
-					toast.error(`Failed to process payments for ${tenant.name}.`);
+					// Don't show error toast for payment detection failures
 				}
 			}
 		};
 
 		checkPayments();
 	}, [billsHistory, tenantsList, user]);
+
+	const handlePaymentSuccess = () => {
+		setPendingPayment(null);
+		router.refresh();
+	};
 
 	const handleSendBill = () => {
 		if (!isObjectType(selectedTenant)) {
@@ -473,23 +500,23 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 	};
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="animate-in fade-in-50 flex flex-col gap-6 duration-500">
 			{/* Custom Header */}
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center gap-3">
-					<div className="rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 p-3">
-						<User className="h-6 w-6 text-blue-600" />
+					<div className="from-primary/30 via-primary/20 to-primary/10 border-primary/20 rounded-xl border bg-gradient-to-br p-3 shadow-lg">
+						<User className="text-primary h-6 w-6" />
 					</div>
 					<div>
-						<h1 className="text-3xl font-bold tracking-tight text-gray-900">
+						<h1 className="text-foreground text-3xl font-bold tracking-tight">
 							Welcome {isObjectType(user) ? user.name || "User" : "User"}!
 						</h1>
-						<p className="mt-1 text-gray-600">
+						<p className="text-muted-foreground mt-1">
 							Manage your utility bills and tenant communications
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2 text-sm text-gray-500">
+				<div className="text-muted-foreground flex items-center gap-2 text-sm">
 					<Calendar className="h-4 w-4" />
 					<span>{currentDateString}</span>
 				</div>
@@ -507,8 +534,19 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 			/>
 
 			{isLoading && (
-				<div className="flex items-center justify-center py-8">
-					<div className="text-gray-600">Loading month data...</div>
+				<div className="animate-in fade-in-50 flex flex-col gap-6 duration-300">
+					<div className="flex items-center justify-center py-8">
+						<div className="flex flex-col items-center gap-3">
+							<Skeleton className="h-8 w-48" />
+							<Skeleton className="h-4 w-32" />
+						</div>
+					</div>
+					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<Skeleton key={i} className="h-24 w-full rounded-xl" />
+						))}
+					</div>
+					<Skeleton className="h-64 w-full rounded-xl" />
 				</div>
 			)}
 
@@ -552,6 +590,19 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 						onConfirm={confirmSendEmail}
 					/>
 				)}
+
+			{/* Payment Selection Dialog */}
+			{pendingPayment && isObjectType(user) && (
+				<PaymentSelectionDialog
+					isOpen={true}
+					tenant={pendingPayment.tenant}
+					payment={pendingPayment.payment}
+					unpaidBills={pendingPayment.unpaidBills}
+					userId={user.id}
+					onClose={() => setPendingPayment(null)}
+					onSuccess={handlePaymentSuccess}
+				/>
+			)}
 		</div>
 	);
 };

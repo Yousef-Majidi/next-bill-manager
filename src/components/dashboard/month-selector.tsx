@@ -32,7 +32,7 @@ export const MonthSelector = ({
 	);
 
 	return (
-		<div className="flex items-center justify-between rounded-lg border bg-white p-4 shadow-sm">
+		<div className="bg-card flex items-center justify-between rounded-lg border p-4 shadow-sm">
 			<div className="flex items-center gap-3">
 				<Button
 					variant="outline"
@@ -45,11 +45,11 @@ export const MonthSelector = ({
 				</Button>
 
 				<div className="flex flex-col items-center gap-1">
-					<span className="text-lg font-semibold text-gray-900">
+					<span className="text-foreground text-lg font-semibold">
 						{monthYearString}
 					</span>
 					{isCurrentMonth && (
-						<span className="text-xs text-gray-500">Current Month</span>
+						<span className="text-muted-foreground text-xs">Current Month</span>
 					)}
 				</div>
 

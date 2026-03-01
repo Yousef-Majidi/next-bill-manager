@@ -60,40 +60,22 @@ next-bill-manager/
 
 ### Feature Structure
 
-Each feature must follow this structure:
+Each feature should follow a modular structure, creating directories only as needed:
 
 ```
 features/[feature-name]/
-├── actions/                     # Server actions and API calls
-│   ├── index.ts                 # Barrel exports
-│   ├── create.ts                # Create operations
-│   ├── read.ts                  # Read operations
-│   ├── update.ts                # Update operations
-│   └── delete.ts                # Delete operations
-├── components/                  # Feature-specific components
-│   ├── index.ts                 # Barrel exports
-│   ├── [ComponentName].tsx      # React components
-│   └── [ComponentName].test.tsx # Component tests
-├── hooks/                       # Feature-specific hooks
-│   ├── index.ts                 # Barrel exports
-│   ├── use[HookName].ts         # Custom hooks
-│   └── use[HookName].test.ts    # Hook tests
-├── types/                       # Feature-specific types
-│   ├── index.ts                 # Barrel exports
-│   ├── [TypeName].ts            # Type definitions
-│   └── [TypeName].test.ts       # Type validation tests
-├── utils/                       # Feature-specific utilities
-│   ├── index.ts                 # Barrel exports
-│   ├── [utilityName].ts         # Utility functions
-│   └── [utilityName].test.ts    # Utility tests
-└── index.ts                     # Feature barrel exports
+├── actions/                     # (Optional) Server actions and API calls
+├── components/                  # (Optional) Feature-specific components
+├── hooks/                       # (Optional) Feature-specific hooks
+├── types/                       # (Optional) Feature-specific types
+├── utils/                       # (Optional) Feature-specific utilities
+└── index.ts                     # (Optional) Feature exports
 ```
 
 ### Module Boundaries
 
 - **Feature Isolation**: Each feature should be self-contained
 - **Dependency Rules**: Features can depend on shared modules, not other features
-- **Barrel Exports**: Use index.ts files for clean imports
 - **Absolute Imports**: Use `@/` prefix for better maintainability
 
 ## Naming Conventions
@@ -310,11 +292,9 @@ export function Component({ data, onAction, isLoading, error }: ComponentProps) 
 
 1. Create feature directory in `src/features/`
 2. Follow the standard feature structure
-3. Implement barrel exports
-4. Add proper TypeScript types
-5. Write tests for new functionality
-6. Update documentation
-7. Run validation scripts
+3. Add proper TypeScript types
+4. Write tests for new functionality
+5. Update documentation
 
 ### When Refactoring
 
@@ -322,8 +302,7 @@ export function Component({ data, onAction, isLoading, error }: ComponentProps) 
 2. Update all related imports
 3. Update tests
 4. Update documentation
-5. Run validation scripts
-6. Test thoroughly
+5. Test thoroughly
 
 ### When Removing Features
 
@@ -331,8 +310,7 @@ export function Component({ data, onAction, isLoading, error }: ComponentProps) 
 2. Update imports and exports
 3. Clean up dependencies
 4. Update documentation
-5. Run validation scripts
-6. Test for regressions
+5. Test for regressions
 
 ## Quality Gates and Testing
 
@@ -366,11 +344,8 @@ The project implements comprehensive quality gates:
 
 ### Available Scripts
 
-- `pnpm validate-all` - Run all validation scripts
+- `pnpm validate-all` - Validate feature dependencies
 - `pnpm check-dependencies` - Validate feature dependencies
-- `pnpm validate-structure` - Validate feature structure
-- `pnpm validate-exports` - Validate barrel exports
-- `pnpm test-code-organization` - Test code organization
 
 ### Linting Rules
 
@@ -383,10 +358,8 @@ The project implements comprehensive quality gates:
 
 The project uses Husky for pre-commit hooks:
 
-- Runs validation scripts before commits
 - Ensures code quality standards
 - Prevents commits with linting errors
-- Validates code organization
 
 ## Commit Guidelines
 

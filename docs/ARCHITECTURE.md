@@ -43,33 +43,16 @@ The application is structured in three main layers:
 
 ## Feature Structure
 
-Each feature follows this structure:
+Each feature follows a modular structure. Folders are created only as needed:
 
 ```
 features/[feature-name]/
-├── actions/                    	# Server actions and API calls
-│   ├── index.ts                	# Barrel exports
-│   ├── create.ts               	# Create operations
-│   ├── read.ts                 	# Read operations
-│   ├── update.ts               	# Update operations
-│   └── delete.ts               	# Delete operations
-├── components/                 	# Feature-specific components
-│   ├── index.ts                	# Barrel exports
-│   ├── [component-name].tsx    	# React components
-│   └── [component-name].test.tsx # Component tests
-├── hooks/                     		# Feature-specific hooks
-│   ├── index.ts               		# Barrel exports
-│   ├── use-[hook-name].ts     		# Custom hooks
-│   └── use-[hook-name].test.ts		# Hook tests
-├── types/                     		# Feature-specific types
-│   ├── index.ts               		# Barrel exports
-│   ├── [type-name].ts         		# Type definitions
-│   └── [type-name].test.ts    		# Type validation tests
-├── utils/                     		# Feature-specific utilities
-│   ├── index.ts               		# Barrel exports
-│   ├── [utility-name].ts      		# Utility functions
-│   └── [utility-name].test.ts 		# Utility tests
-└── index.ts                   		# Feature barrel exports
+├── actions/                    	# (Optional) Server actions and API calls
+├── components/                 	# (Optional) Feature-specific React components
+├── hooks/                     		# (Optional) Feature-specific hooks
+├── types/                     		# (Optional) Feature-specific types
+├── utils/                     		# (Optional) Feature-specific utilities
+└── index.ts                   		# (Optional) Feature barrel exports
 ```
 
 ## Component Architecture
@@ -242,33 +225,25 @@ graph TD
 
 ## Import/Export Patterns
 
-### Barrel Exports
+### Exports
 
-Use barrel exports (`index.ts`) for clean imports:
+Use barrel exports (`index.ts`) for clean imports when beneficial, though they are not strictly required for every subdirectory:
 
 ```typescript
-// features/bills/actions/index.ts
-export * from "./createBill";
-export * from "./getBills";
-export * from "./updateBill";
-export * from "./deleteBill";
-
 // features/bills/index.ts
 export * from "./actions";
 export * from "./components";
-export * from "./hooks";
-export * from "./types";
-export * from "./utils";
+// Only export what actually exists
 ```
 
 ### Import Guidelines
 
 ```typescript
-// Clean imports using barrel exports
+// Clean imports
 import { Button, Card } from "@/components/ui";
 import { createBill, getBills } from "@/features/bills";
 // Absolute imports for better maintainability
-import { useBills } from "@/features/bills/hooks";
+import { useBills } from "@/features/bills/hooks/use-bills";
 import { BillType } from "@/features/bills/types";
 ```
 
