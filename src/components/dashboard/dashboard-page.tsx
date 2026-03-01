@@ -321,11 +321,15 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 				});
 
 				if (result.success) {
-					if (result.data.requiresSelection) {
+					if (
+						result.data.requiresSelection &&
+						result.data.payment &&
+						result.data.unpaidBills
+					) {
 						// Show payment selection dialog
 						setPendingPayment({
 							tenant,
-							payment: result.data.payment,
+							payment: result.data.payment as Payment,
 							unpaidBills: result.data.unpaidBills,
 						});
 						break; // Only show one payment at a time

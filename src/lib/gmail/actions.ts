@@ -2,7 +2,7 @@
 
 import { safeExecuteAsync } from "@/lib/common/error-handling";
 import { isObjectType } from "@/lib/common/type-utils";
-import { getTenantShares, roundToCurrency } from "@/lib/common/utils";
+import { roundToCurrency } from "@/lib/common/utils";
 import { getUser, markBillAsPaid, updateTenantBalance } from "@/lib/data";
 import { parseMessages, parsePaymentMessage } from "@/lib/gmail";
 import { getGmailClient } from "@/lib/gmail/client";

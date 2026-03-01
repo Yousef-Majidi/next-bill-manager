@@ -33,12 +33,19 @@ export function SettingsPageClient() {
 
 	// Get user initials for avatar
 	const userInitials = useMemo(() => {
-		if (!isObjectType(user) || !user.name) return "U";
-		const names = user.name.split(" ");
-		if (names.length >= 2) {
-			return `${names[0][0]}${names[1][0]}`.toUpperCase();
-		}
-		return user.name[0].toUpperCase();
+		if (
+			!isObjectType(user) ||
+			typeof user.name !== "string" ||
+			!user.name.trim()
+		)
+			return "U";
+		const names = user.name.trim().split(/\s+/);
+
+		const firstInitial = names[0]?.[0] || "";
+		const secondInitial = names.length > 1 ? names[1]?.[0] || "" : "";
+
+		const initials = `${firstInitial}${secondInitial}`.toUpperCase();
+		return initials || "U";
 	}, [user]);
 
 	// Get user name parts

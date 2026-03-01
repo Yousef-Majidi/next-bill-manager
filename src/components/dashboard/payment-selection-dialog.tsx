@@ -94,7 +94,6 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 	const difference = paymentAmount - totalSelectedAmount;
 	const isExact = Math.abs(difference) <= 0.01;
 	const isOverpaid = difference > 0.01;
-	const isUnderpaid = difference < -0.01;
 
 	const handleToggleBill = (billId: string) => {
 		const newSelected = new Set(selectedBillIds);
@@ -252,7 +251,7 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 											</TableCell>
 										</TableRow>
 									) : (
-										billAmounts.map(({ bill, tenantTotal, expectedAmount }) => {
+										billAmounts.map(({ bill, tenantTotal }) => {
 											const billId = bill.id || "";
 											const isSelected = selectedBillIds.has(billId);
 											const isFirstBill = bill === unpaidBills[0];
