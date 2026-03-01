@@ -1,0 +1,2 @@
+// dashboard types exports
+export {};

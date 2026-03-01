@@ -1,0 +1,264 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, Percent, UserPlus, Users } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+	Slider,
+} from "@/components/ui";
+import { CreateTenantRequestSchema } from "@/lib/common/api-contracts";
+import { safeExecuteAsync } from "@/lib/common/error-handling";
+import { validateWithSchema } from "@/lib/common/type-utils";
+import {
+	TenantFormData,
+	UtilityProviderCategory as UtilityCategory,
+} from "@/types";
+
+// Form schema for tenant creation
+const TenantFormSchema = z.object({
+	name: z.string().min(1, "Name is required"),
+	email: z.string().email("Invalid email format"),
+	secondaryName: z.string().optional(),
+	shares: z.object({
+		[UtilityCategory.Electricity]: z.number().min(0).max(100),
+		[UtilityCategory.Water]: z.number().min(0).max(100),
+		[UtilityCategory.Gas]: z.number().min(0).max(100),
+	}),
+});
+
+type TenantFormSchema = z.infer<typeof TenantFormSchema>;
+
+interface AddDialogProps {
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly onSubmit: (data: TenantFormData) => void;
+}
+
+export const AddTenantDialog: React.FC<AddDialogProps> = ({
+	isOpen,
+	onClose,
+	onSubmit,
+}) => {
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+		reset,
+		setValue,
+		watch,
+	} = useForm<TenantFormSchema>({
+		resolver: zodResolver(TenantFormSchema),
+		defaultValues: {
+			name: "",
+			email: "",
+			secondaryName: "",
+			shares: {
+				[UtilityCategory.Electricity]: 0,
+				[UtilityCategory.Water]: 0,
+				[UtilityCategory.Gas]: 0,
+			},
+		},
+	});
+
+	const watchedShares = watch("shares");
+
+	const handleFormSubmit = async (data: TenantFormSchema) => {
+		const result = await safeExecuteAsync(async () => {
+			// Additional runtime validation
+			const validation = validateWithSchema(CreateTenantRequestSchema, data);
+			if (!validation.success) {
+				throw new Error(`Form validation failed: ${validation.error}`);
+			}
+
+			// Convert to TenantFormData format
+			const tenantData: TenantFormData = {
+				name: data.name,
+				email: data.email,
+				...(data.secondaryName ? { secondaryName: data.secondaryName } : {}),
+				shares: {
+					[UtilityCategory.Electricity]:
+						data.shares[UtilityCategory.Electricity] ?? 0,
+					[UtilityCategory.Water]: data.shares[UtilityCategory.Water] ?? 0,
+					[UtilityCategory.Gas]: data.shares[UtilityCategory.Gas] ?? 0,
+				},
+			};
+
+			onSubmit(tenantData);
+		});
+
+		if (!result.success) {
+			// Error handling is done by the parent component
+			return;
+		}
+
+		// Reset form on success
+		reset();
+	};
+
+	const updateShare = (category: string, value: number) => {
+		// Use a proper type assertion for the setValue function
+		(setValue as (name: `shares.${string}`, value: number) => void)(
+			`shares.${category}`,
+			value,
+		);
+	};
+
+	return (
+		<Dialog open={isOpen} onOpenChange={onClose}>
+			<DialogContent className="max-w-lg">
+				<DialogHeader className="space-y-3">
+					<div className="flex items-center gap-3">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+							<UserPlus className="h-5 w-5 text-white" />
+						</div>
+						<div>
+							<DialogTitle className="text-xl font-semibold">
+								Add New Tenant
+							</DialogTitle>
+							<DialogDescription className="text-gray-600">
+								Add a new tenant and configure their utility share percentages
+							</DialogDescription>
+						</div>
+					</div>
+				</DialogHeader>
+				<form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+					{/* Basic Information Section */}
+					<div className="space-y-4">
+						<div className="mb-3 flex items-center gap-2">
+							<Users className="h-4 w-4 text-blue-600" />
+							<h3 className="font-semibold text-gray-900">Basic Information</h3>
+						</div>
+
+						<div className="grid gap-4">
+							<div>
+								<Label
+									htmlFor="name"
+									className="text-sm font-medium text-gray-700">
+									Full Name
+								</Label>
+								<Input
+									id="name"
+									{...register("name")}
+									placeholder="e.g., John Doe"
+									className="mt-1"
+								/>
+								{errors.name && (
+									<p className="mt-1 text-sm text-red-500">
+										{errors.name.message}
+									</p>
+								)}
+							</div>
+
+							<div>
+								<Label
+									htmlFor="email"
+									className="flex items-center gap-1 text-sm font-medium text-gray-700">
+									<Mail className="h-3 w-3" />
+									Email Address
+								</Label>
+								<Input
+									id="email"
+									type="email"
+									{...register("email")}
+									placeholder="e.g., john@example.com"
+									className="mt-1"
+								/>
+								{errors.email && (
+									<p className="mt-1 text-sm text-red-500">
+										{errors.email.message}
+									</p>
+								)}
+							</div>
+
+							<div>
+								<Label
+									htmlFor="secondaryName"
+									className="text-sm font-medium text-gray-700">
+									Secondary Name (Optional)
+								</Label>
+								<Input
+									id="secondaryName"
+									{...register("secondaryName")}
+									placeholder="e.g., Jane Doe"
+									className="mt-1"
+								/>
+								{errors.secondaryName && (
+									<p className="mt-1 text-sm text-red-500">
+										{errors.secondaryName.message}
+									</p>
+								)}
+							</div>
+						</div>
+					</div>
+
+					{/* Utility Shares Section */}
+					<div className="space-y-4">
+						<div className="mb-3 flex items-center gap-2">
+							<Percent className="h-4 w-4 text-purple-600" />
+							<h3 className="font-semibold text-gray-900">Utility Shares</h3>
+						</div>
+
+						<div className="space-y-4 rounded-lg bg-gray-50 p-4">
+							{(["Electricity", "Water", "Gas"] as const).map((category) => (
+								<div key={category} className="space-y-2">
+									<div className="flex items-center justify-between">
+										<Label
+											htmlFor={category.toLowerCase()}
+											className="text-sm font-medium text-gray-700">
+											{category}
+										</Label>
+										<div className="flex items-center gap-1">
+											<span className="text-lg font-semibold text-gray-900">
+												{watchedShares?.[category] || 0}
+											</span>
+											<span className="text-sm text-gray-500">%</span>
+										</div>
+									</div>
+									<Slider
+										value={[watchedShares?.[category] || 0]}
+										onValueChange={(value: number[]) =>
+											updateShare(category, value[0] || 0)
+										}
+										max={100}
+										min={0}
+										step={1}
+										className="w-full"
+									/>
+								</div>
+							))}
+						</div>
+						{errors.shares && (
+							<p className="text-sm text-red-500">{errors.shares.message}</p>
+						)}
+					</div>
+
+					<DialogFooter className="gap-3">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onClose}
+							className="flex-1">
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
+							Add Tenant
+						</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+};
