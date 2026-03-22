@@ -80,7 +80,6 @@
 	"pnpm": {
 		"overrides": {
 			"playwright": ">=1.55.1",
-			"ajv": ">=8.18.0",
 			"minimatch": ">=9.0.6",
 			"js-yaml": ">=4.1.1",
 			"flatted": ">=3.4.2",
