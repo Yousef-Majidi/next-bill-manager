@@ -42,11 +42,11 @@ const categoryIcons = {
 };
 
 const categoryColors = {
-	Electricity: "bg-yellow-100 text-yellow-800",
-	Water: "bg-blue-100 text-blue-800",
-	Gas: "bg-orange-100 text-orange-800",
-	Internet: "bg-purple-100 text-purple-800",
-	OTHER: "bg-gray-100 text-gray-800",
+	Electricity: "bg-[oklch(0.20_0.02_60)] text-[oklch(0.70_0.18_60)]",
+	Water: "bg-[oklch(0.20_0.02_200)] text-[oklch(0.70_0.18_200)]",
+	Gas: "bg-[oklch(0.20_0.02_25)] text-[oklch(0.70_0.18_25)]",
+	Internet: "bg-[oklch(0.20_0.02_280)] text-[oklch(0.70_0.18_280)]",
+	OTHER: "bg-muted text-muted-foreground",
 };
 
 export const ProvidersPage = () => {
@@ -194,10 +194,12 @@ export const ProvidersPage = () => {
 		<div className="space-y-8">
 			{/* Page Header */}
 			<div className="space-y-1">
-				<h1 className="text-3xl font-bold tracking-tight text-gray-900">
+				<h1 className="text-foreground text-3xl font-bold tracking-tight">
 					Utility Providers
 				</h1>
-				<p className="text-gray-600">Manage your utility service providers</p>
+				<p className="text-muted-foreground">
+					Manage your utility service providers
+				</p>
 			</div>
 
 			{/* Header with Stats and Action */}
@@ -205,12 +207,12 @@ export const ProvidersPage = () => {
 				{/* Compact Stats */}
 				<div className="flex items-center gap-6">
 					<div className="flex items-center gap-3">
-						<div className="rounded-lg bg-blue-100 p-2">
-							<Building2 className="h-5 w-5 text-blue-600" />
+						<div className="bg-primary/20 rounded-lg p-2">
+							<Building2 className="text-primary h-5 w-5" />
 						</div>
 						<div>
-							<p className="text-sm text-gray-600">Total Providers</p>
-							<p className="text-2xl font-bold text-gray-900">
+							<p className="text-muted-foreground text-sm">Total Providers</p>
+							<p className="text-foreground text-2xl font-bold">
 								{totalProviders}
 							</p>
 						</div>
@@ -218,20 +220,20 @@ export const ProvidersPage = () => {
 
 					<div className="flex items-center gap-4">
 						<div className="flex items-center gap-2">
-							<Zap className="h-4 w-4 text-yellow-600" />
-							<span className="text-sm font-medium text-gray-700">
+							<Zap className="text-primary h-4 w-4" />
+							<span className="text-foreground text-sm font-medium">
 								{electricityProviders}
 							</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<Droplets className="h-4 w-4 text-blue-600" />
-							<span className="text-sm font-medium text-gray-700">
+							<Droplets className="text-primary h-4 w-4" />
+							<span className="text-foreground text-sm font-medium">
 								{waterProviders}
 							</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<Flame className="h-4 w-4 text-orange-600" />
-							<span className="text-sm font-medium text-gray-700">
+							<Flame className="text-primary h-4 w-4" />
+							<span className="text-foreground text-sm font-medium">
 								{gasProviders}
 							</span>
 						</div>
@@ -239,9 +241,7 @@ export const ProvidersPage = () => {
 				</div>
 
 				{/* Add Provider Button */}
-				<Button
-					onClick={() => toggleDialog(DialogType.MAIN)}
-					className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl">
+				<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Provider
 				</Button>
@@ -257,12 +257,12 @@ export const ProvidersPage = () => {
 						const colorClass =
 							categoryColors[
 								provider.category as keyof typeof categoryColors
-							] || "bg-gray-100 text-gray-800";
+							] || "bg-muted text-muted-foreground";
 
 						return (
 							<Card
 								key={provider.id}
-								className="group border border-gray-200 transition-all duration-200 hover:border-gray-300 hover:shadow-sm">
+								className="group transition-all duration-200">
 								<CardContent className="p-4">
 									{/* Compact header */}
 									<div className="mb-3 flex items-center justify-between">
@@ -272,7 +272,7 @@ export const ProvidersPage = () => {
 												<Icon className="h-4 w-4" />
 											</div>
 											<div className="min-w-0 flex-1">
-												<h3 className="truncate text-sm font-semibold text-gray-900">
+												<h3 className="text-foreground truncate text-sm font-semibold">
 													{provider.name}
 												</h3>
 												<Badge
@@ -290,7 +290,7 @@ export const ProvidersPage = () => {
 													setItemToEdit(provider);
 													toggleDialog(DialogType.EDIT);
 												}}
-												className="h-6 w-6 p-0 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+												className="text-muted-foreground hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0">
 												<Edit className="h-3 w-3" />
 											</Button>
 											<Button
@@ -300,7 +300,7 @@ export const ProvidersPage = () => {
 													setItemIdToDelete(provider.id || null);
 													toggleDialog(DialogType.DELETE);
 												}}
-												className="h-6 w-6 p-0 text-gray-400 hover:bg-red-50 hover:text-red-600">
+												className="text-muted-foreground hover:bg-destructive/20 hover:text-destructive h-6 w-6 p-0">
 												<Trash2 className="h-3 w-3" />
 											</Button>
 										</div>
@@ -311,22 +311,22 @@ export const ProvidersPage = () => {
 										<div className="space-y-1.5">
 											{provider.email && (
 												<div className="flex items-center gap-1.5">
-													<Mail className="h-3 w-3 flex-shrink-0 text-gray-400" />
+													<Mail className="text-muted-foreground h-3 w-3 flex-shrink-0" />
 													<a
 														href={`mailto:${provider.email}`}
-														className="truncate text-xs text-blue-600 hover:text-blue-700 hover:underline">
+														className="text-primary truncate text-xs hover:underline">
 														{provider.email}
 													</a>
 												</div>
 											)}
 											{provider.website && (
 												<div className="flex items-center gap-1.5">
-													<Globe className="h-3 w-3 flex-shrink-0 text-gray-400" />
+													<Globe className="text-muted-foreground h-3 w-3 flex-shrink-0" />
 													<a
 														href={provider.website}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="truncate text-xs text-blue-600 hover:text-blue-700 hover:underline">
+														className="text-primary truncate text-xs hover:underline">
 														{provider.website}
 													</a>
 												</div>
@@ -340,18 +340,16 @@ export const ProvidersPage = () => {
 				</div>
 			) : (
 				<div className="py-12 text-center">
-					<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gray-100 to-gray-200">
-						<Building2 className="h-8 w-8 text-gray-500" />
+					<div className="bg-muted mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+						<Building2 className="text-muted-foreground h-8 w-8" />
 					</div>
-					<h3 className="mb-2 text-lg font-semibold text-gray-900">
+					<h3 className="text-foreground mb-2 text-lg font-semibold">
 						No providers yet
 					</h3>
-					<p className="mb-6 text-gray-600">
+					<p className="text-muted-foreground mb-6">
 						Get started by adding your first utility provider
 					</p>
-					<Button
-						onClick={() => toggleDialog(DialogType.MAIN)}
-						className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl">
+					<Button onClick={() => toggleDialog(DialogType.MAIN)}>
 						<Plus className="mr-2 h-4 w-4" />
 						Add Your First Provider
 					</Button>

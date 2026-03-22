@@ -119,14 +119,14 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 			<DialogContent className="max-w-lg">
 				<DialogHeader className="space-y-3">
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-							<UserPlus className="h-5 w-5 text-white" />
+						<div className="bg-primary/20 flex h-10 w-10 items-center justify-center rounded-lg">
+							<UserPlus className="text-primary h-5 w-5" />
 						</div>
 						<div>
-							<DialogTitle className="text-xl font-semibold">
+							<DialogTitle className="text-foreground text-xl font-semibold">
 								Add New Tenant
 							</DialogTitle>
-							<DialogDescription className="text-gray-600">
+							<DialogDescription className="text-muted-foreground">
 								Add a new tenant and configure their utility share percentages
 							</DialogDescription>
 						</div>
@@ -136,15 +136,17 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 					{/* Basic Information Section */}
 					<div className="space-y-4">
 						<div className="mb-3 flex items-center gap-2">
-							<Users className="h-4 w-4 text-blue-600" />
-							<h3 className="font-semibold text-gray-900">Basic Information</h3>
+							<Users className="text-primary h-4 w-4" />
+							<h3 className="text-foreground font-semibold">
+								Basic Information
+							</h3>
 						</div>
 
 						<div className="grid gap-4">
 							<div>
 								<Label
 									htmlFor="name"
-									className="text-sm font-medium text-gray-700">
+									className="text-foreground text-sm font-medium">
 									Full Name
 								</Label>
 								<Input
@@ -154,7 +156,7 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 									className="mt-1"
 								/>
 								{errors.name && (
-									<p className="mt-1 text-sm text-red-500">
+									<p className="text-destructive mt-1 text-sm">
 										{errors.name.message}
 									</p>
 								)}
@@ -163,7 +165,7 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 							<div>
 								<Label
 									htmlFor="email"
-									className="flex items-center gap-1 text-sm font-medium text-gray-700">
+									className="text-foreground flex items-center gap-1 text-sm font-medium">
 									<Mail className="h-3 w-3" />
 									Email Address
 								</Label>
@@ -175,7 +177,7 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 									className="mt-1"
 								/>
 								{errors.email && (
-									<p className="mt-1 text-sm text-red-500">
+									<p className="text-destructive mt-1 text-sm">
 										{errors.email.message}
 									</p>
 								)}
@@ -184,7 +186,7 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 							<div>
 								<Label
 									htmlFor="secondaryName"
-									className="text-sm font-medium text-gray-700">
+									className="text-foreground text-sm font-medium">
 									Secondary Name (Optional)
 								</Label>
 								<Input
@@ -194,7 +196,7 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 									className="mt-1"
 								/>
 								{errors.secondaryName && (
-									<p className="mt-1 text-sm text-red-500">
+									<p className="text-destructive mt-1 text-sm">
 										{errors.secondaryName.message}
 									</p>
 								)}
@@ -205,24 +207,24 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 					{/* Utility Shares Section */}
 					<div className="space-y-4">
 						<div className="mb-3 flex items-center gap-2">
-							<Percent className="h-4 w-4 text-purple-600" />
-							<h3 className="font-semibold text-gray-900">Utility Shares</h3>
+							<Percent className="text-primary h-4 w-4" />
+							<h3 className="text-foreground font-semibold">Utility Shares</h3>
 						</div>
 
-						<div className="space-y-4 rounded-lg bg-gray-50 p-4">
+						<div className="bg-muted space-y-4 rounded-lg p-4">
 							{(["Electricity", "Water", "Gas"] as const).map((category) => (
 								<div key={category} className="space-y-2">
 									<div className="flex items-center justify-between">
 										<Label
 											htmlFor={category.toLowerCase()}
-											className="text-sm font-medium text-gray-700">
+											className="text-foreground text-sm font-medium">
 											{category}
 										</Label>
 										<div className="flex items-center gap-1">
-											<span className="text-lg font-semibold text-gray-900">
+											<span className="text-foreground text-lg font-semibold">
 												{watchedShares?.[category] || 0}
 											</span>
-											<span className="text-sm text-gray-500">%</span>
+											<span className="text-muted-foreground text-sm">%</span>
 										</div>
 									</div>
 									<Slider
@@ -239,7 +241,9 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 							))}
 						</div>
 						{errors.shares && (
-							<p className="text-sm text-red-500">{errors.shares.message}</p>
+							<p className="text-destructive text-sm">
+								{errors.shares.message}
+							</p>
 						)}
 					</div>
 
@@ -251,11 +255,7 @@ export const AddTenantDialog: React.FC<AddDialogProps> = ({
 							className="flex-1">
 							Cancel
 						</Button>
-						<Button
-							type="submit"
-							className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl">
-							Add Tenant
-						</Button>
+						<Button type="submit">Add Tenant</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

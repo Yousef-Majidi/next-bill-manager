@@ -1,2 +1,0 @@
-// bills actions exports
-export {};

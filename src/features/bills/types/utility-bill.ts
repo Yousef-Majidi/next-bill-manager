@@ -30,4 +30,5 @@ export interface ConsolidatedBill {
 	readonly paid: boolean;
 	readonly dateSent: string | null;
 	readonly datePaid: string | null;
+	readonly paymentMessageId?: string | null;
 }

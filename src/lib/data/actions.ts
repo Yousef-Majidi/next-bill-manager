@@ -37,6 +37,42 @@ import {
 	UtilityProviderCategory,
 } from "@/types";
 
+// Helper function to normalize dates to ISO string format
+const normalizeDateToISO = (
+	dateValue: string | Date | null | undefined,
+): string | null => {
+	if (!dateValue || dateValue === "") {
+		return null;
+	}
+
+	// If it's already a Date object, convert to ISO
+	if (dateValue instanceof Date) {
+		return dateValue.toISOString();
+	}
+
+	// If it's already an ISO string, return it
+	if (
+		typeof dateValue === "string" &&
+		dateValue.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+	) {
+		return dateValue;
+	}
+
+	// Try to parse and convert to ISO
+	if (typeof dateValue === "string") {
+		try {
+			const parsed = new Date(dateValue);
+			if (!isNaN(parsed.getTime())) {
+				return parsed.toISOString();
+			}
+		} catch {
+			// Invalid date, return null
+		}
+	}
+
+	return null;
+};
+
 export const isTokenExpired = async (tokenExp: number) => {
 	return tokenExp < Math.floor(Date.now() / 1000);
 };
@@ -296,6 +332,7 @@ export const updateUtilityProvider = async (
 		}
 
 		revalidatePath("/dashboard/providers");
+		revalidatePath("/dashboard/admin");
 		return {
 			acknowledged: result.acknowledged,
 			modifiedCount: result.modifiedCount,
@@ -482,6 +519,8 @@ export const updateTenant = async (
 			},
 		);
 
+		revalidatePath("/dashboard/tenants");
+		revalidatePath("/dashboard/admin");
 		return { acknowledged: result.acknowledged };
 	});
 
@@ -559,6 +598,7 @@ export const markBillAsPaid = async (
 		}
 
 		revalidatePath("/dashboard");
+		revalidatePath("/dashboard/admin");
 		return {
 			acknowledged: result.acknowledged,
 			modifiedCount: result.modifiedCount,
@@ -606,12 +646,19 @@ export const getConsolidatedBills = async (
 
 				// If strict validation fails, try to normalize the data for existing records
 				if (isObjectType(bill)) {
+					// Normalize tenant_id - convert ObjectId to string if needed
+					const tenantId = safeGetProperty(bill, "tenant_id");
+					const normalizedTenantId =
+						tenantId instanceof ObjectId
+							? tenantId.toString()
+							: tenantId || null;
+
 					const normalizedBill = {
 						_id: safeGetProperty(bill, "_id"),
 						user_id: safeGetProperty(bill, "user_id") || userId,
 						year: safeGetProperty(bill, "year") || new Date().getFullYear(),
 						month: safeGetProperty(bill, "month") || new Date().getMonth() + 1,
-						tenant_id: safeGetProperty(bill, "tenant_id") || null,
+						tenant_id: normalizedTenantId,
 						categories: safeGetProperty(bill, "categories") || {},
 						total_amount: safeGetProperty(bill, "total_amount") || 0,
 						paid: safeGetProperty(bill, "paid") || false,
@@ -676,12 +723,9 @@ export const getConsolidatedBills = async (
 					),
 					totalAmount: bill.total_amount,
 					paid: bill.paid,
-					dateSent: bill.date_sent
-						? new Date(bill.date_sent).toDateString()
-						: null,
-					datePaid: bill.date_paid
-						? new Date(bill.date_paid).toDateString()
-						: null,
+					dateSent: bill.date_sent || null,
+					datePaid: bill.date_paid || null,
+					paymentMessageId: bill.payment_message_id || null,
 				};
 			})
 			.filter(Boolean) as ConsolidatedBill[];
@@ -720,8 +764,8 @@ export const addConsolidatedBill = async (
 				: {},
 			total_amount: roundToCurrency(bill.totalAmount),
 			paid: bill.paid,
-			date_sent: bill.dateSent,
-			date_paid: bill.datePaid,
+			date_sent: normalizeDateToISO(bill.dateSent),
+			date_paid: normalizeDateToISO(bill.datePaid),
 		};
 
 		const validation = validateWithSchema(
@@ -770,8 +814,8 @@ export const addConsolidatedBill = async (
 							categories: validation.data.categories,
 							total_amount: validation.data.total_amount,
 							paid: bill.paid,
-							date_sent: bill.dateSent,
-							date_paid: bill.datePaid,
+							date_sent: normalizeDateToISO(bill.dateSent),
+							date_paid: normalizeDateToISO(bill.datePaid),
 							updated_at: new Date().toISOString(),
 						},
 					},
@@ -784,14 +828,168 @@ export const addConsolidatedBill = async (
 			};
 		}
 
+		// Ensure dates in validation.data are normalized (validation might have converted them)
+		const insertData = {
+			...validation.data,
+			date_sent: normalizeDateToISO(validation.data.date_sent),
+			date_paid: normalizeDateToISO(validation.data.date_paid),
+		};
+
 		const result = await db
 			.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
-			.insertOne(validation.data);
+			.insertOne(insertData);
 
 		revalidatePath("/dashboard/bills");
 		return {
 			acknowledged: result.acknowledged,
 			insertedId: result.insertedId.toString(),
+		};
+	});
+
+	if (!result.success) {
+		throw result.error;
+	}
+
+	return result.data;
+};
+
+export const updateConsolidatedBill = async (
+	userId: string,
+	billId: string,
+	updateData: {
+		year?: number;
+		month?: number;
+		tenantId?: string | null;
+		totalAmount?: number;
+		paid?: boolean;
+		dateSent?: string | null;
+		datePaid?: string | null;
+		paymentMessageId?: string;
+	},
+) => {
+	const result = await safeExecuteAsync(async () => {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+
+		// Build update operations
+		const updateOperations: Record<string, unknown> = {};
+		const unsetOperations: Record<string, unknown> = {};
+
+		if (updateData.year !== undefined) {
+			updateOperations.year = updateData.year;
+		}
+		if (updateData.month !== undefined) {
+			updateOperations.month = updateData.month;
+		}
+		if (updateData.tenantId !== undefined) {
+			updateOperations.tenant_id = updateData.tenantId
+				? new ObjectId(updateData.tenantId)
+				: null;
+		}
+		if (updateData.totalAmount !== undefined) {
+			updateOperations.total_amount = roundToCurrency(updateData.totalAmount);
+		}
+		if (updateData.paid !== undefined) {
+			updateOperations.paid = updateData.paid;
+		}
+		if (updateData.dateSent !== undefined) {
+			const normalizedDateSent = normalizeDateToISO(updateData.dateSent);
+			if (normalizedDateSent === null) {
+				unsetOperations.date_sent = "";
+			} else {
+				updateOperations.date_sent = normalizedDateSent;
+			}
+		}
+		if (updateData.datePaid !== undefined) {
+			const normalizedDatePaid = normalizeDateToISO(updateData.datePaid);
+			if (normalizedDatePaid === null) {
+				unsetOperations.date_paid = "";
+			} else {
+				updateOperations.date_paid = normalizedDatePaid;
+			}
+		}
+		if (updateData.paymentMessageId !== undefined) {
+			if (
+				updateData.paymentMessageId === null ||
+				updateData.paymentMessageId === ""
+			) {
+				unsetOperations.payment_message_id = "";
+			} else {
+				updateOperations.payment_message_id = updateData.paymentMessageId;
+			}
+		}
+
+		// Always update updated_at
+		updateOperations.updated_at = new Date().toISOString();
+
+		// Build the update operation
+		const updateOperation: Record<string, unknown> = {};
+		if (Object.keys(updateOperations).length > 0) {
+			updateOperation.$set = updateOperations;
+		}
+		if (Object.keys(unsetOperations).length > 0) {
+			updateOperation.$unset = unsetOperations;
+		}
+
+		const updateResult = await db
+			.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+			.updateOne(
+				{ _id: new ObjectId(billId), user_id: userId },
+				updateOperation,
+			);
+
+		if (updateResult.matchedCount === 0) {
+			throw createDatabaseError(
+				"Bill not found or does not belong to user.",
+				"UPDATE",
+				"consolidated_bills",
+				billId,
+			);
+		}
+
+		revalidatePath("/dashboard/admin");
+		revalidatePath("/dashboard/bills");
+		revalidatePath("/dashboard");
+		return {
+			acknowledged: updateResult.acknowledged,
+			modifiedCount: updateResult.modifiedCount,
+		};
+	});
+
+	if (!result.success) {
+		throw result.error;
+	}
+
+	return result.data;
+};
+
+export const deleteConsolidatedBill = async (
+	userId: string,
+	billId: string,
+) => {
+	const result = await safeExecuteAsync(async () => {
+		const db = client.db(process.env.MONGODB_DATABASE_NAME);
+		const deleteResult = await db
+			.collection(process.env.MONGODB_CONSOLIDATED_BILLS!)
+			.deleteOne({
+				_id: new ObjectId(billId),
+				user_id: userId,
+			});
+
+		if (deleteResult.deletedCount === 0) {
+			throw createDatabaseError(
+				"Bill not found or does not belong to user.",
+				"DELETE",
+				"consolidated_bills",
+				billId,
+			);
+		}
+
+		revalidatePath("/dashboard/admin");
+		revalidatePath("/dashboard/bills");
+		revalidatePath("/dashboard");
+		return {
+			acknowledged: deleteResult.acknowledged,
+			deletedCount: deleteResult.deletedCount,
 		};
 	});
 
