@@ -42,8 +42,8 @@ export const StatsSummary = ({
 				icon={<DollarSign className="h-5 w-5" />}
 				value={`$${currentMonthTotal.toFixed(2)}`}
 				description={currentDateString}
-				className="border-border from-card bg-gradient-to-br to-[oklch(0.20_0.02_270)]"
-				iconClassName="text-[oklch(0.70_0.18_200)]"
+				className="border-border"
+				iconClassName="text-[oklch(0.50_0.18_200)] dark:text-[oklch(0.70_0.18_200)]"
 			/>
 
 			<StatCard
@@ -51,8 +51,8 @@ export const StatsSummary = ({
 				icon={<TrendingUp className="h-5 w-5" />}
 				value={`$${lastMonthTotal.toFixed(2)}`}
 				description={lastMonthString}
-				className="border-border from-card bg-gradient-to-br to-[oklch(0.20_0.02_60)]"
-				iconClassName="text-[oklch(0.70_0.18_60)]"
+				className="border-border"
+				iconClassName="text-[oklch(0.50_0.18_60)] dark:text-[oklch(0.70_0.18_60)]"
 			/>
 
 			<StatCard
@@ -60,8 +60,8 @@ export const StatsSummary = ({
 				icon={<CheckCircle className="h-5 w-5" />}
 				value={`$${paidAmount.toFixed(2)}`}
 				description="Last month"
-				className="border-border from-card bg-gradient-to-br to-[oklch(0.20_0.02_160)]"
-				iconClassName="text-[oklch(0.70_0.18_160)]"
+				className="border-border"
+				iconClassName="text-[oklch(0.45_0.18_160)] dark:text-[oklch(0.70_0.18_160)]"
 			/>
 
 			<StatCard
@@ -77,10 +77,10 @@ export const StatsSummary = ({
 				description={
 					outstandingBalance < 0 ? "Overpaid amount" : "Unpaid bills"
 				}
-				className="border-border from-card bg-gradient-to-br to-[oklch(0.20_0.02_25)]"
+				className="border-border"
 				iconClassName={
 					outstandingBalance < 0
-						? "text-[oklch(0.70_0.18_190)]"
+						? "text-[oklch(0.50_0.18_190)] dark:text-[oklch(0.70_0.18_190)]"
 						: "text-destructive"
 				}
 			/>

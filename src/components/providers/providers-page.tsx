@@ -42,10 +42,13 @@ const categoryIcons = {
 };
 
 const categoryColors = {
-	Electricity: "bg-[oklch(0.20_0.02_60)] text-[oklch(0.70_0.18_60)]",
-	Water: "bg-[oklch(0.20_0.02_200)] text-[oklch(0.70_0.18_200)]",
-	Gas: "bg-[oklch(0.20_0.02_25)] text-[oklch(0.70_0.18_25)]",
-	Internet: "bg-[oklch(0.20_0.02_280)] text-[oklch(0.70_0.18_280)]",
+	Electricity:
+		"bg-amber-100 text-amber-700 dark:bg-[oklch(0.20_0.02_60)] dark:text-[oklch(0.70_0.18_60)]",
+	Water:
+		"bg-sky-100 text-sky-700 dark:bg-[oklch(0.20_0.02_200)] dark:text-[oklch(0.70_0.18_200)]",
+	Gas: "bg-orange-100 text-orange-700 dark:bg-[oklch(0.20_0.02_25)] dark:text-[oklch(0.70_0.18_25)]",
+	Internet:
+		"bg-violet-100 text-violet-700 dark:bg-[oklch(0.20_0.02_280)] dark:text-[oklch(0.70_0.18_280)]",
 	OTHER: "bg-muted text-muted-foreground",
 };
 
