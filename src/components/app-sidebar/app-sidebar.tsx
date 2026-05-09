@@ -27,7 +27,6 @@ import {
 	AvatarFallback,
 	AvatarImage,
 	Badge,
-	Button,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -214,11 +213,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<SidebarMenu>
 							{quickStats.map((stat) => (
 								<SidebarMenuItem key={stat.label}>
-									<SidebarMenuButton>
-										<stat.icon className={`size-4 ${stat.color}`} />
-										<div className="flex flex-1 items-center justify-between">
-											<span className="text-sm">{stat.label}</span>
-											<Badge variant="secondary" className="ml-auto">
+									<SidebarMenuButton
+										className="overflow-hidden"
+										tooltip={`${stat.label}: ${stat.value}`}>
+										<stat.icon className={`size-4 shrink-0 ${stat.color}`} />
+										<div className="flex min-w-0 flex-1 items-center justify-between gap-1">
+											<span className="truncate text-sm">{stat.label}</span>
+											<Badge variant="secondary" className="shrink-0">
 												{stat.value}
 											</Badge>
 										</div>
@@ -231,17 +232,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 				<SidebarSeparator />
 
-				{/* Recent Activity Section */}
-				<SidebarGroup>
+				{/* Recent Activity Section — hidden when collapsed */}
+				<SidebarGroup className="group-data-[collapsible=icon]:hidden">
 					<SidebarGroupLabel>Recent Activity</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem>
 								<SidebarMenuButton>
-									<div className="size-4 rounded-full bg-green-500" />
-									<div className="flex flex-col">
-										<span className="text-xs">John Doe paid</span>
-										<span className="text-muted-foreground text-xs">
+									<div className="size-4 shrink-0 rounded-full bg-green-500" />
+									<div className="flex min-w-0 flex-col">
+										<span className="truncate text-xs">John Doe paid</span>
+										<span className="text-muted-foreground truncate text-xs">
 											2 days ago
 										</span>
 									</div>
@@ -249,10 +250,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton>
-									<div className="bg-primary size-4 rounded-full" />
-									<div className="flex flex-col">
-										<span className="text-xs">Bill sent to Jane</span>
-										<span className="text-muted-foreground text-xs">
+									<div className="bg-primary size-4 shrink-0 rounded-full" />
+									<div className="flex min-w-0 flex-col">
+										<span className="truncate text-xs">Bill sent to Jane</span>
+										<span className="text-muted-foreground truncate text-xs">
 											5 days ago
 										</span>
 									</div>
@@ -260,10 +261,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton>
-									<div className="size-4 rounded-full bg-[oklch(0.70_0.18_60)]" />
-									<div className="flex flex-col">
-										<span className="text-xs">New provider added</span>
-										<span className="text-muted-foreground text-xs">
+									<div className="size-4 shrink-0 rounded-full bg-[oklch(0.70_0.18_60)]" />
+									<div className="flex min-w-0 flex-col">
+										<span className="truncate text-xs">New provider added</span>
+										<span className="text-muted-foreground truncate text-xs">
 											1 week ago
 										</span>
 									</div>
@@ -308,7 +309,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
-						<SidebarMenuButton asChild>
+						<SidebarMenuButton asChild tooltip="Settings">
 							<Link href="/dashboard/settings">
 								<Settings className="size-4" />
 								<span>Settings</span>
@@ -316,14 +317,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
-						<SidebarMenuButton asChild>
-							<Button
-								variant="ghost"
-								className="flex items-center"
-								onClick={() => handleLogOut()}>
-								<span>Log Out</span>
-								<LogOut className="size-4" />
-							</Button>
+						<SidebarMenuButton onClick={() => handleLogOut()} tooltip="Log Out">
+							<LogOut className="size-4" />
+							<span>Log Out</span>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>

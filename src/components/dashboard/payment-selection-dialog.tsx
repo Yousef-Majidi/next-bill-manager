@@ -82,11 +82,20 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 		};
 	});
 
-	// Calculate total selected amount
+	// Calculate total selected amounts
 	const totalSelectedAmount = Array.from(selectedBillIds).reduce(
 		(sum, billId) => {
 			const billAmount = billAmounts.find((ba) => ba.bill.id === billId);
 			return sum + (billAmount?.expectedAmount || 0);
+		},
+		0,
+	);
+
+	// Tenant's pure share (no outstanding balance added) — shown in summary
+	const selectedTenantShare = Array.from(selectedBillIds).reduce(
+		(sum, billId) => {
+			const billAmount = billAmounts.find((ba) => ba.bill.id === billId);
+			return sum + (billAmount?.tenantTotal || 0);
 		},
 		0,
 	);
@@ -193,10 +202,10 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 								</div>
 							</div>
 							<div>
-								<Label className="text-sm font-medium text-gray-500">
+								<Label className="text-muted-foreground text-sm font-medium">
 									Tenant
 								</Label>
-								<p className="text-lg font-medium text-gray-900">
+								<p className="text-foreground text-lg font-medium">
 									{tenant.name}
 								</p>
 							</div>
@@ -205,10 +214,10 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 
 					{/* Unpaid Bills List */}
 					<div>
-						<Label className="text-base font-semibold text-gray-900">
+						<Label className="text-foreground text-base font-semibold">
 							Unpaid Bills
 						</Label>
-						<p className="mb-3 text-sm text-gray-500">
+						<p className="text-muted-foreground mb-3 text-sm">
 							Select the bills this payment applies to
 						</p>
 						<div className="rounded-md border">
@@ -296,27 +305,27 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 
 					{/* Summary */}
 					{selectedBillIds.size > 0 && (
-						<div className="rounded-lg border bg-blue-50 p-4">
+						<div className="bg-muted/40 rounded-lg border p-4">
 							<div className="space-y-2">
 								<div className="flex items-center justify-between">
-									<Label className="text-sm font-medium text-gray-700">
-										Selected Bills Total:
+									<Label className="text-muted-foreground text-sm font-medium">
+										Tenant&#39;s Share:
 									</Label>
-									<span className="text-lg font-semibold text-gray-900">
-										${totalSelectedAmount.toFixed(2)}
+									<span className="text-foreground text-lg font-semibold">
+										${selectedTenantShare.toFixed(2)}
 									</span>
 								</div>
 								<div className="flex items-center justify-between">
-									<Label className="text-sm font-medium text-gray-700">
+									<Label className="text-muted-foreground text-sm font-medium">
 										Payment Amount:
 									</Label>
-									<span className="text-lg font-semibold text-gray-900">
+									<span className="text-foreground text-lg font-semibold">
 										${paymentAmount.toFixed(2)}
 									</span>
 								</div>
 								<div className="border-t pt-2">
 									<div className="flex items-center justify-between">
-										<Label className="text-sm font-medium text-gray-700">
+										<Label className="text-muted-foreground text-sm font-medium">
 											Difference:
 										</Label>
 										<span
