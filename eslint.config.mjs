@@ -114,13 +114,22 @@ const baseConfig = {
 };
 
 const eslintConfig = [
+	// Global ignores — must be first and standalone (no other keys)
+	{
+		ignores: [
+			"**/*.d.ts",
+			".next/**",
+			"node_modules/**",
+			"coverage/**",
+			"playwright-report/**",
+			"test-results/**",
+			"public/**",
+			"*.config.{js,mjs,ts,cjs}",
+		],
+	},
 	...nextConfigs,
 	// Include base config with plugins if Next.js config failed
 	...(nextConfigs.length === 0 ? [baseConfig] : []),
-	// Exclude .d.ts files from linting to avoid parser project issues
-	{
-		ignores: ["**/*.d.ts"],
-	},
 	{
 		files: ["src/features/**/*.{ts,tsx}"],
 		// Include parser and plugins if Next.js config failed

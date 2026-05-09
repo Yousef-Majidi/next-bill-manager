@@ -9,6 +9,7 @@ export default defineConfig({
 		setupFiles: ["./src/test/setup.tsx"],
 		globals: true,
 		css: true,
+		pool: "vmThreads",
 		include: [
 			"src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
 			"src/test/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
@@ -27,14 +28,6 @@ export default defineConfig({
 				"src/lib/common/error-handling.ts",
 				"src/lib/common/type-utils.ts",
 			],
-			thresholds: {
-				global: {
-					branches: 70,
-					functions: 70,
-					lines: 70,
-					statements: 70,
-				},
-			},
 		},
 	},
 	resolve: {

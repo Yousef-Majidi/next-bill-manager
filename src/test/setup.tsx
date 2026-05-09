@@ -1,7 +1,22 @@
 import React from "react";
 
 import "@testing-library/jest-dom";
+// Polyfill Web Streams API for msw v2 + jsdom compatibility
+import {
+	ReadableStream,
+	TransformStream,
+	WritableStream,
+} from "node:stream/web";
 import { vi } from "vitest";
+
+if (typeof globalThis.ReadableStream === "undefined") {
+	// @ts-expect-error — jsdom doesn't include Web Streams; polyfill from Node
+	globalThis.ReadableStream = ReadableStream;
+	// @ts-expect-error
+	globalThis.WritableStream = WritableStream;
+	// @ts-expect-error
+	globalThis.TransformStream = TransformStream;
+}
 
 // Mock window.matchMedia for next-themes
 Object.defineProperty(window, "matchMedia", {
