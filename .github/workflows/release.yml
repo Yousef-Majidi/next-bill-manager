@@ -11,17 +11,10 @@ env:
 
 jobs:
   release:
-    name: Create Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
-    env:
-      MONGODB_URI: ${{ secrets.MONGODB_URI }}
-      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
 
     steps:
       - name: Checkout code
@@ -29,58 +22,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build application
-        run: pnpm run build
-
       - name: Generate changelog
         id: changelog
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${VERSION}^" 2>/dev/null || echo "")
 
           if [ -n "$PREVIOUS_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD)
+            CHANGELOG=$(git log --pretty=format:"- %s" "${PREVIOUS_TAG}..${VERSION}")
           else
-            CHANGELOG=$(git log --pretty=format:"- %s" HEAD)
+            CHANGELOG=$(git log --pretty=format:"- %s" "${VERSION}")
           fi
 
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "${CHANGELOG}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Create GitHub Release
         run: |
           gh release create ${{ github.ref_name }} \
-            --title "Release ${{ github.ref_name }} - Stable MVP" \
+            --title "${{ steps.changelog.outputs.version }}" \
             --notes "## What's Changed
 
-          ${{ steps.changelog.outputs.changelog }}
-
-          ## Installation
-
-          \`\`\`bash
-          pnpm install
-          \`\`\`
-
-          ## Development
-
-          \`\`\`bash
-          pnpm run dev
-          \`\`\`
-
-          This release represents the stable MVP with all core features working reliably."
+          ${{ steps.changelog.outputs.changelog }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
