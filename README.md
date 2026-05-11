@@ -98,7 +98,7 @@ next-bill-manager/
 │   ├── hooks/                 # Shared React hooks
 │   ├── states/                # Global state management
 │   └── types/                 # Global TypeScript types
-├── scripts/                   # Build and validation scripts
+├── scripts/                   # Build and database scripts
 ├── docs/                      # Documentation
 └── .github/                   # GitHub Actions workflows
 ```
@@ -120,14 +120,12 @@ next-bill-manager/
 ### Code Quality
 
 - `pnpm lint` - Run ESLint
-- `pnpm validate-all` - Run all validation scripts
-- `pnpm quality-gate:full` - Full quality gate with build
 
 ### Version Management
 
-- `pnpm release:prepare` - Patch release
-- `pnpm release:minor` - Minor release
-- `pnpm release:major` - Major release
+- `pnpm version:patch` - Patch version bump
+- `pnpm version:minor` - Minor version bump
+- `pnpm version:major` - Major version bump
 
 ### Database
 
@@ -157,28 +155,26 @@ This project follows a feature-based architecture with clear dependency rules an
 
 ### Quality Gates
 
-- **Test Coverage**: 70% minimum coverage
-- **Quality Gates**: Automated checks for linting, testing, and build
 - **CI/CD**: GitHub Actions with automated deployment
-- **Version Management**: Automated versioning with semantic versioning
+- **Linting & Tests**: Automated checks on every push
+- **Production Build**: Verified build process
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Follow the [Contributing Guidelines](docs/CONTRIBUTING.md)
-4. Run quality gates (`pnpm run quality-gate:full`)
-5. Ensure tests pass (`pnpm run test:run`)
+4. Ensure tests pass (`pnpm test`)
+5. Ensure linting passes (`pnpm lint`)
 6. Commit your changes (`git commit -m 'Add amazing feature'`)
 7. Push to the branch (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
 
 ### Quality Requirements
 
-- All tests must pass with 70% minimum coverage
-- Code must pass linting and validation checks
+- All tests must pass
+- Code must pass linting checks
 - Build must complete successfully
-- Follow semantic versioning for releases
 
 ## License
 

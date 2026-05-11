@@ -317,26 +317,9 @@ const sanitizedContent = DOMPurify.sanitize(userInput);
 
 ### Testing Patterns
 
-```typescript
-// Component testing
-describe('BillCard', () => {
-  it('renders bill information correctly', () => {
-    const bill = mockBill();
-    render(<BillCard bill={bill} />);
-    expect(screen.getByText(bill.title)).toBeInTheDocument();
-  });
-});
-
-// Hook testing
-describe('useBills', () => {
-  it('fetches bills successfully', async () => {
-    const { result } = renderHook(() => useBills());
-    await waitFor(() => {
-      expect(result.current.data).toBeDefined();
-    });
-  });
-});
-```
+- **Unit & Integration**: Vitest for application logic
+- **Component Testing**: React Testing Library
+- **Mocks**: MSW for API mocking
 
 ## Deployment Architecture
 
@@ -363,9 +346,8 @@ GMAIL_CLIENT_SECRET=production_gmail_client_secret
 
 ### Deployment Pipeline
 
-1. **Code Push**: Triggers automated build
-2. **Validation**: Runs all validation scripts
-3. **Testing**: Executes test suite
-4. **Build**: Creates optimized production build
-5. **Deployment**: Deploys to Vercel
-6. **Verification**: Health checks and monitoring
+1. **Code Push**: Triggers GitHub Actions workflow
+2. **Linting & Tests**: Automated quality checks
+3. **Build**: Production build verification
+4. **Deployment**: Automated deployment to Vercel
+5. **Verification**: Health checks and monitoring
