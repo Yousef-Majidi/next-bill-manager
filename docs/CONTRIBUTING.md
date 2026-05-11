@@ -35,9 +35,9 @@ This document outlines the development standards and contribution process for th
    # Edit .env.local with your configuration
    ```
 
-4. **Run validation scripts**
+4. **Run linting**
    ```bash
-   pnpm validate-all
+   pnpm lint
    ```
 
 ## Code Organization Standards
@@ -179,26 +179,21 @@ describe('useHookName', () => {
 
 ### Test Coverage
 
-- **Minimum 70% test coverage** (enforced by quality gates)
 - Test happy path and error scenarios
 - Test edge cases and boundary conditions
 - Mock external dependencies appropriately
 - Use Vitest with V8 coverage provider
-- Generate coverage reports: `pnpm test:coverage:html`
+- Generate coverage reports: `pnpm test:coverage`
 
 ## Code Review Process
 
-### Review Checklist
-
 - [ ] Code follows project conventions
-- [ ] All tests pass with 70%+ coverage
-- [ ] Quality gates pass (`pnpm run quality-gate:full`)
-- [ ] No linting errors
+- [ ] All tests pass
+- [ ] Linting passes (`pnpm lint`)
 - [ ] Proper error handling implemented
 - [ ] Performance considerations addressed
 - [ ] Security considerations addressed
 - [ ] Documentation updated if needed
-- [ ] Version management considered (if applicable)
 
 ### Review Guidelines
 
@@ -314,44 +309,25 @@ export function Component({ data, onAction, isLoading, error }: ComponentProps) 
 
 ## Quality Gates and Testing
 
-### Quality Gate System
-
-The project implements comprehensive quality gates:
-
-- **Quality Check**: `pnpm run quality-check` - Linting, tests, and validation
-- **Quality Gate**: `pnpm run quality-gate` - Quality gate checks
-- **Full Quality Gate**: `pnpm run quality-gate:full` - Complete quality gate with build
-
 ### Testing Infrastructure
 
 - **Test Runner**: Vitest with V8 coverage provider
-- **Coverage Threshold**: 70% minimum (enforced by quality gates)
 - **Coverage Reports**: HTML, JSON, and LCOV formats
 - **Test Commands**:
   - `pnpm test` - Run tests with UI
   - `pnpm test:run` - Run tests in CI mode
   - `pnpm test:coverage` - Generate coverage report
-  - `pnpm test:coverage:html` - Generate HTML coverage report
 
 ### CI/CD Integration
 
 - **GitHub Actions**: Automated testing and deployment
-- **Quality Gates**: Enforced in CI pipeline
-- **Coverage Reporting**: Integrated with Codecov
+- **Linting & Tests**: Enforced in CI pipeline
 - **Automated Releases**: Version management and deployment
-
-## Validation and Automation
-
-### Available Scripts
-
-- `pnpm validate-all` - Validate feature dependencies
-- `pnpm check-dependencies` - Validate feature dependencies
 
 ### Linting Rules
 
 - ESLint configuration for code quality
 - Prettier for consistent formatting
-- Custom rules for project-specific patterns
 - Automated enforcement in CI/CD
 
 ### Pre-commit Hooks

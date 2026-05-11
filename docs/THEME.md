@@ -12,16 +12,16 @@ The app uses **OKLCH color space** for better color consistency and perceptual u
 oklch(lightness chroma hue)
 ```
 
-### Current Theme (Dark - Neutral Gray)
+### Current Theme (Light - Default)
 
-The default theme is a **neutral dark theme** with minimal color saturation:
+The default theme is a **clean light theme** with high legibility:
 
-- **Background**: `oklch(0.12 0.01 0)` - Very dark gray/charcoal
-- **Foreground**: `oklch(0.98 0.005 0)` - Almost white text
-- **Card**: `oklch(0.18 0.01 0)` - Slightly lighter dark gray
-- **Primary**: `oklch(0.75 0.08 180)` - Teal/cyan accent (hue 180)
-- **Muted**: `oklch(0.25 0.01 0)` - Medium gray
-- **Border**: `oklch(1 0 0 / 12%)` - Semi-transparent white
+- **Background**: `oklch(1 0 0)` - Pure white
+- **Foreground**: `oklch(0.25 0.01 0)` - Dark gray text
+- **Card**: `oklch(1 0 0)` - White cards
+- **Primary**: `oklch(0.45 0.15 210)` - Professional blue (hue 210)
+- **Muted**: `oklch(0.96 0.005 0)` - Very light gray
+- **Border**: `oklch(0.9 0.01 0)` - Subtle light border
 
 ## Theme Variables
 
@@ -122,12 +122,14 @@ The theme variables are mapped to Tailwind classes:
 - `border-border`
 - `bg-input`
 
-## Light Theme
+## Dark Theme
 
-The light theme is available under the `.light` class. To switch themes, modify `src/app/layout.tsx`:
+The dark theme is available under the `.dark` class. The application uses `next-themes` to manage theme switching.
+
+To set the default theme, modify `src/app/layout.tsx`:
 
 ```tsx
-<ThemeProvider defaultTheme="light" ...>
+<ThemeProvider defaultTheme="system" enableSystem ...>
 ```
 
-Or change the `defaultTheme` prop in the ThemeProvider component.
+The system will respect the user's OS preference if "system" is selected, or default to the chosen theme.

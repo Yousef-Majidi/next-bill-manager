@@ -18,57 +18,37 @@ We follow [Semantic Versioning (SemVer)](https://semver.org/) with the format `M
 - **Status**: Development/Alpha
 - **Stability**: Breaking changes expected
 
-## Version Management
+### Version Management
 
-### Automated Versioning
-
-Use the version manager script for consistent versioning:
+Use standard `npm version` commands:
 
 ```bash
-# Patch release (bug fixes)
-node scripts/version-manager.mjs patch
+# Patch version bump (0.1.0 -> 0.1.1)
+pnpm version patch
 
-# Minor release (new features)
-node scripts/version-manager.mjs minor
+# Minor version bump (0.1.0 -> 0.2.0)
+pnpm version minor
 
-# Major release (breaking changes)
-node scripts/version-manager.mjs major
-
-# Preview release (beta)
-node scripts/version-manager.mjs preview
-```
-
-### Package Scripts
-
-```bash
-# Quick version bump with quality checks
-pnpm run release:prepare    # Patch release
-pnpm run release:minor      # Minor release
-pnpm run release:major      # Major release
+# Major version bump (0.1.0 -> 1.0.0)
+pnpm version major
 ```
 
 ## Release Process
 
 ### 1. Development Workflow
 
-1. **Feature Development**: Work on `develop` branch
-2. **Quality Gates**: All changes must pass quality checks
-3. **Testing**: Comprehensive testing before release
-4. **Version Bump**: Use appropriate version increment
+### 1. Development Workflow
+
+1. **Feature Development**: Work on feature branches and merge to `main`
+2. **Quality Checks**: Ensure linting and tests pass
+3. **Version Bump**: Increment version before release
 
 ### 2. Release Steps
 
-1. **Quality Check**: Run `pnpm run quality-gate:full`
-2. **Version Update**: Use version manager script
-3. **Git Tag**: Automatic tag creation
-4. **CI/CD**: Automated testing and deployment
-5. **Release Notes**: Auto-generated from commit history
-
-### 3. Deployment
-
-- **Preview**: Automatic deployment on PR
-- **Production**: Automatic deployment on main branch push
-- **Release**: GitHub release created on tag push
+1. **Local Check**: Run `pnpm test` and `pnpm lint`
+2. **Version Update**: `pnpm version [patch|minor|major]`
+3. **Push Changes**: `git push origin main --tags`
+4. **CI/CD**: GitHub Actions handles verification and deployment
 
 ## Version History
 
@@ -95,10 +75,9 @@ After v1.0.0:
 Before any release:
 
 - ✅ All tests passing
-- ✅ Code quality checks passing
-- ✅ Type safety validation
+- ✅ Linting checks passing
 - ✅ Build successful
-- ✅ Security audit clean
+- ✅ Type safety validation
 
 ## Commit Message Convention
 
@@ -115,7 +94,7 @@ Follow conventional commits for automatic changelog generation:
 
 ## Environment-Specific Versions
 
-- **Development**: Latest commit on develop branch
+- **Development**: Latest commit on `main` branch
 - **Staging**: Latest tag with `-beta` suffix
 - **Production**: Latest stable tag
 
