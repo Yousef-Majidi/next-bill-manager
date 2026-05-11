@@ -18,20 +18,14 @@ We follow [Semantic Versioning (SemVer)](https://semver.org/) with the format `M
 - **Status**: Development/Alpha
 - **Stability**: Breaking changes expected
 
-### Version Management
+### Automated Versioning (Release Please)
 
-Use standard `npm version` commands:
+The project uses **Release Please** to automate version management.
 
-```bash
-# Patch version bump (0.1.0 -> 0.1.1)
-pnpm version patch
-
-# Minor version bump (0.1.0 -> 0.2.0)
-pnpm version minor
-
-# Major version bump (0.1.0 -> 1.0.0)
-pnpm version major
-```
+1. **Automatic Tracking**: Every merge to `main` triggers the bot to update a "Release PR".
+2. **Changelog**: The bot maintains `CHANGELOG.md` based on your commit messages.
+3. **Releasing**: When you are ready to release, simply merge the "Release PR".
+4. **Tagging**: Merging the Release PR automatically creates a Git tag and a GitHub Release.
 
 ## Release Process
 
@@ -39,16 +33,15 @@ pnpm version major
 
 ### 1. Development Workflow
 
-1. **Feature Development**: Work on feature branches and merge to `main`
-2. **Quality Checks**: Ensure linting and tests pass
-3. **Version Bump**: Increment version before release
+1. **Feature Development**: Work on feature branches.
+2. **Commit Messages**: Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat:`, `fix:`) so the bot can categorize changes.
+3. **Merge**: Merge feature PRs into `main`.
 
 ### 2. Release Steps
 
-1. **Local Check**: Run `pnpm test` and `pnpm lint`
-2. **Version Update**: `pnpm version [patch|minor|major]`
-3. **Push Changes**: `git push origin main --tags`
-4. **CI/CD**: GitHub Actions handles verification and deployment
+1. **Merge Release PR**: Look for the PR titled "chore(main): release x.y.z" opened by the bot.
+2. **Verify**: Review the generated changelog in the PR.
+3. **Approve & Merge**: Merging this PR triggers the final release and tagging.
 
 ## Version History
 
