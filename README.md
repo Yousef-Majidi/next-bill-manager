@@ -123,9 +123,7 @@ next-bill-manager/
 
 ### Version Management
 
-- `pnpm version:patch` - Patch version bump
-- `pnpm version:minor` - Minor version bump
-- `pnpm version:major` - Major version bump
+Releases are handled automatically by **Release Please**. When a PR is merged to `main`, a "Release PR" is updated. Merging that PR will tag the version and create a GitHub Release.
 
 ### Database
 
