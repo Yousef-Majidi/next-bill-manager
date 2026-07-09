@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/Yousef-Majidi/next-bill-manager/compare/v0.5.1...v0.5.2) (2026-07-09)
+
+
+### Bug Fixes
+
+* match display names containing tenant name and search starting from oldest unpaid bill sent date ([#60](https://github.com/Yousef-Majidi/next-bill-manager/issues/60)) ([e6ad220](https://github.com/Yousef-Majidi/next-bill-manager/commit/e6ad22079c31a885619a381401ed0777ac23b9f2))
+
 ## [0.5.1](https://github.com/Yousef-Majidi/next-bill-manager/compare/v0.5.0...v0.5.1) (2026-05-11)
 
 
