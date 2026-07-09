@@ -304,18 +304,25 @@ export const DashboardPage = ({ currentMonthBill }: DashboardPageProps) => {
 				return;
 			}
 
-			// Set date range for payment detection (last 30 days)
-			const endDate = new Date();
-			const startDate = new Date();
-			startDate.setDate(startDate.getDate() - 30);
-
-			const dateRange = {
-				start: startDate.toISOString().split("T")[0] ?? "",
-				end: endDate.toISOString().split("T")[0] ?? "",
-			};
-
 			// Check for unused payments (only one at a time to avoid overwhelming the user)
 			for (const tenant of tenantsWithOutstanding) {
+				const endDate = new Date();
+				const unpaidBillsForTenant = billsHistory.filter(
+					(bill) => bill.tenantId === tenant.id && !bill.paid && bill.dateSent,
+				);
+				const earliestDateSent = unpaidBillsForTenant
+					.map((bill) => new Date(bill.dateSent!))
+					.sort((a, b) => a.getTime() - b.getTime())[0];
+
+				const startDate =
+					earliestDateSent ??
+					new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+				const dateRange = {
+					start: startDate.toISOString().split("T")[0] ?? "",
+					end: endDate.toISOString().split("T")[0] ?? "",
+				};
+
 				const result = await safeExecuteAsync(async () => {
 					return await processTenantPayments(tenant, billsHistory, dateRange);
 				});

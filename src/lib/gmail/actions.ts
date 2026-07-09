@@ -192,7 +192,7 @@ export const queryForBillPayment = async (
 
 		// Try each name in the search
 		for (const name of searchNames) {
-			const query = `from:"${name}" after:${dateRange.start} before:${dateRange.end}`;
+			const query = `from:${name} after:${dateRange.start} before:${dateRange.end}`;
 			const response = await gmailClient.users.messages.list({
 				userId: "me",
 				q: query,
@@ -282,7 +282,7 @@ export const processTenantPayments = async (
 
 		// Try each name in the search
 		for (const name of searchNames) {
-			const query = `from:"${name}" after:${dateRange.start} before:${dateRange.end}`;
+			const query = `from:${name} after:${dateRange.start} before:${dateRange.end}`;
 			const response = await gmailClient.users.messages.list({
 				userId: "me",
 				q: query,
