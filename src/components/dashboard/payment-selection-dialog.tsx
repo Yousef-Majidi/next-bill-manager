@@ -67,31 +67,17 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 
 	const paymentAmount = roundToCurrency(Number(payment.amount));
 
-	// Calculate amounts for each bill
+	// Calculate the tenant's share for each bill
 	const billAmounts = unpaidBills.map((bill) => {
 		const { tenantTotal } = getTenantShares(bill, tenant);
-		// For the first bill in the list, include outstanding balance
-		const isFirstBill = bill === unpaidBills[0];
-		const expectedAmount = isFirstBill
-			? tenantTotal + tenant.outstandingBalance
-			: tenantTotal;
 		return {
 			bill,
 			tenantTotal,
-			expectedAmount,
 		};
 	});
 
-	// Calculate total selected amounts
-	const totalSelectedAmount = Array.from(selectedBillIds).reduce(
-		(sum, billId) => {
-			const billAmount = billAmounts.find((ba) => ba.bill.id === billId);
-			return sum + (billAmount?.expectedAmount || 0);
-		},
-		0,
-	);
-
-	// Tenant's pure share (no outstanding balance added) — shown in summary
+	// Tenant's share across the selected bills — shown in the summary and used
+	// as the basis for the payment difference
 	const selectedTenantShare = Array.from(selectedBillIds).reduce(
 		(sum, billId) => {
 			const billAmount = billAmounts.find((ba) => ba.bill.id === billId);
@@ -100,7 +86,7 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 		0,
 	);
 
-	const difference = paymentAmount - totalSelectedAmount;
+	const difference = paymentAmount - selectedTenantShare;
 	const isExact = Math.abs(difference) <= 0.01;
 	const isOverpaid = difference > 0.01;
 
@@ -151,7 +137,7 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
 				<DialogHeader className="space-y-3">
 					<div className="flex items-center gap-3">
 						<div className="bg-primary/20 rounded-xl p-3">
@@ -171,7 +157,7 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 				<div className="space-y-6">
 					{/* Payment Details */}
 					<div className="bg-muted rounded-lg border p-4">
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div>
 								<Label className="text-muted-foreground text-sm font-medium">
 									Payment Amount
@@ -184,7 +170,7 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 								<Label className="text-muted-foreground text-sm font-medium">
 									From
 								</Label>
-								<p className="text-foreground text-lg font-medium">
+								<p className="text-foreground text-lg font-medium break-words">
 									{payment.sentFrom}
 								</p>
 							</div>
@@ -220,7 +206,7 @@ export const PaymentSelectionDialog: React.FC<PaymentSelectionDialogProps> = ({
 						<p className="text-muted-foreground mb-3 text-sm">
 							Select the bills this payment applies to
 						</p>
-						<div className="rounded-md border">
+						<div className="overflow-x-auto rounded-md border">
 							<Table>
 								<TableHeader>
 									<TableRow>
