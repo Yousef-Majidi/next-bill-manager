@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/Yousef-Majidi/next-bill-manager/compare/v0.5.2...v0.5.3) (2026-08-01)
+
+
+### Bug Fixes
+
+* mobile responsiveness for bill/payment dialogs and payment difference calc ([#62](https://github.com/Yousef-Majidi/next-bill-manager/issues/62)) ([5df829f](https://github.com/Yousef-Majidi/next-bill-manager/commit/5df829f8476b5bcf1b0cd1e325db770eeb344003))
+
 ## [0.5.2](https://github.com/Yousef-Majidi/next-bill-manager/compare/v0.5.1...v0.5.2) (2026-07-09)
 
 
