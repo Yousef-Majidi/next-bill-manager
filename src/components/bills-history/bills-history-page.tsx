@@ -692,7 +692,7 @@ export const BillsHistoryPage = () => {
 														View Details
 													</Button>
 												</DialogTrigger>
-												<DialogContent className="max-w-7xl">
+												<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-7xl">
 													<DialogHeader className="space-y-3">
 														<div className="flex items-center gap-3">
 															<div className="bg-primary/20 rounded-xl p-3">
