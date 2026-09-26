@@ -1,7 +1,7 @@
 # Next Bill Manager
 
 > **Archived.** This project is no longer maintained. It has been replaced by
-> [Sharehold](https://sharehold-ten.vercel.app), a rewrite that does the same
+> [Sharehold](https://sharehold.app), a rewrite that does the same
 > job without needing access to your whole inbox. All the bill and payment
 > history kept here was moved into Sharehold before the archive.
 
